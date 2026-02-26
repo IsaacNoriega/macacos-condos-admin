@@ -1,4 +1,14 @@
-const tenantMiddleware = (req, res, next) => {
+import { Request, Response, NextFunction } from 'express';
+
+// Extiende la interfaz Request para incluir tenantId
+declare module 'express-serve-static-core' {
+  interface Request {
+    tenantId?: string;
+    user?: any;
+  }
+}
+
+const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
     // Extract tenantId from JWT token (from authMiddleware)
     const tenantId = req.user?.tenantId;
@@ -12,9 +22,9 @@ const tenantMiddleware = (req, res, next) => {
 
     // Attach tenantId to request for use in queries
     req.tenantId = tenantId;
-    
+
     next();
-  } catch (error) {
+  } catch (error: any) {
     return res.status(500).json({
       success: false,
       message: 'Error in tenant middleware',
@@ -23,4 +33,4 @@ const tenantMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = tenantMiddleware;
+export default tenantMiddleware;

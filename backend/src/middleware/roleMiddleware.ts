@@ -1,5 +1,7 @@
-const roleMiddleware = (allowedRoles) => {
-  return (req, res, next) => {
+import { Request, Response, NextFunction } from 'express';
+
+const roleMiddleware = (allowedRoles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     try {
       const userRole = req.user?.role;
 
@@ -18,7 +20,7 @@ const roleMiddleware = (allowedRoles) => {
       }
 
       next();
-    } catch (error) {
+    } catch (error: any) {
       return res.status(500).json({
         success: false,
         message: 'Error in role middleware',
@@ -28,4 +30,4 @@ const roleMiddleware = (allowedRoles) => {
   };
 };
 
-module.exports = roleMiddleware;
+export default roleMiddleware;
