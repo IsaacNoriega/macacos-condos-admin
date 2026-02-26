@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
 const logsDir = path.join(__dirname, '../logs');
 
@@ -8,8 +8,12 @@ if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
+export interface LoggerDetails {
+  [key: string]: any;
+}
+
 const logger = {
-  log: (action, userId, tenantId, details = {}) => {
+  log: (action: string, userId: string, tenantId: string, details: LoggerDetails = {}): void => {
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -20,11 +24,10 @@ const logger = {
     };
 
     const logFile = path.join(logsDir, `${new Date().toISOString().split('T')[0]}.log`);
-
     fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
   },
 
-  error: (action, userId, tenantId, error) => {
+  error: (action: string, userId: string, tenantId: string, error: Error): void => {
     const timestamp = new Date().toISOString();
     const errorEntry = {
       timestamp,
@@ -36,9 +39,8 @@ const logger = {
     };
 
     const logFile = path.join(logsDir, `${new Date().toISOString().split('T')[0]}-errors.log`);
-
     fs.appendFileSync(logFile, JSON.stringify(errorEntry) + '\n');
   },
 };
 
-module.exports = logger;
+export default logger;

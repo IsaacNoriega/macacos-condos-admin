@@ -1,6 +1,14 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
+import { Request, Response, NextFunction } from 'express';
 
-const authMiddleware = (req, res, next) => {
+// Extiende la interfaz Request para incluir user
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: any;
+  }
+}
+
+const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
     // Get token from headers
     const token = req.headers.authorization?.split(' ')[1];
@@ -13,13 +21,13 @@ const authMiddleware = (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+
     // Attach user info to request
     req.user = decoded;
-    
+
     next();
-  } catch (error) {
+  } catch (error: any) {
     return res.status(401).json({
       success: false,
       message: 'Invalid or expired token',
@@ -28,4 +36,4 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+export default authMiddleware;
