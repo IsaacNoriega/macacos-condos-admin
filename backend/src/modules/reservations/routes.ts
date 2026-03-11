@@ -6,7 +6,7 @@ import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
 
-router.get('/', roleMiddleware(['superadmin', 'admin']), getAllReservations);
+router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllReservations);
 router.post('/',
   roleMiddleware(['superadmin', 'admin', 'residente']),
   body('amenity').notEmpty().withMessage('Amenidad obligatoria'),

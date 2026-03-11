@@ -1,0 +1,38 @@
+import Resident from './model';
+import Unit from '../units/model';
+
+export const findResidentsByTenant = (tenantId?: string) => {
+  return Resident.find({ tenantId });
+};
+
+export const findResidentByIdInTenant = (residentId: string, tenantId?: string) => {
+  return Resident.findOne({ _id: residentId, tenantId });
+};
+
+export const validateUnitInTenant = async (unitId: string, tenantId?: string) => {
+  if (!tenantId) return false;
+  const unit = await Unit.findOne({ _id: unitId, tenantId });
+  return Boolean(unit);
+};
+
+export const countResidentsInUnit = (tenantId?: string, unitId?: string) => {
+  return Resident.countDocuments({ tenantId, unitId });
+};
+
+export const createResidentInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {
+  const resident = new Resident({ ...payload, tenantId });
+  await resident.save();
+  return resident;
+};
+
+export const updateResidentInTenant = (residentId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
+  return Resident.findOneAndUpdate(
+    { _id: residentId, tenantId },
+    payload,
+    { new: true }
+  );
+};
+
+export const deleteResidentInTenant = (residentId: string, tenantId?: string) => {
+  return Resident.findOneAndDelete({ _id: residentId, tenantId });
+};

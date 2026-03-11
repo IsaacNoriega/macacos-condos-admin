@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import Tenant from './model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import * as tenantsService from './service';
 
 export const getAllTenants = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenants = await Tenant.find();
+    const tenants = await tenantsService.findAllTenants();
     res.json({ success: true, tenants });
   } catch (err: unknown) {
     next(new AppError('Error al obtener tenants', 500, { cause: toError(err).message }));
@@ -14,7 +14,7 @@ export const getAllTenants = async (req: Request, res: Response, next: NextFunct
 
 export const getTenantById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenant = await Tenant.findById(req.params.id);
+    const tenant = await tenantsService.findTenantById(String(req.params.id));
     if (!tenant) {
       throw new AppError('Tenant no encontrado', 404);
     }
@@ -27,8 +27,7 @@ export const getTenantById = async (req: Request, res: Response, next: NextFunct
 
 export const createTenant = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenant = new Tenant(req.body);
-    await tenant.save();
+    const tenant = await tenantsService.createTenant(req.body);
     logger.log('tenants.create', req.user?.id ? String(req.user.id) : 'system', String(tenant._id), { name: tenant.name });
     res.status(201).json({ success: true, tenant });
   } catch (err: unknown) {
@@ -39,7 +38,7 @@ export const createTenant = async (req: Request, res: Response, next: NextFuncti
 
 export const updateTenant = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenant = await Tenant.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const tenant = await tenantsService.updateTenant(String(req.params.id), req.body);
     if (!tenant) {
       throw new AppError('Tenant no encontrado', 404);
     }
@@ -54,7 +53,7 @@ export const updateTenant = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteTenant = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenant = await Tenant.findByIdAndDelete(req.params.id);
+    const tenant = await tenantsService.deleteTenant(String(req.params.id));
     if (!tenant) {
       throw new AppError('Tenant no encontrado', 404);
     }

@@ -19,7 +19,7 @@ router.post('/',
   body('name').notEmpty().withMessage('El nombre es obligatorio'),
   body('email').isEmail().withMessage('Email inválido'),
   body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-  body('role').isIn(['superadmin', 'admin', 'residente']).withMessage('Rol inválido'),
+  body('role').isIn(['superadmin', 'admin', 'residente', 'familiar']).withMessage('Rol inválido'),
   validateRequest,
   createUser
 );
@@ -29,7 +29,7 @@ router.put('/:id',
   body('name').optional().notEmpty().withMessage('El nombre es obligatorio'),
   body('email').optional().isEmail().withMessage('Email inválido'),
   body('password').optional().isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-  body('role').optional().isIn(['superadmin', 'admin', 'residente']).withMessage('Rol inválido'),
+  body('role').optional().isIn(['superadmin', 'admin', 'residente', 'familiar']).withMessage('Rol inválido'),
   validateRequest,
   updateUser
 );

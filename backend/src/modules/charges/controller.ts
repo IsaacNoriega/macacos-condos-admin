@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import Charge from './model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import * as chargesService from './service';
 
 export const getAllCharges = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const charges = await Charge.find({ tenantId: req.tenantId });
+    const charges = await chargesService.findChargesByTenant(req.tenantId);
     res.json({ success: true, charges });
   } catch (err: unknown) {
     next(new AppError('Error al obtener cargos', 500, { cause: toError(err).message }));
@@ -14,8 +14,7 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
 
 export const createCharge = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const charge = new Charge({ ...req.body, tenantId: req.tenantId });
-    await charge.save();
+    const charge = await chargesService.createChargeInTenant(req.body, req.tenantId);
     logger.log('charges.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { chargeId: String(charge._id) });
     res.status(201).json({ success: true, charge });
   } catch (err: unknown) {
@@ -26,7 +25,7 @@ export const createCharge = async (req: Request, res: Response, next: NextFuncti
 
 export const updateCharge = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const charge = await Charge.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, req.body, { new: true });
+    const charge = await chargesService.updateChargeInTenant(String(req.params.id), req.tenantId, req.body);
     if (!charge) {
       throw new AppError('Cargo no encontrado', 404);
     }
@@ -41,7 +40,7 @@ export const updateCharge = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteCharge = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const charge = await Charge.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
+    const charge = await chargesService.deleteChargeInTenant(String(req.params.id), req.tenantId);
     if (!charge) {
       throw new AppError('Cargo no encontrado', 404);
     }

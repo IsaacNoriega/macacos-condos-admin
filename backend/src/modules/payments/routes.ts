@@ -12,7 +12,7 @@ import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
 
-router.get('/', roleMiddleware(['superadmin', 'admin']), getAllPayments);
+router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllPayments);
 router.post('/',
   roleMiddleware(['superadmin', 'admin', 'residente']),
   body('userId').isMongoId().withMessage('userId inválido'),

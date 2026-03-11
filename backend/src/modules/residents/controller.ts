@@ -1,20 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
-import Resident from './model';
-import Unit from '../units/model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import * as residentsService from './service';
 
 const MAX_RESIDENTS_PER_UNIT = 5;
 
-const validateUnitInTenant = async (unitId: string, tenantId?: string) => {
-  if (!tenantId) return false;
-  const unit = await Unit.findOne({ _id: unitId, tenantId });
-  return Boolean(unit);
-};
-
 export const getAllResidents = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const residents = await Resident.find({ tenantId: req.tenantId });
+    const residents = await residentsService.findResidentsByTenant(req.tenantId);
     res.json({ success: true, residents });
   } catch (err: unknown) {
     next(new AppError('Error al obtener residentes', 500, { cause: toError(err).message }));
@@ -23,7 +16,7 @@ export const getAllResidents = async (req: Request, res: Response, next: NextFun
 
 export const getResidentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const resident = await Resident.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    const resident = await residentsService.findResidentByIdInTenant(String(req.params.id), req.tenantId);
     if (!resident) {
       throw new AppError('Residente no encontrado', 404);
     }
@@ -38,18 +31,17 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
   try {
     const { unitId } = req.body;
 
-    const validUnit = await validateUnitInTenant(unitId, req.tenantId);
+    const validUnit = await residentsService.validateUnitInTenant(unitId, req.tenantId);
     if (!validUnit) {
       throw new AppError('La unidad no pertenece al tenant actual', 400);
     }
 
-    const currentResidents = await Resident.countDocuments({ tenantId: req.tenantId, unitId });
+    const currentResidents = await residentsService.countResidentsInUnit(req.tenantId, unitId);
     if (currentResidents >= MAX_RESIDENTS_PER_UNIT) {
       throw new AppError(`La unidad ya tiene el maximo permitido de ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
     }
 
-    const resident = new Resident({ ...req.body, tenantId: req.tenantId });
-    await resident.save();
+    const resident = await residentsService.createResidentInTenant(req.body, req.tenantId);
     logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: String(resident._id), unitId });
     res.status(201).json({ success: true, resident });
   } catch (err: unknown) {
@@ -60,32 +52,25 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
 
 export const updateResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const currentResident = await Resident.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    const currentResident = await residentsService.findResidentByIdInTenant(String(req.params.id), req.tenantId);
     if (!currentResident) {
       throw new AppError('Residente no encontrado', 404);
     }
 
     if (req.body.unitId && req.body.unitId !== currentResident.unitId.toString()) {
-      const validUnit = await validateUnitInTenant(req.body.unitId, req.tenantId);
+      const validUnit = await residentsService.validateUnitInTenant(req.body.unitId, req.tenantId);
       if (!validUnit) {
         throw new AppError('La unidad no pertenece al tenant actual', 400);
       }
 
-      const residentsInTargetUnit = await Resident.countDocuments({
-        tenantId: req.tenantId,
-        unitId: req.body.unitId,
-      });
+      const residentsInTargetUnit = await residentsService.countResidentsInUnit(req.tenantId, req.body.unitId);
 
       if (residentsInTargetUnit >= MAX_RESIDENTS_PER_UNIT) {
         throw new AppError(`La unidad destino ya tiene ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
       }
     }
 
-    const resident = await Resident.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenantId },
-      req.body,
-      { new: true }
-    );
+    const resident = await residentsService.updateResidentInTenant(String(req.params.id), req.tenantId, req.body);
 
     logger.log('residents.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: req.params.id });
     res.json({ success: true, resident });
@@ -97,7 +82,7 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
 
 export const deleteResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const resident = await Resident.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
+    const resident = await residentsService.deleteResidentInTenant(String(req.params.id), req.tenantId);
     if (!resident) {
       throw new AppError('Residente no encontrado', 404);
     }

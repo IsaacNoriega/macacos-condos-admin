@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import Payment from './model';
 import Stripe from 'stripe';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import * as paymentsService from './service';
 
 const getStripeClient = () => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -15,7 +15,7 @@ const getStripeClient = () => {
 
 export const getAllPayments = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payments = await Payment.find({ tenantId: req.tenantId });
+    const payments = await paymentsService.findPaymentsByTenant(req.tenantId);
     res.json({ success: true, payments });
   } catch (err: unknown) {
     next(new AppError('Error al obtener pagos', 500, { cause: toError(err).message }));
@@ -24,14 +24,13 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
 
 export const createPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payment = new Payment({
+    const paymentData = {
       ...req.body,
-      tenantId: req.tenantId,
       provider: req.body.provider || 'manual',
       status: req.body.status || 'paid',
       paymentDate: req.body.paymentDate || new Date(),
-    });
-    await payment.save();
+    };
+    const payment = await paymentsService.createPaymentInTenant(paymentData, req.tenantId);
     logger.log('payments.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { paymentId: String(payment._id), provider: payment.provider });
     res.status(201).json({ success: true, payment });
   } catch (err: unknown) {
@@ -109,23 +108,19 @@ export const stripeWebhook = async (req: Request, res: Response) => {
       const metadata = session.metadata || {};
 
       if (metadata.tenantId && metadata.userId && metadata.chargeId && metadata.amount) {
-        await Payment.findOneAndUpdate(
-          { stripeSessionId: session.id },
-          {
-            tenantId: metadata.tenantId,
-            userId: metadata.userId,
-            chargeId: metadata.chargeId,
-            amount: Number(metadata.amount),
-            currency: session.currency || 'mxn',
-            provider: 'stripe',
-            status: 'paid',
-            stripeSessionId: session.id,
-            stripePaymentIntentId:
-              typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
-            paymentDate: new Date(),
-          },
-          { new: true, upsert: true, setDefaultsOnInsert: true }
-        );
+        await paymentsService.upsertPaymentByStripeSessionId(session.id, {
+          tenantId: metadata.tenantId,
+          userId: metadata.userId,
+          chargeId: metadata.chargeId,
+          amount: Number(metadata.amount),
+          currency: session.currency || 'mxn',
+          provider: 'stripe',
+          status: 'paid',
+          stripeSessionId: session.id,
+          stripePaymentIntentId:
+            typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+          paymentDate: new Date(),
+        });
         logger.log('payments.webhook.completed', 'stripe-webhook', metadata.tenantId, { sessionId: session.id, userId: metadata.userId, chargeId: metadata.chargeId });
       }
     }
@@ -139,7 +134,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
 export const updatePayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payment = await Payment.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, req.body, { new: true });
+    const payment = await paymentsService.updatePaymentInTenant(String(req.params.id), req.tenantId, req.body);
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
     }
@@ -154,7 +149,7 @@ export const updatePayment = async (req: Request, res: Response, next: NextFunct
 
 export const deletePayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payment = await Payment.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
+    const payment = await paymentsService.deletePaymentInTenant(String(req.params.id), req.tenantId);
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
     }

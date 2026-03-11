@@ -11,7 +11,7 @@ router.post(
 	body('name').notEmpty().withMessage('El nombre es obligatorio'),
 	body('email').isEmail().withMessage('Email invalido'),
 	body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-	body('role').isIn(['superadmin', 'admin', 'residente']).withMessage('Rol invalido'),
+	body('role').isIn(['superadmin', 'admin', 'residente', 'familiar']).withMessage('Rol invalido'),
 	body('tenantId').isMongoId().withMessage('tenantId invalido'),
 	validateRequest,
 	register

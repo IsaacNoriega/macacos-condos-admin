@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import Maintenance from './model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import * as maintenanceService from './service';
 
 export const getAllReports = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reports = await Maintenance.find({ tenantId: req.tenantId });
+    const reports = await maintenanceService.findMaintenanceByTenant(req.tenantId);
     res.json({ success: true, reports });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reportes', 500, { cause: toError(err).message }));
@@ -14,8 +14,7 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
 
 export const createReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = new Maintenance({ ...req.body, tenantId: req.tenantId });
-    await report.save();
+    const report = await maintenanceService.createMaintenanceInTenant(req.body, req.tenantId);
     logger.log('maintenance.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reportId: String(report._id) });
     res.status(201).json({ success: true, report });
   } catch (err: unknown) {
@@ -26,7 +25,7 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
 
 export const updateReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = await Maintenance.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, req.body, { new: true });
+    const report = await maintenanceService.updateMaintenanceInTenant(String(req.params.id), req.tenantId, req.body);
     if (!report) {
       throw new AppError('Reporte no encontrado', 404);
     }
@@ -41,7 +40,7 @@ export const updateReport = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = await Maintenance.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
+    const report = await maintenanceService.deleteMaintenanceInTenant(String(req.params.id), req.tenantId);
     if (!report) {
       throw new AppError('Reporte no encontrado', 404);
     }

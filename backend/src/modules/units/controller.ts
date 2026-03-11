@@ -1,11 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import Unit from './model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import * as unitsService from './service';
 
 export const getAllUnits = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const units = await Unit.find({ tenantId: req.tenantId });
+    const units = await unitsService.findUnitsByTenant(req.tenantId);
     res.json({ success: true, units });
   } catch (err: unknown) {
     next(new AppError('Error al obtener unidades', 500, { cause: toError(err).message }));
@@ -14,7 +14,7 @@ export const getAllUnits = async (req: Request, res: Response, next: NextFunctio
 
 export const getUnitById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await Unit.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    const unit = await unitsService.findUnitByIdInTenant(String(req.params.id), req.tenantId);
     if (!unit) {
       throw new AppError('Unidad no encontrada', 404);
     }
@@ -27,8 +27,7 @@ export const getUnitById = async (req: Request, res: Response, next: NextFunctio
 
 export const createUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = new Unit({ ...req.body, tenantId: req.tenantId });
-    await unit.save();
+    const unit = await unitsService.createUnitInTenant(req.body, req.tenantId);
     logger.log('units.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { unitId: String(unit._id), code: unit.code });
     res.status(201).json({ success: true, unit });
   } catch (err: unknown) {
@@ -39,11 +38,7 @@ export const createUnit = async (req: Request, res: Response, next: NextFunction
 
 export const updateUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await Unit.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenantId },
-      req.body,
-      { new: true }
-    );
+    const unit = await unitsService.updateUnitInTenant(String(req.params.id), req.tenantId, req.body);
 
     if (!unit) {
       throw new AppError('Unidad no encontrada', 404);
@@ -59,7 +54,7 @@ export const updateUnit = async (req: Request, res: Response, next: NextFunction
 
 export const deleteUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await Unit.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
+    const unit = await unitsService.deleteUnitInTenant(String(req.params.id), req.tenantId);
     if (!unit) {
       throw new AppError('Unidad no encontrada', 404);
     }
