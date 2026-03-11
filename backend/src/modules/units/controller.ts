@@ -1,39 +1,43 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import Unit from './model';
 import logger from '../../utils/logger';
+import { AppError, toError } from '../../utils/httpError';
 
-export const getAllUnits = async (req: Request, res: Response) => {
+export const getAllUnits = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const units = await Unit.find({ tenantId: req.tenantId });
     res.json({ success: true, units });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener unidades', error: err.message });
+  } catch (err: unknown) {
+    next(new AppError('Error al obtener unidades', 500, { cause: toError(err).message }));
   }
 };
 
-export const getUnitById = async (req: Request, res: Response) => {
+export const getUnitById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const unit = await Unit.findOne({ _id: req.params.id, tenantId: req.tenantId });
-    if (!unit) return res.status(404).json({ success: false, message: 'Unidad no encontrada' });
+    if (!unit) {
+      throw new AppError('Unidad no encontrada', 404);
+    }
+
     res.json({ success: true, unit });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener unidad', error: err.message });
+  } catch (err: unknown) {
+    next(err instanceof AppError ? err : new AppError('Error al obtener unidad', 500, { cause: toError(err).message }));
   }
 };
 
-export const createUnit = async (req: Request, res: Response) => {
+export const createUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const unit = new Unit({ ...req.body, tenantId: req.tenantId });
     await unit.save();
     logger.log('units.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { unitId: String(unit._id), code: unit.code });
     res.status(201).json({ success: true, unit });
-  } catch (err: any) {
-    logger.error('units.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al crear unidad', error: err.message });
+  } catch (err: unknown) {
+    logger.error('units.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(new AppError('Error al crear unidad', 400, { cause: toError(err).message }));
   }
 };
 
-export const updateUnit = async (req: Request, res: Response) => {
+export const updateUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const unit = await Unit.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenantId },
@@ -41,23 +45,29 @@ export const updateUnit = async (req: Request, res: Response) => {
       { new: true }
     );
 
-    if (!unit) return res.status(404).json({ success: false, message: 'Unidad no encontrada' });
+    if (!unit) {
+      throw new AppError('Unidad no encontrada', 404);
+    }
+
     logger.log('units.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { unitId: req.params.id });
     res.json({ success: true, unit });
-  } catch (err: any) {
-    logger.error('units.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al actualizar unidad', error: err.message });
+  } catch (err: unknown) {
+    logger.error('units.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al actualizar unidad', 400, { cause: toError(err).message }));
   }
 };
 
-export const deleteUnit = async (req: Request, res: Response) => {
+export const deleteUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const unit = await Unit.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
-    if (!unit) return res.status(404).json({ success: false, message: 'Unidad no encontrada' });
+    if (!unit) {
+      throw new AppError('Unidad no encontrada', 404);
+    }
+
     logger.log('units.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { unitId: req.params.id });
     res.json({ success: true, message: 'Unidad eliminada' });
-  } catch (err: any) {
-    logger.error('units.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al eliminar unidad', error: err.message });
+  } catch (err: unknown) {
+    logger.error('units.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al eliminar unidad', 400, { cause: toError(err).message }));
   }
 };

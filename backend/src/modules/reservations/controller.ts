@@ -1,48 +1,104 @@
-import { Request, Response } from 'express';
-import Reservation from './model';
+import { NextFunction, Request, Response } from 'express';
 import logger from '../../utils/logger';
+import { AppError, toError } from '../../utils/httpError';
+import {
+  createReservationInTenant,
+  deleteReservationInTenant,
+  findReservationByIdInTenant,
+  findReservationConflict,
+  findReservationsByTenant,
+  updateReservationInTenant,
+} from './service';
 
-export const getAllReservations = async (req: Request, res: Response) => {
+export const getAllReservations = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reservations = await Reservation.find({ tenantId: req.tenantId });
+    const reservations = await findReservationsByTenant(req.tenantId);
     res.json({ success: true, reservations });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener reservaciones', error: err.message });
+  } catch (err: unknown) {
+    next(new AppError('Error al obtener reservaciones', 500, { cause: toError(err).message }));
   }
 };
 
-export const createReservation = async (req: Request, res: Response) => {
+export const createReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reservation = new Reservation({ ...req.body, tenantId: req.tenantId });
-    await reservation.save();
+    const { amenity, start, end } = req.body;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new AppError('Fechas inválidas para reservación', 400);
+    }
+
+    if (startDate >= endDate) {
+      throw new AppError('La fecha de inicio debe ser menor que la fecha de fin', 400);
+    }
+
+    if (await findReservationConflict(req.tenantId as string, amenity, startDate, endDate)) {
+      throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
+    }
+
+    const reservation = await createReservationInTenant({ ...req.body, start: startDate, end: endDate }, req.tenantId);
     logger.log('reservations.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: String(reservation._id) });
     res.status(201).json({ success: true, reservation });
-  } catch (err: any) {
-    logger.error('reservations.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al crear reservación', error: err.message });
+  } catch (err: unknown) {
+    logger.error('reservations.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al crear reservación', 400, { cause: toError(err).message }));
   }
 };
 
-export const updateReservation = async (req: Request, res: Response) => {
+export const updateReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reservation = await Reservation.findOneAndUpdate({ _id: req.params.id, tenantId: req.tenantId }, req.body, { new: true });
-    if (!reservation) return res.status(404).json({ success: false, message: 'Reservación no encontrada' });
+    const currentReservation = await findReservationByIdInTenant(String(req.params.id), req.tenantId);
+    if (!currentReservation) {
+      throw new AppError('Reservación no encontrada', 404);
+    }
+
+    const nextAmenityRaw = req.body.amenity ?? currentReservation.amenity;
+    if (Array.isArray(nextAmenityRaw)) {
+      throw new AppError('Amenidad inválida', 400);
+    }
+    const nextAmenity = String(nextAmenityRaw);
+    const nextStart = req.body.start ? new Date(req.body.start) : currentReservation.start;
+    const nextEnd = req.body.end ? new Date(req.body.end) : currentReservation.end;
+
+    if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) {
+      throw new AppError('Fechas inválidas para reservación', 400);
+    }
+
+    if (nextStart >= nextEnd) {
+      throw new AppError('La fecha de inicio debe ser menor que la fecha de fin', 400);
+    }
+
+    if (await findReservationConflict(req.tenantId as string, nextAmenity, nextStart, nextEnd, String(req.params.id))) {
+      throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
+    }
+
+    const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, {
+      ...req.body,
+      amenity: nextAmenity,
+      start: nextStart,
+      end: nextEnd,
+    });
+
     logger.log('reservations.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
     res.json({ success: true, reservation });
-  } catch (err: any) {
-    logger.error('reservations.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al actualizar reservación', error: err.message });
+  } catch (err: unknown) {
+    logger.error('reservations.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al actualizar reservación', 400, { cause: toError(err).message }));
   }
 };
 
-export const deleteReservation = async (req: Request, res: Response) => {
+export const deleteReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reservation = await Reservation.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
-    if (!reservation) return res.status(404).json({ success: false, message: 'Reservación no encontrada' });
+    const reservation = await deleteReservationInTenant(String(req.params.id), req.tenantId);
+    if (!reservation) {
+      throw new AppError('Reservación no encontrada', 404);
+    }
+
     logger.log('reservations.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
     res.json({ success: true, message: 'Reservación eliminada' });
-  } catch (err: any) {
-    logger.error('reservations.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al eliminar reservación', error: err.message });
+  } catch (err: unknown) {
+    logger.error('reservations.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al eliminar reservación', 400, { cause: toError(err).message }));
   }
 };

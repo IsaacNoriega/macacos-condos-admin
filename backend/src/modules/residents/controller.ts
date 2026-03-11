@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import Resident from './model';
 import Unit from '../units/model';
 import logger from '../../utils/logger';
+import { AppError, toError } from '../../utils/httpError';
 
 const MAX_RESIDENTS_PER_UNIT = 5;
 
@@ -11,61 +12,63 @@ const validateUnitInTenant = async (unitId: string, tenantId?: string) => {
   return Boolean(unit);
 };
 
-export const getAllResidents = async (req: Request, res: Response) => {
+export const getAllResidents = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const residents = await Resident.find({ tenantId: req.tenantId });
     res.json({ success: true, residents });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener residentes', error: err.message });
+  } catch (err: unknown) {
+    next(new AppError('Error al obtener residentes', 500, { cause: toError(err).message }));
   }
 };
 
-export const getResidentById = async (req: Request, res: Response) => {
+export const getResidentById = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const resident = await Resident.findOne({ _id: req.params.id, tenantId: req.tenantId });
-    if (!resident) return res.status(404).json({ success: false, message: 'Residente no encontrado' });
+    if (!resident) {
+      throw new AppError('Residente no encontrado', 404);
+    }
+
     res.json({ success: true, resident });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener residente', error: err.message });
+  } catch (err: unknown) {
+    next(err instanceof AppError ? err : new AppError('Error al obtener residente', 500, { cause: toError(err).message }));
   }
 };
 
-export const createResident = async (req: Request, res: Response) => {
+export const createResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { unitId } = req.body;
 
     const validUnit = await validateUnitInTenant(unitId, req.tenantId);
     if (!validUnit) {
-      return res.status(400).json({ success: false, message: 'La unidad no pertenece al tenant actual' });
+      throw new AppError('La unidad no pertenece al tenant actual', 400);
     }
 
     const currentResidents = await Resident.countDocuments({ tenantId: req.tenantId, unitId });
     if (currentResidents >= MAX_RESIDENTS_PER_UNIT) {
-      return res.status(400).json({
-        success: false,
-        message: `La unidad ya tiene el maximo permitido de ${MAX_RESIDENTS_PER_UNIT} residentes`,
-      });
+      throw new AppError(`La unidad ya tiene el maximo permitido de ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
     }
 
     const resident = new Resident({ ...req.body, tenantId: req.tenantId });
     await resident.save();
     logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: String(resident._id), unitId });
     res.status(201).json({ success: true, resident });
-  } catch (err: any) {
-    logger.error('residents.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al crear residente', error: err.message });
+  } catch (err: unknown) {
+    logger.error('residents.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al crear residente', 400, { cause: toError(err).message }));
   }
 };
 
-export const updateResident = async (req: Request, res: Response) => {
+export const updateResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const currentResident = await Resident.findOne({ _id: req.params.id, tenantId: req.tenantId });
-    if (!currentResident) return res.status(404).json({ success: false, message: 'Residente no encontrado' });
+    if (!currentResident) {
+      throw new AppError('Residente no encontrado', 404);
+    }
 
     if (req.body.unitId && req.body.unitId !== currentResident.unitId.toString()) {
       const validUnit = await validateUnitInTenant(req.body.unitId, req.tenantId);
       if (!validUnit) {
-        return res.status(400).json({ success: false, message: 'La unidad no pertenece al tenant actual' });
+        throw new AppError('La unidad no pertenece al tenant actual', 400);
       }
 
       const residentsInTargetUnit = await Resident.countDocuments({
@@ -74,10 +77,7 @@ export const updateResident = async (req: Request, res: Response) => {
       });
 
       if (residentsInTargetUnit >= MAX_RESIDENTS_PER_UNIT) {
-        return res.status(400).json({
-          success: false,
-          message: `La unidad destino ya tiene ${MAX_RESIDENTS_PER_UNIT} residentes`,
-        });
+        throw new AppError(`La unidad destino ya tiene ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
       }
     }
 
@@ -89,20 +89,23 @@ export const updateResident = async (req: Request, res: Response) => {
 
     logger.log('residents.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: req.params.id });
     res.json({ success: true, resident });
-  } catch (err: any) {
-    logger.error('residents.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al actualizar residente', error: err.message });
+  } catch (err: unknown) {
+    logger.error('residents.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al actualizar residente', 400, { cause: toError(err).message }));
   }
 };
 
-export const deleteResident = async (req: Request, res: Response) => {
+export const deleteResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const resident = await Resident.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
-    if (!resident) return res.status(404).json({ success: false, message: 'Residente no encontrado' });
+    if (!resident) {
+      throw new AppError('Residente no encontrado', 404);
+    }
+
     logger.log('residents.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: req.params.id });
     res.json({ success: true, message: 'Residente eliminado' });
-  } catch (err: any) {
-    logger.error('residents.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al eliminar residente', error: err.message });
+  } catch (err: unknown) {
+    logger.error('residents.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al eliminar residente', 400, { cause: toError(err).message }));
   }
 };

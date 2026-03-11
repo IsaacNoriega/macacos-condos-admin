@@ -1,69 +1,80 @@
-import { Request, Response } from 'express';
-import User from './model';
+import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import logger from '../../utils/logger';
+import { AppError, toError } from '../../utils/httpError';
+import {
+  createUserInTenant,
+  deleteUserInTenant,
+  findUserByIdInTenant,
+  findUsersByTenant,
+  updateUserInTenant,
+} from './service';
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await User.find({ tenantId: req.tenantId }).select('-password');
+    const users = await findUsersByTenant(req.tenantId);
     res.json({ success: true, users });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener usuarios', error: err.message });
+  } catch (err: unknown) {
+    next(new AppError('Error al obtener usuarios', 500, { cause: toError(err).message }));
   }
 };
 
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findOne({ _id: req.params.id, tenantId: req.tenantId }).select('-password');
-    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    const user = await findUserByIdInTenant(String(req.params.id), req.tenantId);
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
     res.json({ success: true, user });
-  } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Error al obtener usuario', error: err.message });
+  } catch (err: unknown) {
+    next(err instanceof AppError ? err : new AppError('Error al obtener usuario', 500, { cause: toError(err).message }));
   }
 };
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { password, ...rest } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ ...rest, password: hashedPassword, tenantId: req.tenantId });
-    await user.save();
+    const user = await createUserInTenant({ ...rest, password: hashedPassword }, req.tenantId);
     logger.log('users.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { userId: String(user._id), role: user.role });
     res.status(201).json({ success: true, user: { ...user.toObject(), password: undefined } });
-  } catch (err: any) {
-    logger.error('users.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al crear usuario', error: err.message });
+  } catch (err: unknown) {
+    logger.error('users.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(new AppError('Error al crear usuario', 400, { cause: toError(err).message }));
   }
 };
 
-export const updateUser = async (req: Request, res: Response) => {
+export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const update = { ...req.body };
+    const update: Record<string, unknown> = { ...req.body };
     if (update.password) {
-      update.password = await bcrypt.hash(update.password, 10);
+      update.password = await bcrypt.hash(String(update.password), 10);
     }
-    const user = await User.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenantId },
-      update,
-      { new: true }
-    ).select('-password');
-    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    const user = await updateUserInTenant(String(req.params.id), req.tenantId, update);
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
     logger.log('users.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { targetUserId: req.params.id });
     res.json({ success: true, user });
-  } catch (err: any) {
-    logger.error('users.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al actualizar usuario', error: err.message });
+  } catch (err: unknown) {
+    logger.error('users.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al actualizar usuario', 400, { cause: toError(err).message }));
   }
 };
 
-export const deleteUser = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await User.findOneAndDelete({ _id: req.params.id, tenantId: req.tenantId });
-    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+    const user = await deleteUserInTenant(String(req.params.id), req.tenantId);
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
     logger.log('users.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { targetUserId: req.params.id });
     res.json({ success: true, message: 'Usuario eliminado' });
-  } catch (err: any) {
-    logger.error('users.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', err);
-    res.status(400).json({ success: false, message: 'Error al eliminar usuario', error: err.message });
+  } catch (err: unknown) {
+    logger.error('users.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al eliminar usuario', 400, { cause: toError(err).message }));
   }
 };

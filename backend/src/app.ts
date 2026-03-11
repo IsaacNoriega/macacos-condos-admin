@@ -16,6 +16,8 @@ import paymentsRoutes from './modules/payments/routes';
 import { stripeWebhook } from './modules/payments/controller';
 import maintenanceRoutes from './modules/maintenance/routes';
 import reservationsRoutes from './modules/reservations/routes';
+import { AppError } from './utils/httpError';
+import logger from './utils/logger';
 
 const app = express();
 
@@ -51,11 +53,25 @@ app.use('/api/reservations', authMiddleware, tenantMiddleware, reservationsRoute
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
+  const statusCode = err instanceof AppError ? err.statusCode : err.status || 500;
+  const message = err instanceof AppError ? err.message : err.message || 'Internal server error';
+
+  logger.error(
+    'app.unhandled.error',
+    req.user?.id ? String(req.user.id) : 'system',
+    req.tenantId || 'global',
+    err instanceof Error ? err : new Error(String(err))
+  );
+
+  res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err : {},
+    message,
+    errors:
+      err instanceof AppError && err.details
+        ? err.details
+        : process.env.NODE_ENV === 'development'
+        ? { stack: err?.stack }
+        : undefined,
   });
 });
 

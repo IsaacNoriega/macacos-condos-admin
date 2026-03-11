@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { register, login, forgotPassword } from './controller';
+import { register, login, forgotPassword, resetPassword } from './controller';
 import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
@@ -30,6 +30,14 @@ router.post(
 	body('email').isEmail().withMessage('Email invalido'),
 	validateRequest,
 	forgotPassword
+);
+
+router.post(
+	'/reset-password',
+	body('token').isString().notEmpty().withMessage('Token obligatorio'),
+	body('newPassword').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
+	validateRequest,
+	resetPassword
 );
 
 export default router;
