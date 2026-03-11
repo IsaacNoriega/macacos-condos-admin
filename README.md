@@ -1,6 +1,6 @@
 # Macacos Condos Admin
 
-Plataforma SaaS multicondominio (multi-tenant) para la gestión administrativa de condominios.
+Plataforma **SaaS multicondominio (multi-tenant)** para la gestión administrativa de condominios.
 
 Proyecto desarrollado para la materia **Diseño de Sistemas Escalables**.
 
@@ -8,51 +8,116 @@ Proyecto desarrollado para la materia **Diseño de Sistemas Escalables**.
 
 # Propósito del Proyecto
 
-Centralizar la administración de múltiples condominios dentro de una sola plataforma web, reemplazando herramientas dispersas como hojas de cálculo y aplicaciones de mensajería.
+Centralizar la administración de múltiples condominios dentro de una sola plataforma web, reemplazando herramientas dispersas como hojas de cálculo, sistemas manuales y aplicaciones de mensajería.
 
-El sistema está diseñado bajo un modelo SaaS con arquitectura multi-tenant y enfoque en:
+El sistema está diseñado como un **SaaS multi-tenant**, permitiendo que múltiples condominios utilicen la misma plataforma mientras mantienen sus datos completamente aislados.
+
+El diseño del sistema prioriza:
 
 * Escalabilidad
-* Aislamiento de datos
+* Aislamiento de datos entre condominios
 * Seguridad
-* Trazabilidad
 * Modularidad
+* Trazabilidad
+* Arquitectura preparada para cloud
 
 ---
 
 # Contexto Arquitectónico (IMPORTANTE PARA DESARROLLO)
 
-## Modelo SaaS Multi‑Tenant
+## Modelo SaaS Multi-Tenant
 
-* Base de datos compartida
-* Separación lógica por `tenantId`
-* Todas las entidades deben incluir `tenantId`
-* Middleware obligatorio que:
+El sistema utiliza un modelo **multi-tenant con base de datos compartida**.
 
-  * Valida JWT
-  * Extrae `tenantId`
-  * Inyecta `req.tenantId`
-  * Restringe consultas por tenant
+Cada registro del sistema pertenece a un **tenant**, que representa un condominio.
 
-Regla crítica: Ninguna consulta puede ejecutarse sin filtrar por `tenantId`.
+Separación lógica mediante:
+
+```
+tenantId
+```
+
+### Reglas obligatorias
+
+1. Todas las entidades deben incluir `tenantId`
+2. Todas las consultas deben filtrar por `tenantId`
+3. El backend utiliza middleware que:
+
+* valida JWT
+* identifica el usuario
+* extrae `tenantId`
+* inyecta `req.tenantId`
+* restringe acceso a datos de otros condominios
+
+Regla crítica:
+
+**Ninguna consulta puede ejecutarse sin filtrar por `tenantId`.**
+
+Esto garantiza el aislamiento de datos entre condominios.
 
 ---
 
 # Arquitectura Técnica
 
+## Frontend
+
+Framework principal:
+
+* Angular
+* Arquitectura modular por features
+* Consumo de API REST
+* Control de acceso basado en roles
+
+Estructura sugerida:
+
+```
+frontend/src/
+│
+├── app/
+│   ├── core/
+│   │   ├── guards/
+│   │   ├── interceptors/
+│   │   └── services/
+│   │
+│   ├── modules/
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── residents/
+│   │   ├── charges/
+│   │   ├── payments/
+│   │   ├── maintenance/
+│   │   └── reservations/
+│   │
+│   ├── shared/
+│   └── layouts/
+│
+└── environments/
+```
+
+El frontend maneja:
+
+* autenticación
+* rutas protegidas
+* control de roles
+* consumo de API
+
+---
+
 ## Backend
+
+Tecnologías principales:
 
 * Node.js
 * Express
 * MongoDB Atlas
 * Mongoose
 * JWT (jsonwebtoken)
-* bcryptjs
+* bcrypt
 * express-validator
 * helmet
 * morgan
 
-Arquitectura modular por feature.
+Arquitectura **modular por dominio**.
 
 Estructura esperada:
 
@@ -60,73 +125,175 @@ Estructura esperada:
 backend/src/
 │
 ├── config/
+│
 ├── modules/
 │   ├── auth/
 │   ├── tenants/
 │   ├── users/
+│   ├── units/
+│   ├── residents/
 │   ├── charges/
 │   ├── payments/
 │   ├── maintenance/
-│   ├── reservations/
+│   └── reservations/
 │
 ├── middleware/
 │   ├── authMiddleware.js
 │   ├── tenantMiddleware.js
 │   └── roleMiddleware.js
 │
+├── services/
 ├── utils/
 ├── logs/
+│
 ├── app.js
 └── server.js
 ```
 
 ---
 
-## Frontend
+## Infraestructura Cloud
 
-* React
-* Vite
-* Arquitectura por roles
-* Consumo de API REST
+El sistema está diseñado para desplegarse en **Microsoft Azure**.
 
-Estructura sugerida:
+Servicios previstos:
+
+* Azure App Service (backend)
+* Azure Blob Storage (archivos)
+* MongoDB Atlas (base de datos)
+* Azure Application Gateway (balanceador)
+
+Arquitectura simplificada:
 
 ```
-frontend/src/
-│
-├── api/
-├── components/
-├── pages/
-├── layouts/
-├── routes/
-├── context/
-├── hooks/
-└── App.jsx
+Usuarios
+   │
+   ▼
+Angular SPA
+   │
+   ▼
+API REST (Node.js / Express)
+   │
+   ├── Auth Service
+   ├── Tenant Service
+   ├── Condo Management
+   ├── Payments Service
+   ├── Maintenance
+   └── Reservations
+   │
+   ▼
+MongoDB Atlas
+   │
+   ▼
+Azure Blob Storage
 ```
 
 ---
 
-# Actores del Sistema
+# Sistema de Pagos
 
-## Superadministrador
+Los pagos se gestionan mediante **Stripe**.
 
-* Gestiona tenants
-* Activa / desactiva condominios
-* Configura parámetros globales
+Se utiliza para:
 
-## Administrador del Condominio
+* pago de cuotas
+* pago de cargos
+* reservas pagadas (opcional)
 
-* Gestiona residentes
-* Crea cargos
-* Administra pagos
-* Supervisa reportes
+Flujo simplificado:
 
-## Residente
+```
+Residente
+   │
+Angular App
+   │
+Backend API
+   │
+Stripe Checkout
+   │
+Webhook Stripe
+   │
+Actualización del pago en base de datos
+```
 
-* Consulta estado de cuenta
-* Registra pagos
-* Reporta mantenimiento
-* Reserva amenidades
+---
+
+# Modelo de Ocupación de Departamentos
+
+Cada unidad (departamento o casa) puede tener **hasta 5 residentes registrados**.
+
+Estructura conceptual:
+
+```
+Condominium
+   │
+   ├── Unit
+   │     ├── Resident
+   │     ├── Resident
+   │     ├── Resident
+   │     ├── Resident
+   │     └── Resident
+```
+
+Esto permite representar familias o copropietarios dentro de una misma unidad.
+
+---
+
+# Roles del Sistema
+
+## SuperAdmin
+
+Administrador global del sistema SaaS.
+
+Puede:
+
+* crear condominios
+* gestionar tenants
+* activar o desactivar condominios
+* supervisar el sistema completo
+
+---
+
+## Admin (Administrador del Condominio)
+
+Gestiona la operación de un condominio específico.
+
+Puede:
+
+* administrar unidades
+* registrar residentes
+* generar cargos
+* gestionar pagos
+* administrar mantenimiento
+* gestionar reservaciones
+
+---
+
+## Residente / Inquilino
+
+Usuario que habita una unidad dentro del condominio.
+
+Puede:
+
+* consultar estado de cuenta
+* pagar cuotas
+* reportar mantenimiento
+* reservar amenidades
+* consultar anuncios
+
+---
+
+## Familiar / Copropietario (opcional)
+
+Miembros adicionales de la unidad.
+
+Permite:
+
+* ver información del departamento
+* realizar reservas
+* consultar cargos
+
+Sin permisos administrativos.
 
 ---
 
@@ -137,37 +304,62 @@ frontend/src/
 * Registro
 * Login
 * Recuperación de contraseña
-* Control por roles
+* Control de roles
 
-## TEN
+---
 
-* Registro de condominio
+## TENANTS
+
+* Registro de condominios
 * Configuración
-* Activar / desactivar
+* Activación / desactivación
 
-## CARG
+---
 
-* CRUD de cargos
-* Asignación a residentes
+## USERS
 
-## PAG
+* gestión de usuarios
+* asignación de roles
+* control de acceso
 
-* Registro de pago
-* Asociación pago‑cargo
-* Estado de cuenta
+---
 
-## MANT
+## UNITS
 
-* Crear reporte
-* Cambiar estado
-* Asignar responsable
-* Historial
+* registro de departamentos o casas
+* asignación de residentes
 
-## RES
+---
 
-* Calendario centralizado
-* Validación de conflictos
-* Crear / cancelar reservación
+## CHARGES
+
+* creación de cargos
+* asignación a unidades
+* historial de cargos
+
+---
+
+## PAYMENTS
+
+* integración con Stripe
+* registro de pagos
+* estado de cuenta
+
+---
+
+## MAINTENANCE
+
+* reportes de mantenimiento
+* seguimiento de estado
+* asignación de responsables
+
+---
+
+## RESERVATIONS
+
+* reservación de amenidades
+* calendario
+* validación de conflictos
 
 ---
 
@@ -175,34 +367,50 @@ frontend/src/
 
 ## Seguridad
 
-* 0 accesos cruzados entre tenants
-* 100% rutas protegidas
+* aislamiento completo entre tenants
 * JWT obligatorio
-* Contraseñas encriptadas
+* contraseñas encriptadas
+* validaciones en backend
+
+---
 
 ## Rendimiento
 
-* ≤ 2s promedio
-* ≤ 5s máximo
+* ≤ 2 segundos promedio de respuesta
+* ≤ 5 segundos máximo
+
+---
 
 ## Escalabilidad
 
-* Soporte mínimo 10 tenants
-* Posibilidad futura de sharding
+Arquitectura preparada para:
+
+* múltiples condominios
+* crecimiento de usuarios
+* expansión SaaS
+
+---
 
 ## Disponibilidad
 
-* ≥ 99% mensual
+Objetivo mínimo:
+
+```
+99% disponibilidad mensual
+```
+
+---
 
 ## Trazabilidad
 
-* Logs obligatorios para acciones críticas
-* Cada log debe incluir:
+El sistema registra logs para acciones críticas.
 
-  * usuario
-  * tenantId
-  * fecha
-  * acción
+Cada log debe incluir:
+
+* usuario
+* tenantId
+* fecha
+* acción realizada
 
 ---
 
@@ -216,60 +424,102 @@ npm install
 npm run dev
 ```
 
+---
+
 ## Frontend
 
 ```
 cd frontend
 npm install
-npm run dev
+npm start
 ```
 
 ---
 
 # Estrategia de Ramas
 
-* main → producción
-* develop → integración
-* feature/* → nuevas funcionalidades
+Modelo basado en Git Flow simplificado.
 
-Ejemplo:
+```
+main → producción
+develop → integración
+feature/* → nuevas funcionalidades
+```
+
+Ejemplos:
 
 ```
 feature/auth-module
 feature/tenant-middleware
+feature/payments-stripe
 feature/reservations-module
 ```
 
-No se trabaja directamente en main.
+No se trabaja directamente sobre `main`.
 
 ---
 
 # Riesgos Técnicos
 
-* Error en aislamiento de tenants
-* Consultas sin índices
-* Falta de validaciones
-* Crecimiento sin estrategia de escalabilidad
+* errores en aislamiento multi-tenant
+* consultas sin índices
+* integración incorrecta con Stripe
+* crecimiento sin estrategia de escalado
 
 ---
 
 # Evolución Futura
 
-* Base de datos por tenant
-* Sharding
-* Integración con pasarelas de pago
-* Aplicación móvil
-* Sistema avanzado de auditoría
+Posibles mejoras:
+
+* base de datos por tenant
+* sharding
+* aplicación móvil
+* notificaciones push
+* sistema avanzado de auditoría
+* microservicios para pagos y notificaciones
 
 ---
 
 # Convenciones de Desarrollo
 
-* Todas las rutas protegidas deben usar middleware de autenticación.
-* Todas las consultas deben filtrar por `tenantId`.
-* No se permiten accesos directos a modelos sin pasar por capa de servicio.
-* Validaciones obligatorias en entrada de datos.
-* Manejo centralizado de errores.
+Reglas obligatorias para el proyecto:
+
+* todas las rutas protegidas deben usar middleware de autenticación
+* todas las consultas deben filtrar por `tenantId`
+* no se permiten accesos directos a modelos sin capa de servicio
+* validaciones obligatorias en entrada de datos
+* manejo centralizado de errores
+
+---
+
+## Estándar de Validación y Logs (implementado)
+
+Para mantener consistencia en backend y facilitar auditoría:
+
+* toda ruta que use `express-validator` debe ejecutar el middleware `validateRequest` antes del controlador
+* los errores de validación deben responder con estructura uniforme (`success`, `message`, `errors`)
+* toda acción crítica (auth, create, update, delete y webhooks de pago) debe registrar log
+
+Formato de evento de log:
+
+```
+dominio.accion
+```
+
+Ejemplos:
+
+* `auth.login`
+* `users.create`
+* `payments.checkoutSession.create`
+* `payments.webhook.completed`
+
+Campos mínimos por log:
+
+* usuario (o `system`/`stripe-webhook` cuando aplique)
+* tenantId (o `global` cuando no exista contexto de tenant)
+* fecha (timestamp ISO)
+* acción realizada
 
 ---
 
@@ -282,6 +532,7 @@ No se trabaja directamente en main.
 * Regina Plascencia Gómez
 
 Profesor:
+
 David Emmanuel Ramirez T.
 
 ---
