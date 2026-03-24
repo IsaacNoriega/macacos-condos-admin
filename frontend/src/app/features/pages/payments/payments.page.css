@@ -1,0 +1,108 @@
+.payments-page {
+  display: grid;
+  gap: 1rem;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 1rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #d3e0e6;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  border: 1px solid #b8cfd7;
+  border-radius: 0.65rem;
+  padding: 0.5rem;
+  font: inherit;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.btn {
+  border: 1px solid #8aa8b2;
+  border-radius: 999px;
+  background: #fff;
+  color: #204652;
+  padding: 0.45rem 0.75rem;
+  cursor: pointer;
+}
+
+.btn.primary {
+  background: #0a8c9b;
+  border-color: #0a8c9b;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #f1fafc;
+}
+
+.msg {
+  margin: 0;
+  border-radius: 0.65rem;
+  padding: 0.6rem;
+}
+
+.msg.error {
+  border: 1px solid #e7b0ae;
+  background: #fce9e8;
+  color: #8f2421;
+}
+
+.msg.ok {
+  border: 1px solid #9edfc0;
+  background: #e7f8ee;
+  color: #0f6a42;
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e2ebef;
+  text-align: left;
+  padding: 0.45rem;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 1000px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,102 @@
+.login-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 15% 8%, #8edee9 0, transparent 34%),
+    radial-gradient(circle at 85% 95%, #ffd0a9 0, transparent 35%),
+    linear-gradient(140deg, #edfafd, #f8feff 45%, #fff7f0 100%);
+  padding: 1rem;
+}
+
+.card {
+  width: min(470px, 96vw);
+  border: 1px solid #d6e8ed;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(5px);
+  box-shadow: 0 20px 50px rgba(19, 52, 62, 0.16);
+  padding: 1.1rem;
+}
+
+header h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+}
+
+header p {
+  margin: 0.3rem 0 0;
+  color: #4b7079;
+}
+
+.tabs {
+  margin: 1rem 0 0.7rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.tabs button {
+  border: 1px solid #c9dde2;
+  background: #f6fcfd;
+  border-radius: 999px;
+  padding: 0.45rem;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  border-color: #0b8c9d;
+  color: #0b8c9d;
+  font-weight: 700;
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+input {
+  border: 1px solid #c0d8df;
+  border-radius: 0.65rem;
+  padding: 0.55rem;
+  font: inherit;
+}
+
+input:focus {
+  outline: 2px solid #55b8c5;
+  border-color: #55b8c5;
+}
+
+button.primary {
+  border: none;
+  border-radius: 999px;
+  padding: 0.55rem;
+  background: linear-gradient(90deg, #0c7f90, #0ba5b4);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.message {
+  margin: 0.3rem 0 0.8rem;
+  border-radius: 0.65rem;
+  padding: 0.55rem;
+  font-size: 0.88rem;
+}
+
+.message.error {
+  border: 1px solid #e4b6b5;
+  background: #fdeceb;
+  color: #8f2f2d;
+}
+
+.message.info {
+  border: 1px solid #aedfd0;
+  background: #e6f7f1;
+  color: #14553d;
+}

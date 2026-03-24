@@ -1,0 +1,26 @@
+<section class="dashboard-page">
+  <header class="hero">
+    <div>
+      <h1>Panel de control</h1>
+      <p>
+        Bienvenido, <strong>{{ auth.user()?.name }}</strong>.
+        Rol actual: <strong>{{ auth.user()?.role }}</strong>.
+      </p>
+      <small>Actualizado: {{ now() | date : 'medium' }}</small>
+    </div>
+    <button class="refresh" type="button" (click)="refresh()" [disabled]="loading()">Actualizar métricas</button>
+  </header>
+
+  @if (error()) {
+  <p class="error">{{ error() }}</p>
+  }
+
+  <div class="cards">
+    @for (card of cards(); track card.label) {
+    <article class="card">
+      <h2>{{ card.label }}</h2>
+      <p>{{ card.value }}</p>
+    </article>
+    }
+  </div>
+</section>
