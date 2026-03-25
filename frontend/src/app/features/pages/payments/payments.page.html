@@ -1,0 +1,90 @@
+<section class="payments-page">
+  <header>
+    <h1>Pagos</h1>
+    <button class="btn" type="button" (click)="loadPayments()" [disabled]="loading()">Refrescar</button>
+  </header>
+
+  @if (error()) {
+  <p class="msg error">{{ error() }}</p>
+  }
+
+  @if (message()) {
+  <p class="msg ok">{{ message() }}</p>
+  }
+
+  <div class="layout">
+    <article class="card">
+      <h2>Registrar pago</h2>
+      <form [formGroup]="paymentForm" class="form-grid">
+        <label>
+          ID de usuario
+          <input type="text" formControlName="userId" placeholder="ObjectId del usuario" />
+        </label>
+
+        <label>
+          ID de cargo
+          <input type="text" formControlName="chargeId" placeholder="ObjectId del cargo" />
+        </label>
+
+        <label>
+          Monto
+          <input type="number" formControlName="amount" />
+        </label>
+
+        <label>
+          Moneda
+          <input type="text" formControlName="currency" />
+        </label>
+
+        <label>
+          Proveedor
+          <select formControlName="provider">
+            <option value="manual">Manual</option>
+            <option value="stripe">Stripe</option>
+          </select>
+        </label>
+
+        <div class="actions">
+          <button class="btn primary" type="button" (click)="registerManualPayment()">Pago manual</button>
+          <button class="btn secondary" type="button" (click)="goToStripeCheckout()">Stripe Checkout</button>
+        </div>
+      </form>
+    </article>
+
+    <article class="card">
+      <h2>Historial</h2>
+      @if (loading()) {
+      <p>Cargando pagos...</p>
+      } @else if (!payments().length) {
+      <p>No hay pagos registrados.</p>
+      } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Cargo</th>
+              <th>Monto</th>
+              <th>Proveedor</th>
+              <th>Estatus</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (payment of payments(); track payment._id) {
+            <tr>
+              <td>{{ payment.userId }}</td>
+              <td>{{ payment.chargeId }}</td>
+              <td>{{ payment.amount | currency : (payment.currency || 'MXN').toUpperCase() }}</td>
+              <td>{{ payment.provider }}</td>
+              <td>{{ payment.status }}</td>
+              <td>{{ payment.paymentDate | date : 'short' }}</td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </article>
+  </div>
+</section>

@@ -1,0 +1,66 @@
+<section class="login-page">
+  <article class="card">
+    <header>
+      <h1>Macacos Condos Admin</h1>
+      <p>Plataforma multi-tenant para administración de condominios.</p>
+    </header>
+
+    <div class="tabs">
+      <button type="button" [class.active]="activePanel() === 'login'" (click)="activePanel.set('login')">
+        Login
+      </button>
+      <button type="button" [class.active]="activePanel() === 'forgot'" (click)="activePanel.set('forgot')">
+        Recuperar
+      </button>
+      <button type="button" [class.active]="activePanel() === 'reset'" (click)="activePanel.set('reset')">
+        Reset
+      </button>
+    </div>
+
+    @if (error()) {
+    <p class="message error">{{ error() }}</p>
+    }
+
+    @if (info()) {
+    <p class="message info">{{ info() }}</p>
+    }
+
+    @if (activePanel() === 'login') {
+    <form [formGroup]="loginForm" (ngSubmit)="login()" class="form-grid">
+      <label>
+        Email
+        <input type="email" formControlName="email" />
+      </label>
+      <label>
+        Contraseña
+        <input type="password" formControlName="password" />
+      </label>
+      <button class="primary" type="submit">Entrar</button>
+    </form>
+    }
+
+    @if (activePanel() === 'forgot') {
+    <form [formGroup]="forgotForm" (ngSubmit)="forgotPassword()" class="form-grid">
+      <label>
+        Email de la cuenta
+        <input type="email" formControlName="email" />
+      </label>
+      <button class="primary" type="submit">Generar recuperación</button>
+    </form>
+    }
+
+    @if (activePanel() === 'reset') {
+    <form [formGroup]="resetForm" (ngSubmit)="resetPassword()" class="form-grid">
+      <label>
+        Token
+        <input type="text" formControlName="token" />
+      </label>
+      <label>
+        Nueva contraseña
+        <input type="password" formControlName="newPassword" />
+      </label>
+      <button class="primary" type="submit">Actualizar contraseña</button>
+    </form>
+    }
+  </article>
+</section>

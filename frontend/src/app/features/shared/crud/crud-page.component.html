@@ -1,0 +1,103 @@
+<section class="crud-page">
+  <header class="page-head">
+    <h1>{{ config.title }}</h1>
+    <button class="btn btn-ghost" type="button" (click)="loadItems()" [disabled]="loading()">
+      Refrescar
+    </button>
+  </header>
+
+  @if (errorMessage()) {
+  <p class="message error">{{ errorMessage() }}</p>
+  }
+
+  @if (successMessage()) {
+  <p class="message success">{{ successMessage() }}</p>
+  }
+
+  <div class="grid-layout">
+    <article class="card form-card">
+      <h2>{{ editingId() ? 'Editar registro' : 'Nuevo registro' }}</h2>
+
+      <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
+        @for (field of config.fields; track field.key) {
+        <label class="field">
+          <span>{{ field.label }}</span>
+
+          @switch (field.type) {
+            @case ('textarea') {
+              <textarea [formControlName]="field.key" [placeholder]="field.placeholder || ''" rows="3"></textarea>
+            }
+            @case ('select') {
+              <select [formControlName]="field.key">
+                <option value="">Selecciona...</option>
+                @for (option of field.options || []; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            }
+            @default {
+              <input [type]="field.type" [formControlName]="field.key" [placeholder]="field.placeholder || ''" />
+            }
+          }
+
+          @if (isInvalid(field.key)) {
+          <small class="error">Campo obligatorio</small>
+          }
+        </label>
+        }
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit" [disabled]="saving()">
+            {{ editingId() ? 'Actualizar' : 'Guardar' }}
+          </button>
+          <button class="btn btn-ghost" type="button" (click)="resetForm()">Limpiar</button>
+        </div>
+      </form>
+    </article>
+
+    <article class="card table-card">
+      <h2>Registros</h2>
+
+      @if (loading()) {
+      <p>Cargando...</p>
+      } @else if (!items().length) {
+      <p>No hay registros todavía.</p>
+      } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              @for (field of config.fields; track field.key) {
+              <th>{{ field.label }}</th>
+              }
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track trackById($index, item)) {
+            <tr>
+              @for (field of config.fields; track field.key) {
+              <td>
+                {{ formatCell(item, field.key) }}
+              </td>
+              }
+              <td class="row-actions">
+                <button class="btn btn-mini" type="button" (click)="startEdit(item)">Editar</button>
+                <button
+                  class="btn btn-mini danger"
+                  type="button"
+                  (click)="deleteItem(item)"
+                  [disabled]="deletingId() === item['_id']"
+                >
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      }
+    </article>
+  </div>
+</section>

@@ -13,7 +13,7 @@ export interface LoggerDetails {
 }
 
 const logger = {
-  log: (action: string, userId: string, tenantId: string, details: LoggerDetails = {}): void => {
+  log: (action: string, userId = 'system', tenantId = 'global', details: LoggerDetails = {}): void => {
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -27,7 +27,7 @@ const logger = {
     fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
   },
 
-  error: (action: string, userId: string, tenantId: string, error: Error): void => {
+  error: (action: string, userId = 'system', tenantId = 'global', error: Error): void => {
     const timestamp = new Date().toISOString();
     const errorEntry = {
       timestamp,

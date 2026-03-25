@@ -1,49 +1,98 @@
-import { Request, Response } from 'express';
-import User from '../users/model';
+import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import logger from '../../utils/logger';
+import { AppError, toError } from '../../utils/httpError';
+import { createUserInTenant, findUserByEmail, updateUserPasswordByResetToken } from '../users/service';
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, email, password, role, tenantId } = req.body;
     if (!name || !email || !password || !role || !tenantId) {
-      return res.status(400).json({ success: false, message: 'Faltan campos obligatorios' });
+      throw new AppError('Faltan campos obligatorios', 400);
     }
-    const exists = await User.findOne({ email });
-    if (exists) return res.status(400).json({ success: false, message: 'El email ya está registrado' });
+    const exists = await findUserByEmail(email);
+    if (exists) {
+      throw new AppError('El email ya está registrado', 400);
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userData: any = { name, email, password: hashedPassword, role };
-    if (tenantId) userData.tenantId = tenantId;
-    const user = new User(userData);
-    await user.save();
+    const user = await createUserInTenant({ name, email, password: hashedPassword, role }, tenantId);
+    logger.log('auth.register', String(user._id), String(user.tenantId), { email: user.email, role: user.role });
     res.status(201).json({ success: true, user: { ...user.toObject(), password: undefined } });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: 'Error en registro', error: err.message });
+  } catch (err: unknown) {
+    logger.error('auth.register.error', 'anonymous', req.body?.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error en registro', 400, { cause: toError(err).message }));
   }
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+    const user = await findUserByEmail(email);
+    if (!user) {
+      throw new AppError('Credenciales inválidas', 401);
+    }
+
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+    if (!valid) {
+      throw new AppError('Credenciales inválidas', 401);
+    }
+
     const token = jwt.sign({ id: user._id, tenantId: user.tenantId, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '12h' });
+    logger.log('auth.login', String(user._id), String(user.tenantId), { email: user.email, role: user.role });
     res.json({ success: true, token, user: { ...user.toObject(), password: undefined } });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: 'Error en login', error: err.message });
+  } catch (err: unknown) {
+    logger.error('auth.login.error', 'anonymous', 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error en login', 400, { cause: toError(err).message }));
   }
 };
 
-export const forgotPassword = async (req: Request, res: Response) => {
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
-    // Aquí deberías generar un token y enviarlo por email
-    res.json({ success: true, message: 'Instrucciones enviadas al correo (simulado)' });
-  } catch (err: any) {
-    res.status(400).json({ success: false, message: 'Error en recuperación', error: err.message });
+    const user = await findUserByEmail(email);
+    if (!user) {
+      throw new AppError('Usuario no encontrado', 404);
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+    user.resetPasswordToken = tokenHash;
+    user.resetPasswordExpires = expiresAt;
+    await user.save();
+
+    logger.log('auth.forgotPassword', String(user._id), String(user.tenantId), { email: user.email });
+
+    res.json({
+      success: true,
+      message: 'Se generó un token de recuperación con expiración de 15 minutos',
+      ...(process.env.NODE_ENV !== 'production' ? { resetToken: rawToken, expiresAt: expiresAt.toISOString() } : {}),
+    });
+  } catch (err: unknown) {
+    logger.error('auth.forgotPassword.error', 'anonymous', 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error en recuperación', 400, { cause: toError(err).message }));
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { token, newPassword } = req.body;
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const user = await updateUserPasswordByResetToken(tokenHash, hashedPassword);
+    if (!user) {
+      throw new AppError('Token inválido o expirado', 400);
+    }
+
+    logger.log('auth.resetPassword', String(user._id), String(user.tenantId), { email: user.email });
+    res.json({ success: true, message: 'Contraseña actualizada correctamente' });
+  } catch (err: unknown) {
+    logger.error('auth.resetPassword.error', 'anonymous', 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al restablecer contraseña', 400, { cause: toError(err).message }));
   }
 };

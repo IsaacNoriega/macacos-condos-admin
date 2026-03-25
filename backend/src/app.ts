@@ -9,10 +9,15 @@ import tenantMiddleware from './middleware/tenantMiddleware';
 import authRoutes from './modules/auth/routes';
 import tenantsRoutes from './modules/tenants/routes';
 import usersRoutes from './modules/users/routes';
+import unitsRoutes from './modules/units/routes';
+import residentsRoutes from './modules/residents/routes';
 import chargesRoutes from './modules/charges/routes';
 import paymentsRoutes from './modules/payments/routes';
+import { stripeWebhook } from './modules/payments/controller';
 import maintenanceRoutes from './modules/maintenance/routes';
 import reservationsRoutes from './modules/reservations/routes';
+import { AppError } from './utils/httpError';
+import logger from './utils/logger';
 
 const app = express();
 
@@ -22,6 +27,9 @@ app.use(cors());
 
 // Middleware de logging
 app.use(morgan('combined'));
+
+// Webhook de Stripe requiere body sin parsear
+app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), stripeWebhook);
 
 // Body parser
 app.use(express.json());
@@ -36,6 +44,8 @@ app.get('/health', (req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', authMiddleware, tenantsRoutes);
 app.use('/api/users', authMiddleware, tenantMiddleware, usersRoutes);
+app.use('/api/units', authMiddleware, tenantMiddleware, unitsRoutes);
+app.use('/api/residents', authMiddleware, tenantMiddleware, residentsRoutes);
 app.use('/api/charges', authMiddleware, tenantMiddleware, chargesRoutes);
 app.use('/api/payments', authMiddleware, tenantMiddleware, paymentsRoutes);
 app.use('/api/maintenance', authMiddleware, tenantMiddleware, maintenanceRoutes);
@@ -43,11 +53,25 @@ app.use('/api/reservations', authMiddleware, tenantMiddleware, reservationsRoute
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
+  const statusCode = err instanceof AppError ? err.statusCode : err.status || 500;
+  const message = err instanceof AppError ? err.message : err.message || 'Internal server error';
+
+  logger.error(
+    'app.unhandled.error',
+    req.user?.id ? String(req.user.id) : 'system',
+    req.tenantId || 'global',
+    err instanceof Error ? err : new Error(String(err))
+  );
+
+  res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err : {},
+    message,
+    errors:
+      err instanceof AppError && err.details
+        ? err.details
+        : process.env.NODE_ENV === 'development'
+        ? { stack: err?.stack }
+        : undefined,
   });
 });
 
