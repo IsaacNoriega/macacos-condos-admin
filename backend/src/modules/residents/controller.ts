@@ -7,7 +7,18 @@ const MAX_RESIDENTS_PER_UNIT = 5;
 
 export const getAllResidents = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const residents = await residentsService.findResidentsByTenant(req.tenantId);
+    const { tenantId: queryTenantId, unitId: unitIdFilter } = req.query;
+    let queryTenantId_final = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      queryTenantId_final = String(queryTenantId);
+    }
+
+    let residents = await residentsService.findResidentsByTenant(queryTenantId_final);
+    if (unitIdFilter) {
+      residents = residents.filter((r) => String(r.unitId) === String(unitIdFilter));
+    }
+
     res.json({ success: true, residents });
   } catch (err: unknown) {
     next(new AppError('Error al obtener residentes', 500, { cause: toError(err).message }));
@@ -29,20 +40,25 @@ export const getResidentById = async (req: Request, res: Response, next: NextFun
 
 export const createResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId } = req.body;
+    const { unitId, tenantId: requestedTenantId } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
 
-    const validUnit = await residentsService.validateUnitInTenant(unitId, req.tenantId);
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
+    const validUnit = await residentsService.validateUnitInTenant(unitId, targetTenantId);
     if (!validUnit) {
       throw new AppError('La unidad no pertenece al tenant actual', 400);
     }
 
-    const currentResidents = await residentsService.countResidentsInUnit(req.tenantId, unitId);
+    const currentResidents = await residentsService.countResidentsInUnit(targetTenantId, unitId);
     if (currentResidents >= MAX_RESIDENTS_PER_UNIT) {
       throw new AppError(`La unidad ya tiene el maximo permitido de ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
     }
 
-    const resident = await residentsService.createResidentInTenant(req.body, req.tenantId);
-    logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: String(resident._id), unitId });
+    const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
+    logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { residentId: String(resident._id), unitId });
     res.status(201).json({ success: true, resident });
   } catch (err: unknown) {
     logger.error('residents.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

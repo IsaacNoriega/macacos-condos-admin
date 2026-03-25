@@ -114,6 +114,24 @@ export interface CrudFieldOption {
   value: string;
 }
 
+export interface CrudFieldOptionSource {
+  endpoint: string;
+  listKey: string;
+  valueKey: string;
+  labelKey: string;
+  labelSecondaryKey?: string;
+  dependsOnTenant?: boolean;
+  filterBy?: {
+    key: string;
+    values: string[];
+  };
+}
+
+export interface CrudFieldAutoFill {
+  targetKey: string;
+  sourceKey: string;
+}
+
 export interface CrudField {
   key: string;
   label: string;
@@ -121,6 +139,14 @@ export interface CrudField {
   required?: boolean;
   placeholder?: string;
   options?: CrudFieldOption[];
+  optionsSource?: CrudFieldOptionSource;
+  autoFill?: CrudFieldAutoFill[];
+}
+
+export interface CrudFilter {
+  key: string;
+  label: string;
+  optionsSource: CrudFieldOptionSource;
 }
 
 export interface CrudConfig {
@@ -129,4 +155,5 @@ export interface CrudConfig {
   listKey: string;
   singularKey: string;
   fields: CrudField[];
+  filters?: CrudFilter[];
 }

@@ -12,7 +12,14 @@ import {
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const users = await findUsersByTenant(req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    let queryTenantId_final = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      queryTenantId_final = String(queryTenantId);
+    }
+
+    const users = await findUsersByTenant(queryTenantId_final);
     res.json({ success: true, users });
   } catch (err: unknown) {
     next(new AppError('Error al obtener usuarios', 500, { cause: toError(err).message }));
@@ -34,10 +41,16 @@ export const getUserById = async (req: Request, res: Response, next: NextFunctio
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { password, ...rest } = req.body;
+    const { password, tenantId: requestedTenantId, ...rest } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await createUserInTenant({ ...rest, password: hashedPassword }, req.tenantId);
-    logger.log('users.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { userId: String(user._id), role: user.role });
+    const user = await createUserInTenant({ ...rest, password: hashedPassword }, targetTenantId);
+    logger.log('users.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { userId: String(user._id), role: user.role });
     res.status(201).json({ success: true, user: { ...user.toObject(), password: undefined } });
   } catch (err: unknown) {
     logger.error('users.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

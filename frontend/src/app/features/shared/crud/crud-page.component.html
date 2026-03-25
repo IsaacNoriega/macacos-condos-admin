@@ -28,9 +28,12 @@
               <textarea [formControlName]="field.key" [placeholder]="field.placeholder || ''" rows="3"></textarea>
             }
             @case ('select') {
-              <select [formControlName]="field.key">
+              <select 
+                [formControlName]="field.key" 
+                (change)="field.key === 'tenantId' ? onTenantIdChange($any($event.target).value) : onSelectChange(field, $any($event.target).value)"
+              >
                 <option value="">Selecciona...</option>
-                @for (option of field.options || []; track option.value) {
+                @for (option of getFieldOptions(field); track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>
                 }
               </select>

@@ -5,7 +5,14 @@ import * as unitsService from './service';
 
 export const getAllUnits = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const units = await unitsService.findUnitsByTenant(req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    let queryTenantId_final = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      queryTenantId_final = String(queryTenantId);
+    }
+
+    const units = await unitsService.findUnitsByTenant(queryTenantId_final);
     res.json({ success: true, units });
   } catch (err: unknown) {
     next(new AppError('Error al obtener unidades', 500, { cause: toError(err).message }));
@@ -27,8 +34,15 @@ export const getUnitById = async (req: Request, res: Response, next: NextFunctio
 
 export const createUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await unitsService.createUnitInTenant(req.body, req.tenantId);
-    logger.log('units.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { unitId: String(unit._id), code: unit.code });
+    const { tenantId: requestedTenantId, ...payload } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
+    const unit = await unitsService.createUnitInTenant(payload, targetTenantId);
+    logger.log('units.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { unitId: String(unit._id), code: unit.code });
     res.status(201).json({ success: true, unit });
   } catch (err: unknown) {
     logger.error('units.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
