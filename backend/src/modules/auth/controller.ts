@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
-import { createUserInTenant, findUserByEmail, updateUserPasswordByResetToken } from '../users/service';
+import { createUserInTenant, findUserByEmailInTenant, findUsersByEmail, updateUserPasswordByResetToken } from '../users/service';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -12,9 +12,9 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
     if (!name || !email || !password || !role || !tenantId) {
       throw new AppError('Faltan campos obligatorios', 400);
     }
-    const exists = await findUserByEmail(email);
+    const exists = await findUserByEmailInTenant(email, tenantId);
     if (exists) {
-      throw new AppError('El email ya está registrado', 400);
+      throw new AppError('El email ya está registrado en este tenant', 400);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -30,10 +30,17 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const user = await findUserByEmail(email);
-    if (!user) {
+    const users = await findUsersByEmail(email);
+
+    if (!users.length) {
       throw new AppError('Credenciales inválidas', 401);
     }
+
+    if (users.length > 1) {
+      throw new AppError('Existe más de una cuenta con ese email en distintos condominios. Contacta al administrador.', 400);
+    }
+
+    const user = users[0];
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
@@ -51,8 +58,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email } = req.body;
-    const user = await findUserByEmail(email);
+    const { email, tenantId } = req.body;
+    const user = await findUserByEmailInTenant(email, tenantId);
     if (!user) {
       throw new AppError('Usuario no encontrado', 404);
     }

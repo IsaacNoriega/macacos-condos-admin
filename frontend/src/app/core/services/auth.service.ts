@@ -34,8 +34,8 @@ export class AuthService {
     );
   }
 
-  forgotPassword(email: string): Observable<ForgotPasswordResponse> {
-    return this.api.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+  forgotPassword(email: string, tenantId: string): Observable<ForgotPasswordResponse> {
+    return this.api.post<ForgotPasswordResponse>('/auth/forgot-password', { email, tenantId });
   }
 
   resetPassword(token: string, newPassword: string): Observable<{ success: boolean; message: string }> {

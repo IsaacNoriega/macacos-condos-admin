@@ -24,6 +24,7 @@ export class LoginPage {
   });
 
   readonly forgotForm = this.fb.group({
+    tenantId: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
   });
 
@@ -56,8 +57,8 @@ export class LoginPage {
       return;
     }
 
-    const { email } = this.forgotForm.getRawValue();
-    this.auth.forgotPassword(String(email)).subscribe({
+    const { tenantId, email } = this.forgotForm.getRawValue();
+    this.auth.forgotPassword(String(email), String(tenantId)).subscribe({
       next: (response) => {
         this.error.set(null);
         this.info.set(
@@ -69,6 +70,7 @@ export class LoginPage {
       error: (err) => this.error.set(err?.error?.message || 'No se pudo iniciar recuperación.'),
     });
   }
+
 
   resetPassword(): void {
     if (this.resetForm.invalid) {
