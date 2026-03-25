@@ -16,14 +16,48 @@
     <article class="card">
       <h2>Registrar pago</h2>
       <form [formGroup]="paymentForm" class="form-grid">
+        @if (isSuperadmin()) {
         <label>
-          ID de usuario
-          <input type="text" formControlName="userId" placeholder="ObjectId del usuario" />
+          Tenant
+          <select formControlName="tenantId" (change)="onTenantChange()">
+            <option value="">Selecciona...</option>
+            @for (tenant of tenants(); track tenant.value) {
+            <option [value]="tenant.value">{{ tenant.label }}</option>
+            }
+          </select>
+        </label>
+        }
+
+        <label>
+          Unidad
+          <select formControlName="unitId" (change)="onUserOrUnitChange()">
+            <option value="">Selecciona...</option>
+            @for (unit of units(); track unit.value) {
+            <option [value]="unit.value">{{ unit.label }}</option>
+            }
+          </select>
         </label>
 
         <label>
-          ID de cargo
-          <input type="text" formControlName="chargeId" placeholder="ObjectId del cargo" />
+          Usuario
+          <select formControlName="userId" (change)="onUserOrUnitChange()">
+            <option value="">Selecciona...</option>
+            @for (user of users(); track user.value) {
+            <option [value]="user.value">{{ user.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          Cargo
+          <select formControlName="chargeId">
+            <option value="">Selecciona...</option>
+            @for (charge of visibleCharges(); track charge._id) {
+            <option [value]="charge._id">
+              {{ charge.description }} - {{ charge.amount | currency : 'MXN' }}
+            </option>
+            }
+          </select>
         </label>
 
         <label>
@@ -55,6 +89,8 @@
       <h2>Historial</h2>
       @if (loading()) {
       <p>Cargando pagos...</p>
+      } @else if (loadingOptions()) {
+      <p>Cargando catálogos...</p>
       } @else if (!payments().length) {
       <p>No hay pagos registrados.</p>
       } @else {

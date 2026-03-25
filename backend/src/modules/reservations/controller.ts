@@ -12,7 +12,14 @@ import {
 
 export const getAllReservations = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reservations = await findReservationsByTenant(req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    let tenantId = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      tenantId = String(queryTenantId);
+    }
+
+    const reservations = await findReservationsByTenant(tenantId);
     res.json({ success: true, reservations });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reservaciones', 500, { cause: toError(err).message }));
@@ -21,7 +28,13 @@ export const getAllReservations = async (req: Request, res: Response, next: Next
 
 export const createReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { amenity, start, end } = req.body;
+    const { amenity, start, end, tenantId: requestedTenantId, userId: requestedUserId, ...rest } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
     const startDate = new Date(start);
     const endDate = new Date(end);
 
@@ -33,12 +46,19 @@ export const createReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('La fecha de inicio debe ser menor que la fecha de fin', 400);
     }
 
-    if (await findReservationConflict(req.tenantId as string, amenity, startDate, endDate)) {
+    if (await findReservationConflict(targetTenantId, amenity, startDate, endDate)) {
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
-    const reservation = await createReservationInTenant({ ...req.body, start: startDate, end: endDate }, req.tenantId);
-    logger.log('reservations.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: String(reservation._id) });
+    const targetUserId = req.user?.role === 'residente' || req.user?.role === 'familiar'
+      ? String(req.user.id)
+      : (requestedUserId ? String(requestedUserId) : String(req.user?.id || ''));
+
+    const reservation = await createReservationInTenant(
+      { ...rest, amenity, userId: targetUserId, start: startDate, end: endDate },
+      targetTenantId
+    );
+    logger.log('reservations.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { reservationId: String(reservation._id) });
     res.status(201).json({ success: true, reservation });
   } catch (err: unknown) {
     logger.error('reservations.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
