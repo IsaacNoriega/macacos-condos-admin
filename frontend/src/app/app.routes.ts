@@ -60,6 +60,13 @@ export const routes: Routes = [
 					import('./features/pages/maintenance/maintenance.page').then((m) => m.MaintenancePage),
 			},
 			{
+				path: 'amenities',
+				canActivate: [roleGuard],
+				data: { roles: ['superadmin', 'admin'] },
+				loadComponent: () =>
+					import('./features/pages/amenities/amenities.page').then((m) => m.AmenitiesPage),
+			},
+			{
 				path: 'reservations',
 				canActivate: [roleGuard],
 				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
