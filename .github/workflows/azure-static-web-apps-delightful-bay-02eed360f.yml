@@ -36,8 +36,8 @@ jobs:
           # 2. Déjalo vacío si no usas Azure Functions
           api_location: "" 
           
-          # 3. La carpeta real donde Angular guarda los archivos compilados
-          output_location: "dist/frontend" 
+          # 3. Angular 21 (@angular/build:application) publica el index en browser/
+          output_location: "dist/frontend/browser" 
           ###############################################
 
   close_pull_request_job:

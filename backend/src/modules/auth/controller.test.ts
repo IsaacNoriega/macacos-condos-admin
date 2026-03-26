@@ -9,12 +9,12 @@ vi.mock('../../utils/logger', () => ({
 
 vi.mock('../users/service', () => ({
   createUserInTenant: vi.fn(),
-  findUserByEmail: vi.fn(),
+  findUserByEmailInTenant: vi.fn(),
   updateUserPasswordByResetToken: vi.fn(),
 }));
 
 import { forgotPassword, resetPassword } from './controller';
-import { findUserByEmail, updateUserPasswordByResetToken } from '../users/service';
+import { findUserByEmailInTenant, updateUserPasswordByResetToken } from '../users/service';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
 
 describe('auth controller', () => {
@@ -32,15 +32,15 @@ describe('auth controller', () => {
       save,
     } as any;
 
-    vi.mocked(findUserByEmail).mockResolvedValue(user);
+    vi.mocked(findUserByEmailInTenant).mockResolvedValue(user);
 
-    const req = mockRequest({ body: { email: 'john@example.com' } });
+    const req = mockRequest({ body: { email: 'john@example.com', tenantId: 'tenant-1' } });
     const res = mockResponse();
     const next = mockNext();
 
     await forgotPassword(req, res, next);
 
-    expect(findUserByEmail).toHaveBeenCalledWith('john@example.com');
+    expect(findUserByEmailInTenant).toHaveBeenCalledWith('john@example.com', 'tenant-1');
     expect(save).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
