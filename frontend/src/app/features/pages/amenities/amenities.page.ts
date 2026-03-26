@@ -4,22 +4,22 @@ import { AuthService } from '../../../core/services/auth.service';
 import { CrudPageComponent } from '../../shared/crud/crud-page.component';
 
 @Component({
-  selector: 'app-units-page',
+  selector: 'app-amenities-page',
   standalone: true,
   imports: [CrudPageComponent],
   template: '<app-crud-page [config]="config" />',
 })
-export class UnitsPage {
+export class AmenitiesPage {
   readonly config: CrudConfig;
 
   constructor(private readonly auth: AuthService) {
     const isSuperadmin = this.auth.role() === 'superadmin';
 
     this.config = {
-      title: 'Unidades',
-      endpoint: '/units',
-      listKey: 'units',
-      singularKey: 'unit',
+      title: 'Amenidades',
+      endpoint: '/amenities',
+      listKey: 'amenities',
+      singularKey: 'amenity',
       fields: [
         ...(isSuperadmin
           ? [
@@ -38,17 +38,7 @@ export class UnitsPage {
               },
             ]
           : []),
-        { key: 'code', label: 'Código', type: 'text', required: true },
-        {
-          key: 'type',
-          label: 'Tipo',
-          type: 'select',
-          required: true,
-          options: [
-            { label: 'Departamento', value: 'departamento' },
-            { label: 'Casa', value: 'casa' },
-          ],
-        },
+        { key: 'name', label: 'Nombre', type: 'text', required: true },
         { key: 'description', label: 'Descripción', type: 'textarea' },
       ],
     };

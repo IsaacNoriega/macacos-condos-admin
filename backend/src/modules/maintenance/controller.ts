@@ -5,7 +5,14 @@ import * as maintenanceService from './service';
 
 export const getAllReports = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const reports = await maintenanceService.findMaintenanceByTenant(req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    let tenantId = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      tenantId = String(queryTenantId);
+    }
+
+    const reports = await maintenanceService.findMaintenanceByTenant(tenantId);
     res.json({ success: true, reports });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reportes', 500, { cause: toError(err).message }));
@@ -14,8 +21,19 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
 
 export const createReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = await maintenanceService.createMaintenanceInTenant(req.body, req.tenantId);
-    logger.log('maintenance.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reportId: String(report._id) });
+    const { tenantId: requestedTenantId, userId: requestedUserId, ...payload } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
+    const targetUserId = req.user?.role === 'residente' || req.user?.role === 'familiar'
+      ? String(req.user.id)
+      : (requestedUserId ? String(requestedUserId) : String(req.user?.id || ''));
+
+    const report = await maintenanceService.createMaintenanceInTenant({ ...payload, userId: targetUserId }, targetTenantId);
+    logger.log('maintenance.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { reportId: String(report._id) });
     res.status(201).json({ success: true, report });
   } catch (err: unknown) {
     logger.error('maintenance.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

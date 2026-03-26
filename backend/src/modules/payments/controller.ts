@@ -15,7 +15,14 @@ const getStripeClient = () => {
 
 export const getAllPayments = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payments = await paymentsService.findPaymentsByTenant(req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    let tenantId = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      tenantId = String(queryTenantId);
+    }
+
+    const payments = await paymentsService.findPaymentsByTenant(tenantId);
     res.json({ success: true, payments });
   } catch (err: unknown) {
     next(new AppError('Error al obtener pagos', 500, { cause: toError(err).message }));
@@ -24,14 +31,21 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
 
 export const createPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { tenantId: requestedTenantId, ...rest } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
     const paymentData = {
-      ...req.body,
-      provider: req.body.provider || 'manual',
-      status: req.body.status || 'paid',
-      paymentDate: req.body.paymentDate || new Date(),
+      ...rest,
+      provider: rest.provider || 'manual',
+      status: rest.status || 'paid',
+      paymentDate: rest.paymentDate || new Date(),
     };
-    const payment = await paymentsService.createPaymentInTenant(paymentData, req.tenantId);
-    logger.log('payments.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { paymentId: String(payment._id), provider: payment.provider });
+    const payment = await paymentsService.createPaymentInTenant(paymentData, targetTenantId);
+    logger.log('payments.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { paymentId: String(payment._id), provider: payment.provider });
     res.status(201).json({ success: true, payment });
   } catch (err: unknown) {
     logger.error('payments.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -41,7 +55,12 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
 
 export const createStripeCheckoutSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { amount, userId, chargeId, currency } = req.body;
+    const { amount, userId, chargeId, currency, tenantId: requestedTenantId } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
 
     if (!amount || !userId || !chargeId) {
       throw new AppError('amount, userId y chargeId son obligatorios para iniciar checkout', 400);
@@ -72,14 +91,14 @@ export const createStripeCheckoutSession = async (req: Request, res: Response, n
         },
       ],
       metadata: {
-        tenantId: req.tenantId as string,
+        tenantId: targetTenantId,
         userId,
         chargeId,
         amount: String(amount),
       },
     });
 
-    logger.log('payments.checkoutSession.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { sessionId: session.id, userId, chargeId });
+    logger.log('payments.checkoutSession.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { sessionId: session.id, userId, chargeId });
     res.status(201).json({ success: true, sessionId: session.id, checkoutUrl: session.url });
   } catch (err: unknown) {
     logger.error('payments.checkoutSession.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

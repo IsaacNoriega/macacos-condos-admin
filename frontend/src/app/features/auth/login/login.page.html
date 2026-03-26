@@ -42,6 +42,10 @@
     @if (activePanel() === 'forgot') {
     <form [formGroup]="forgotForm" (ngSubmit)="forgotPassword()" class="form-grid">
       <label>
+        Tenant ID
+        <input type="text" formControlName="tenantId" />
+      </label>
+      <label>
         Email de la cuenta
         <input type="email" formControlName="email" />
       </label>

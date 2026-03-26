@@ -26,8 +26,12 @@ export const deleteUserInTenant = (userId: string, tenantId?: string) => {
   return User.findOneAndDelete({ _id: userId, tenantId });
 };
 
-export const findUserByEmail = (email: string) => {
-  return User.findOne({ email });
+export const findUserByEmailInTenant = (email: string, tenantId: string) => {
+  return User.findOne({ email, tenantId });
+};
+
+export const findUsersByEmail = (email: string) => {
+  return User.find({ email });
 };
 
 export const updateUserPasswordByResetToken = async (resetTokenHash: string, hashedPassword: string): Promise<IUser | null> => {

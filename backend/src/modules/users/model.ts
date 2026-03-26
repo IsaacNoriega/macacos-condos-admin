@@ -27,7 +27,6 @@ const userSchema = new Schema<IUser>({
   email: {
     type: String,
     required: true,
-    unique: true,
     lowercase: true,
     trim: true
   },
@@ -57,6 +56,8 @@ const userSchema = new Schema<IUser>({
     default: Date.now
   }
 });
+
+userSchema.index({ tenantId: 1, email: 1 }, { unique: true });
 
 const User = mongoose.model<IUser>('User', userSchema);
 export default User;

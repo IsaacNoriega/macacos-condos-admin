@@ -5,7 +5,14 @@ import * as chargesService from './service';
 
 export const getAllCharges = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const charges = await chargesService.findChargesByTenant(req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    let tenantId = req.tenantId;
+
+    if (req.user?.role === 'superadmin' && queryTenantId) {
+      tenantId = String(queryTenantId);
+    }
+
+    const charges = await chargesService.findChargesByTenant(tenantId);
     res.json({ success: true, charges });
   } catch (err: unknown) {
     next(new AppError('Error al obtener cargos', 500, { cause: toError(err).message }));
@@ -14,8 +21,15 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
 
 export const createCharge = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const charge = await chargesService.createChargeInTenant(req.body, req.tenantId);
-    logger.log('charges.create', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { chargeId: String(charge._id) });
+    const { tenantId: requestedTenantId, ...payload } = req.body;
+    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+
+    if (!targetTenantId) {
+      throw new AppError('No se pudo determinar el tenant destino', 400);
+    }
+
+    const charge = await chargesService.createChargeInTenant(payload, targetTenantId);
+    logger.log('charges.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { chargeId: String(charge._id) });
     res.status(201).json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

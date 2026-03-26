@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import { Component, Input, OnInit, inject, signal, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
-import { CrudConfig } from '../../../core/api.models';
+import { finalize, forkJoin } from 'rxjs';
+import { CrudConfig, CrudField, CrudFieldOption } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 
 @Component({
@@ -25,20 +25,26 @@ export class CrudPageComponent implements OnInit {
   readonly editingId = signal<string | null>(null);
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
+  readonly dynamicOptions = signal<Record<string, CrudFieldOption[]>>({});
+  readonly selectedTenantIdForFiltering = signal<string | null>(null);
 
   readonly form = this.fb.group({});
+  private readonly optionLookupByField = new Map<string, Map<string, Record<string, unknown>>>();
 
   ngOnInit(): void {
     this.buildForm();
-    this.loadItems();
+    this.loadSelectOptions();
   }
 
   loadItems(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
 
+    const tenantId = this.selectedTenantIdForFiltering();
+    const endpoint = tenantId ? `${this.config.endpoint}?tenantId=${tenantId}` : this.config.endpoint;
+
     this.api
-      .get<Record<string, unknown[]>>(`${this.config.endpoint}`)
+      .get<Record<string, unknown[]>>(endpoint)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (response) => {
@@ -132,11 +138,46 @@ export class CrudPageComponent implements OnInit {
 
   resetForm(): void {
     this.editingId.set(null);
+    this.selectedTenantIdForFiltering.set(null);
     this.form.reset(this.emptyFormValues());
+    this.loadItems();
   }
 
   trackById(_: number, item: Record<string, unknown>): string {
     return typeof item['_id'] === 'string' ? (item['_id'] as string) : crypto.randomUUID();
+  }
+
+  getFieldOptions(field: CrudField): CrudFieldOption[] {
+    const dynamic = this.dynamicOptions()[field.key];
+    if (dynamic) {
+      return dynamic;
+    }
+
+    return field.options || [];
+  }
+
+  onSelectChange(field: CrudField, rawValue: string): void {
+    if (!field.autoFill?.length) {
+      return;
+    }
+
+    const optionsMap = this.optionLookupByField.get(field.key);
+    const selected = optionsMap?.get(rawValue);
+    if (!selected) {
+      return;
+    }
+
+    const patch: Record<string, unknown> = {};
+    for (const rule of field.autoFill) {
+      patch[rule.targetKey] = selected[rule.sourceKey] ?? '';
+    }
+
+    this.form.patchValue(patch);
+  }
+
+  onTenantIdChange(value: string): void {
+    this.selectedTenantIdForFiltering.set(value || null);
+    this.loadSelectOptions();
   }
 
   shouldDisplayAsDate(key: string): boolean {
@@ -173,6 +214,70 @@ export class CrudPageComponent implements OnInit {
       this.form.addControl(field.key, this.fb.control('', validators));
     }
     this.form.reset(this.emptyFormValues());
+  }
+
+  private loadSelectOptions(): void {
+    const fieldsWithSource = this.config.fields.filter((field) => field.type === 'select' && !!field.optionsSource);
+
+    if (!fieldsWithSource.length) {
+      this.loadItems();
+      return;
+    }
+
+    const selectedTenantId = this.selectedTenantIdForFiltering();
+    const requests = fieldsWithSource.map((field) => {
+      const source = field.optionsSource!;
+      const endpoint = selectedTenantId && source.dependsOnTenant
+        ? `${source.endpoint}?tenantId=${selectedTenantId}`
+        : source.endpoint;
+      return this.api.get<Record<string, unknown[]>>(endpoint);
+    });
+
+    forkJoin(requests).subscribe({
+      next: (responses) => {
+        const optionsByField: Record<string, CrudFieldOption[]> = {};
+
+        for (let index = 0; index < fieldsWithSource.length; index += 1) {
+          const field = fieldsWithSource[index];
+          const source = field.optionsSource!;
+          const response = responses[index];
+          const recordsRaw = response[source.listKey];
+          const records = Array.isArray(recordsRaw) ? (recordsRaw as Record<string, unknown>[]) : [];
+          const filteredRecords = source.filterBy
+            ? records.filter((item) => source.filterBy!.values.includes(String(item[source.filterBy!.key] ?? '')))
+            : records;
+
+          const options: CrudFieldOption[] = [];
+          const optionsMap = new Map<string, Record<string, unknown>>();
+
+          for (const item of filteredRecords) {
+            const value = item[source.valueKey];
+            const label = item[source.labelKey];
+            if (value === null || value === undefined || label === null || label === undefined) {
+              continue;
+            }
+
+            const optionValue = String(value);
+            const primaryLabel = String(label);
+            const secondaryLabel = source.labelSecondaryKey ? item[source.labelSecondaryKey] : undefined;
+            const optionLabel = secondaryLabel ? `${primaryLabel} (${String(secondaryLabel)})` : primaryLabel;
+
+            options.push({ label: optionLabel, value: optionValue });
+            optionsMap.set(optionValue, item);
+          }
+
+          optionsByField[field.key] = options;
+          this.optionLookupByField.set(field.key, optionsMap);
+        }
+
+        this.dynamicOptions.set(optionsByField);
+        this.loadItems();
+      },
+      error: (error) => {
+        this.errorMessage.set(error?.error?.message || 'No se pudieron cargar opciones del formulario.');
+        this.loadItems();
+      },
+    });
   }
 
   private emptyFormValues(): Record<string, unknown> {
