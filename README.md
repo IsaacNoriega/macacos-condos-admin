@@ -172,7 +172,10 @@ Usuarios
 Angular SPA
    │
    ▼
-API REST (Node.js / Express)
+Azure Application Gateway
+   │
+   ▼
+Node.js API (múltiples instancias)
    │
    ├── Auth Service
    ├── Tenant Service
@@ -187,6 +190,44 @@ MongoDB Atlas
    ▼
 Azure Blob Storage
 ```
+
+---
+
+# Arquitectura de Alta Disponibilidad
+
+## Alta Disponibilidad y Balanceo de Carga
+
+El sistema está diseñado para operar en entornos distribuidos con tolerancia a fallos.
+
+Se utiliza:
+
+* Azure Application Gateway como balanceador de carga
+
+Funciones principales:
+
+* distribuir tráfico entre múltiples instancias del backend
+* evitar punto único de falla
+* mejorar disponibilidad del sistema
+* permitir escalabilidad horizontal
+
+Flujo:
+
+```
+Usuarios
+   │
+   ▼
+Application Gateway (Load Balancer)
+   │
+   ▼
+Instancias Backend (Node.js)
+```
+
+### Estrategia ante fallos
+
+Si una instancia del backend falla:
+
+* el balanceador redirige automáticamente el tráfico a instancias activas
+* el sistema continúa operando sin interrupción total
 
 ---
 
@@ -411,6 +452,53 @@ Cada log debe incluir:
 * tenantId
 * fecha
 * acción realizada
+
+---
+
+# Decisiones de Diseño Distribuido
+
+## Consideraciones de Sistemas Distribuidos
+
+### Tolerancia a Fallos
+
+El sistema minimiza interrupciones mediante:
+
+* balanceador de carga
+* múltiples instancias del backend
+* servicios desacoplados
+
+### CAP Theorem (Consistencia vs Disponibilidad)
+
+Se prioriza:
+
+* Disponibilidad > Consistencia estricta
+
+Decisiones:
+
+* lecturas siempre disponibles
+* consistencia eventual en algunos módulos (ej: pagos, logs)
+* uso de validaciones y control en backend para evitar inconsistencias críticas
+
+### Seguridad
+
+Medidas implementadas:
+
+* autenticación mediante JWT
+* middleware de validación de usuario
+* aislamiento multi-tenant con tenantId
+* encriptación de contraseñas (bcrypt)
+* uso de helmet para cabeceras seguras
+* validación de entradas (express-validator)
+
+### Latencia
+
+Para reducir tiempos de respuesta:
+
+* backend desplegado en región cercana a usuarios
+* uso de MongoDB Atlas optimizado
+* consultas indexadas
+* separación de responsabilidades por módulos
+* uso de CDN/almacenamiento externo (Azure Blob Storage)
 
 ---
 
