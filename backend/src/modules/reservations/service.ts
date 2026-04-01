@@ -1,5 +1,9 @@
 import Reservation from './model';
 
+export const findAllReservations = () => {
+  return Reservation.find({});
+};
+
 export const findReservationsByTenant = (tenantId?: string) => {
   return Reservation.find({ tenantId });
 };

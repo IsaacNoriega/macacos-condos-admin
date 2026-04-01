@@ -26,13 +26,37 @@ export class CrudPageComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
   readonly dynamicOptions = signal<Record<string, CrudFieldOption[]>>({});
+  readonly loadingOptions = signal(false);
   readonly selectedTenantIdForFiltering = signal<string | null>(null);
+  readonly filterValues = signal<Record<string, string>>({});
+
+  readonly filteredItems = computed(() => {
+    const activeFilters = this.filterValues();
+    return this.items().filter((item) => {
+      for (const [key, value] of Object.entries(activeFilters)) {
+        if (!value) {
+          continue;
+        }
+
+        if (String(item[key] ?? '') !== value) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  });
 
   readonly form = this.fb.group({});
   private readonly optionLookupByField = new Map<string, Map<string, Record<string, unknown>>>();
 
+  readonly canCreate = computed(() => this.config.allowCreate !== false);
+  readonly canEdit = computed(() => this.config.allowEdit !== false);
+  readonly canDelete = computed(() => this.config.allowDelete !== false);
+
   ngOnInit(): void {
     this.buildForm();
+    this.form.valueChanges.subscribe(() => this.syncFormFilters());
     this.loadSelectOptions();
   }
 
@@ -58,6 +82,14 @@ export class CrudPageComponent implements OnInit {
   }
 
   submit(): void {
+    if (!this.canCreate() && !this.editingId()) {
+      return;
+    }
+
+    if (!this.canEdit() && this.editingId()) {
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -76,8 +108,19 @@ export class CrudPageComponent implements OnInit {
     request$.pipe(finalize(() => this.saving.set(false))).subscribe({
       next: () => {
         this.successMessage.set(editingId ? 'Registro actualizado.' : 'Registro creado.');
-        this.resetForm();
-        this.loadItems();
+        const tenantIdControl = this.form.get('tenantId');
+        const selectedTenant = typeof tenantIdControl?.value === 'string' ? tenantIdControl.value : '';
+
+        this.editingId.set(null);
+        this.form.reset(this.emptyFormValues());
+
+        if (selectedTenant) {
+          this.selectedTenantIdForFiltering.set(selectedTenant);
+          this.form.patchValue({ tenantId: selectedTenant });
+          this.loadSelectOptions();
+        } else {
+          this.loadItems();
+        }
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.message || 'No se pudo guardar el registro.');
@@ -86,6 +129,10 @@ export class CrudPageComponent implements OnInit {
   }
 
   startEdit(item: Record<string, unknown>): void {
+    if (!this.canEdit()) {
+      return;
+    }
+
     const id = item['_id'];
     if (typeof id !== 'string') {
       return;
@@ -111,6 +158,10 @@ export class CrudPageComponent implements OnInit {
   }
 
   deleteItem(item: Record<string, unknown>): void {
+    if (!this.canDelete()) {
+      return;
+    }
+
     const id = item['_id'];
     if (typeof id !== 'string') {
       return;
@@ -190,6 +241,17 @@ export class CrudPageComponent implements OnInit {
       return '-';
     }
 
+    const field = this.config.fields.find((candidate) => candidate.key === key);
+    if (field?.type === 'select') {
+      const directOptions = field.options || [];
+      const dynamicOptions = this.dynamicOptions()[field.key] || [];
+      const matchedOption = [...dynamicOptions, ...directOptions].find((option) => option.value === String(value));
+
+      if (matchedOption) {
+        return matchedOption.label;
+      }
+    }
+
     if (this.shouldDisplayAsDate(key)) {
       const dateValue = new Date(String(value));
       if (!Number.isNaN(dateValue.getTime())) {
@@ -214,6 +276,29 @@ export class CrudPageComponent implements OnInit {
       this.form.addControl(field.key, this.fb.control('', validators));
     }
     this.form.reset(this.emptyFormValues());
+  }
+
+  private syncFormFilters(): void {
+    const nextFilters: Record<string, string> = {};
+
+    for (const field of this.config.fields) {
+      if (field.type !== 'select') {
+        continue;
+      }
+
+      const value = this.form.get(field.key)?.value;
+      if (typeof value === 'string' && value) {
+        nextFilters[field.key] = value;
+      }
+    }
+
+    this.filterValues.set(nextFilters);
+
+    const tenantId = nextFilters['tenantId'] || '';
+    if (tenantId !== (this.selectedTenantIdForFiltering() || '')) {
+      this.selectedTenantIdForFiltering.set(tenantId || null);
+      this.loadSelectOptions();
+    }
   }
 
   private loadSelectOptions(): void {
@@ -271,10 +356,12 @@ export class CrudPageComponent implements OnInit {
         }
 
         this.dynamicOptions.set(optionsByField);
+        this.loadingOptions.set(false);
         this.loadItems();
       },
       error: (error) => {
         this.errorMessage.set(error?.error?.message || 'No se pudieron cargar opciones del formulario.');
+        this.loadingOptions.set(false);
         this.loadItems();
       },
     });

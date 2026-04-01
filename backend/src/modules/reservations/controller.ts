@@ -6,6 +6,7 @@ import {
   deleteReservationInTenant,
   findReservationByIdInTenant,
   findReservationConflict,
+  findAllReservations,
   findReservationsByTenant,
   updateReservationInTenant,
 } from './service';
@@ -13,13 +14,12 @@ import {
 export const getAllReservations = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: queryTenantId } = req.query;
-    let tenantId = req.tenantId;
+    const reservations = req.user?.role === 'superadmin'
+      ? queryTenantId
+        ? await findReservationsByTenant(String(queryTenantId))
+        : await findAllReservations()
+      : await findReservationsByTenant(req.tenantId);
 
-    if (req.user?.role === 'superadmin' && queryTenantId) {
-      tenantId = String(queryTenantId);
-    }
-
-    const reservations = await findReservationsByTenant(tenantId);
     res.json({ success: true, reservations });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reservaciones', 500, { cause: toError(err).message }));

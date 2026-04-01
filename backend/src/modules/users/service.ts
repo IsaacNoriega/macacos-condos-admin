@@ -1,5 +1,9 @@
 import User, { IUser } from './model';
 
+export const findAllUsers = () => {
+  return User.find({}).select('-password');
+};
+
 export const findUsersByTenant = (tenantId?: string) => {
   return User.find({ tenantId }).select('-password');
 };

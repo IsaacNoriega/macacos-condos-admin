@@ -1,5 +1,9 @@
 import Charge from './model';
 
+export const findAllCharges = () => {
+  return Charge.find({}).lean();
+};
+
 export const findChargesByTenant = (tenantId?: string) => {
   return Charge.find({ tenantId }).lean();
 };
