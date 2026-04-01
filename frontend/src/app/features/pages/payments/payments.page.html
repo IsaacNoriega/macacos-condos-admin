@@ -13,12 +13,15 @@
   }
 
   <div class="layout">
+    <!-- VISTA ADMIN/SUPERADMIN -->
+    @if (isStaff()) {
     <article class="card">
       <h2>Registrar pago</h2>
       <form [formGroup]="paymentForm" class="form-grid">
+        <!-- SuperAdmin: Selector de Tenant -->
         @if (isSuperadmin()) {
         <label>
-          Tenant
+          Tenant *
           <select formControlName="tenantId" (change)="onTenantChange()">
             <option value="">Selecciona...</option>
             @for (tenant of tenants(); track tenant.value) {
@@ -28,8 +31,10 @@
         </label>
         }
 
+        <!-- Admin/SuperAdmin: Selector de Unidad -->
+        @if (isSuperadmin() || isAdmin()) {
         <label>
-          Unidad
+          Unidad @if (isSuperadmin() || isAdmin()) { <span>*</span> }
           <select formControlName="unitId" (change)="onUserOrUnitChange()">
             <option value="">Selecciona...</option>
             @for (unit of units(); track unit.value) {
@@ -37,9 +42,12 @@
             }
           </select>
         </label>
+        }
 
+        <!-- Admin/SuperAdmin: Selector de Usuario -->
+        @if (isSuperadmin() || isAdmin()) {
         <label>
-          Usuario
+          Usuario *
           <select formControlName="userId" (change)="onUserOrUnitChange()">
             <option value="">Selecciona...</option>
             @for (user of users(); track user.value) {
@@ -47,51 +55,113 @@
             }
           </select>
         </label>
+        }
 
         <label>
-          Cargo
-          <select formControlName="chargeId">
+          Cargo *
+          <select formControlName="chargeId" (change)="onChargeSelected()">
             <option value="">Selecciona...</option>
             @for (charge of visibleCharges(); track charge._id) {
             <option [value]="charge._id">
-              {{ charge.description }} - {{ charge.amount | currency : 'MXN' }}
+              {{ charge.description }} - {{ getChargeTotalAmount(charge) | currency : 'MXN' }}
             </option>
             }
           </select>
         </label>
 
         <label>
-          Monto
-          <input type="number" formControlName="amount" />
+          Monto *
+          <input type="number" formControlName="amount" readonly />
         </label>
 
         <label>
           Moneda
-          <input type="text" formControlName="currency" />
+          <input type="text" formControlName="currency" value="mxn" />
         </label>
 
-        <label>
-          Proveedor
-          <select formControlName="provider">
-            <option value="manual">Manual</option>
-            <option value="stripe">Stripe</option>
-          </select>
-        </label>
+        <div class="file-upload-section">
+          <label>
+            Comprobante (opcional si usarás Stripe)
+            <input type="file" accept="image/*,.pdf" (change)="onFileSelected($event)" />
+          </label>
+          @if (selectedFile()) {
+          <p class="file-selected">{{ selectedFile()!.name }}</p>
+          }
+        </div>
 
         <div class="actions">
-          <button class="btn primary" type="button" (click)="registerManualPayment()">Pago manual</button>
-          <button class="btn secondary" type="button" (click)="goToStripeCheckout()">Stripe Checkout</button>
+          <button class="btn primary" type="button" (click)="registerPaymentWithProof()">
+            Registrar pago con comprobante
+          </button>
+          <button class="btn secondary" type="button" (click)="goToStripeCheckout()">
+            Registrar pago Stripe
+          </button>
         </div>
       </form>
     </article>
-
+    } @else {
+    <!-- VISTA USUARIO -->
     <article class="card">
-      <h2>Historial</h2>
+      <h2>Mis cargos pendientes</h2>
+
+      @if (!residentCharges().length) {
+      <p>No tienes cargos pendientes por pagar.</p>
+      } @else {
+      <div class="resident-charges">
+        @for (charge of residentCharges(); track charge._id) {
+        <div class="resident-charge-item">
+          <div>
+            <h3>{{ charge.description }}</h3>
+            <p>Unidad: {{ getUnitLabel(charge.unitId) }}</p>
+            <p>Monto: {{ charge.amount | currency : 'MXN' }}</p>
+            @if (getChargeLateFeeAmount(charge) > 0) {
+            <p>Recargo por atraso: {{ getChargeLateFeeAmount(charge) | currency : 'MXN' }}</p>
+            <p>Total a pagar: {{ getChargeTotalAmount(charge) | currency : 'MXN' }}</p>
+            }
+            @if (charge.dueDate) {
+            <p>Vence: {{ charge.dueDate | date : 'mediumDate' }}</p>
+            }
+          </div>
+          <div class="actions">
+            <button class="btn primary" type="button" (click)="payChargeWithStripe(charge)">
+              Pagar con Stripe
+            </button>
+            <button class="btn secondary" type="button" (click)="selectChargeForProof(charge._id)">
+              Subir comprobante
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+
+      @if (selectedChargeForProof()) {
+      <div class="file-upload-section">
+        <h3>Subir comprobante</h3>
+        <label>
+          Archivo del comprobante
+          <input type="file" accept="image/*,.pdf" (change)="onFileSelected($event)" />
+        </label>
+        @if (selectedFile()) {
+        <p class="file-selected">{{ selectedFile()!.name }}</p>
+        }
+        <div class="actions">
+          <button class="btn primary" type="button" (click)="submitProofForSelectedCharge()">Enviar comprobante</button>
+          <button class="btn" type="button" (click)="selectedChargeForProof.set(null)">Cancelar</button>
+        </div>
+      </div>
+      }
+      }
+    </article>
+    }
+
+    <!-- HISTORIAL DE PAGOS -->
+    <article class="card">
+      <h2>{{ isStaff() ? 'Pagos por usuario' : 'Mi historial de pagos' }}</h2>
       @if (loading()) {
       <p>Cargando pagos...</p>
       } @else if (loadingOptions()) {
       <p>Cargando catálogos...</p>
-      } @else if (!payments().length) {
+      } @else if (!visiblePayments().length) {
       <p>No hay pagos registrados.</p>
       } @else {
       <div class="table-wrap">
@@ -99,22 +169,47 @@
           <thead>
             <tr>
               <th>Usuario</th>
+              <th>Unidad</th>
               <th>Cargo</th>
               <th>Monto</th>
               <th>Proveedor</th>
               <th>Estatus</th>
               <th>Fecha</th>
+              <th>Comprobante</th>
+              @if (isStaff()) {
+              <th>Acciones</th>
+              }
             </tr>
           </thead>
           <tbody>
-            @for (payment of payments(); track payment._id) {
+            @for (payment of visiblePayments(); track payment._id) {
             <tr>
-              <td>{{ payment.userId }}</td>
-              <td>{{ payment.chargeId }}</td>
+              <td>{{ getUserLabel(payment.userId) }}</td>
+              <td>{{ getUnitLabel(payment.unitId) }}</td>
+              <td>{{ getChargeLabel(payment.chargeId) }}</td>
               <td>{{ payment.amount | currency : (payment.currency || 'MXN').toUpperCase() }}</td>
               <td>{{ payment.provider }}</td>
-              <td>{{ payment.status }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="'status-' + getStatusColor(payment.status)">
+                  {{ getStatusLabel(payment.status) }}
+                </span>
+              </td>
               <td>{{ payment.paymentDate | date : 'short' }}</td>
+              <td>
+                @if (payment.proofOfPaymentUrl) {
+                <a [href]="payment.proofOfPaymentUrl" target="_blank" class="btn-small view">Ver archivo</a>
+                } @else {
+                -
+                }
+              </td>
+              @if (isStaff() && payment.status === 'in_review') {
+              <td class="actions-cell">
+                <button class="btn-small approve" (click)="approvePayment(payment._id)" title="Aprobar pago">✓</button>
+                <button class="btn-small reject" (click)="rejectPayment(payment._id)" title="Rechazar pago">✕</button>
+              </td>
+              } @else if (isStaff()) {
+              <td>-</td>
+              }
             </tr>
             }
           </tbody>

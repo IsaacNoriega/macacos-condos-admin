@@ -7,6 +7,7 @@ export interface ICharge extends Document {
   description: string;
   amount: number;
   dueDate: Date;
+  lateFeePerDay: number;
   isPaid: boolean;
   createdAt: Date;
 }
@@ -18,6 +19,7 @@ const chargeSchema = new Schema<ICharge>({
   description: { type: String, required: true },
   amount: { type: Number, required: true },
   dueDate: { type: Date, required: true },
+  lateFeePerDay: { type: Number, default: 10, min: 0 },
   isPaid: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });

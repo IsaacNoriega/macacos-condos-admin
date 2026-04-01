@@ -63,25 +63,34 @@ export interface Resident {
 export interface Charge {
   _id: string;
   tenantId: string;
+  unitId?: string;
   userId: string;
   description: string;
   amount: number;
   dueDate: string;
+  lateFeePerDay?: number;
   isPaid: boolean;
 }
 
 export interface Payment {
   _id: string;
   tenantId: string;
+  unitId?: string;
   userId: string;
   chargeId: string;
+  baseAmount?: number;
+  lateFeeAmount?: number;
+  daysOverdue?: number;
   amount: number;
   currency: string;
   provider: 'manual' | 'stripe';
-  status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'in_review' | 'completed' | 'failed' | 'paid';
+  proofOfPaymentUrl?: string;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   paymentDate: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
 }
 
 export interface MaintenanceReport {
@@ -156,4 +165,7 @@ export interface CrudConfig {
   singularKey: string;
   fields: CrudField[];
   filters?: CrudFilter[];
+  allowCreate?: boolean;
+  allowEdit?: boolean;
+  allowDelete?: boolean;
 }

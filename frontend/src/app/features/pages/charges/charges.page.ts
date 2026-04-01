@@ -67,6 +67,12 @@ export class ChargesPage {
         { key: 'description', label: 'Descripción', type: 'textarea', required: true },
         { key: 'amount', label: 'Monto', type: 'number', required: true },
         { key: 'dueDate', label: 'Fecha de vencimiento', type: 'date', required: true },
+        {
+          key: 'lateFeePerDay',
+          label: 'Recargo por día',
+          type: 'number',
+          placeholder: '10',
+        },
       ],
     };
   }

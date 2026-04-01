@@ -6,7 +6,7 @@ import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
 
-router.get('/', roleMiddleware(['superadmin', 'admin']), getAllCharges);
+router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllCharges);
 router.post('/',
   roleMiddleware(['superadmin', 'admin']),
   body('userId').isMongoId().withMessage('userId inválido'),
@@ -14,6 +14,7 @@ router.post('/',
   body('description').notEmpty().withMessage('Descripción obligatoria'),
   body('amount').isNumeric().withMessage('Monto inválido'),
   body('dueDate').isISO8601().withMessage('Fecha de vencimiento inválida'),
+  body('lateFeePerDay').optional().isNumeric().withMessage('Recargo diario inválido'),
   validateRequest,
   createCharge
 );
@@ -24,6 +25,7 @@ router.put('/:id',
   body('description').optional().notEmpty().withMessage('Descripción obligatoria'),
   body('amount').optional().isNumeric().withMessage('Monto inválido'),
   body('dueDate').optional().isISO8601().withMessage('Fecha de vencimiento inválida'),
+  body('lateFeePerDay').optional().isNumeric().withMessage('Recargo diario inválido'),
   validateRequest,
   updateCharge
 );
