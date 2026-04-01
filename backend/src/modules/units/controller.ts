@@ -6,13 +6,12 @@ import * as unitsService from './service';
 export const getAllUnits = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: queryTenantId } = req.query;
-    let queryTenantId_final = req.tenantId;
+    const units = req.user?.role === 'superadmin'
+      ? queryTenantId
+        ? await unitsService.findUnitsByTenant(String(queryTenantId))
+        : await unitsService.findAllUnits()
+      : await unitsService.findUnitsByTenant(req.tenantId);
 
-    if (req.user?.role === 'superadmin' && queryTenantId) {
-      queryTenantId_final = String(queryTenantId);
-    }
-
-    const units = await unitsService.findUnitsByTenant(queryTenantId_final);
     res.json({ success: true, units });
   } catch (err: unknown) {
     next(new AppError('Error al obtener unidades', 500, { cause: toError(err).message }));

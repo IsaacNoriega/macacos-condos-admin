@@ -1,5 +1,9 @@
 import Amenity from './model';
 
+export const findAllAmenities = () => {
+  return Amenity.find({}).lean();
+};
+
 export const findAmenitiesByTenant = (tenantId?: string) => {
   return Amenity.find({ tenantId }).lean();
 };

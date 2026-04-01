@@ -1,5 +1,9 @@
 import Unit from './model';
 
+export const findAllUnits = () => {
+  return Unit.find({});
+};
+
 export const findUnitsByTenant = (tenantId?: string) => {
   return Unit.find({ tenantId });
 };

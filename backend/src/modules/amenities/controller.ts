@@ -6,13 +6,12 @@ import * as amenitiesService from './service';
 export const getAllAmenities = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: queryTenantId } = req.query;
-    let tenantId = req.tenantId;
+    const amenities = req.user?.role === 'superadmin'
+      ? queryTenantId
+        ? await amenitiesService.findAmenitiesByTenant(String(queryTenantId))
+        : await amenitiesService.findAllAmenities()
+      : await amenitiesService.findAmenitiesByTenant(req.tenantId);
 
-    if (req.user?.role === 'superadmin' && queryTenantId) {
-      tenantId = String(queryTenantId);
-    }
-
-    const amenities = await amenitiesService.findAmenitiesByTenant(tenantId);
     res.json({ success: true, amenities });
   } catch (err: unknown) {
     next(new AppError('Error al obtener amenidades', 500, { cause: toError(err).message }));

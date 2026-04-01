@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import {
+  findAllUsers,
   createUserInTenant,
   deleteUserInTenant,
   findUserByIdInTenant,
@@ -13,13 +14,12 @@ import {
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: queryTenantId } = req.query;
-    let queryTenantId_final = req.tenantId;
+    const users = req.user?.role === 'superadmin'
+      ? queryTenantId
+        ? await findUsersByTenant(String(queryTenantId))
+        : await findAllUsers()
+      : await findUsersByTenant(req.tenantId);
 
-    if (req.user?.role === 'superadmin' && queryTenantId) {
-      queryTenantId_final = String(queryTenantId);
-    }
-
-    const users = await findUsersByTenant(queryTenantId_final);
     res.json({ success: true, users });
   } catch (err: unknown) {
     next(new AppError('Error al obtener usuarios', 500, { cause: toError(err).message }));

@@ -6,9 +6,9 @@ import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
 
-router.get('/', roleMiddleware(['superadmin', 'admin']), getAllReports);
+router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllReports);
 router.post('/',
-  roleMiddleware(['superadmin', 'admin', 'residente']),
+  roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']),
   body('description').notEmpty().withMessage('Descripción obligatoria'),
   validateRequest,
   createReport

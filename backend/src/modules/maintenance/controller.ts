@@ -6,13 +6,19 @@ import * as maintenanceService from './service';
 export const getAllReports = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: queryTenantId } = req.query;
-    let tenantId = req.tenantId;
+    let reports;
 
-    if (req.user?.role === 'superadmin' && queryTenantId) {
-      tenantId = String(queryTenantId);
+    if (req.user?.role === 'superadmin') {
+      reports = queryTenantId
+        ? await maintenanceService.findMaintenanceByTenant(String(queryTenantId))
+        : await maintenanceService.findAllMaintenance();
+    } else if (req.user?.role === 'residente' || req.user?.role === 'familiar') {
+      const tenantReports = await maintenanceService.findMaintenanceByTenant(req.tenantId);
+      reports = tenantReports.filter((report) => String(report.userId) === String(req.user?.id));
+    } else {
+      reports = await maintenanceService.findMaintenanceByTenant(req.tenantId);
     }
 
-    const reports = await maintenanceService.findMaintenanceByTenant(tenantId);
     res.json({ success: true, reports });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reportes', 500, { cause: toError(err).message }));
@@ -22,7 +28,9 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
 export const createReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: requestedTenantId, userId: requestedUserId, ...payload } = req.body;
-    const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
+    const targetTenantId = req.user?.role === 'superadmin'
+      ? (requestedTenantId ? String(requestedTenantId) : '')
+      : req.tenantId;
 
     if (!targetTenantId) {
       throw new AppError('No se pudo determinar el tenant destino', 400);

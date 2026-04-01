@@ -1,11 +1,19 @@
 import Payment from './model';
 
+export const findAllPayments = () => {
+  return Payment.find({});
+};
+
 export const findPaymentsByTenant = (tenantId?: string) => {
   return Payment.find({ tenantId });
 };
 
 export const findPaymentByIdInTenant = (paymentId: string, tenantId?: string) => {
   return Payment.findOne({ _id: paymentId, tenantId });
+};
+
+export const findPaymentById = (paymentId: string) => {
+  return Payment.findById(paymentId);
 };
 
 export const createPaymentInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {
