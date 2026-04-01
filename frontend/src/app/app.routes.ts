@@ -55,7 +55,7 @@ export const routes: Routes = [
 			{
 				path: 'maintenance',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
 				loadComponent: () =>
 					import('./features/pages/maintenance/maintenance.page').then((m) => m.MaintenancePage),
 			},

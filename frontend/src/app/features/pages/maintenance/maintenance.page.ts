@@ -16,12 +16,16 @@ export class MaintenancePage {
     const role = this.auth.role();
     const isSuperadmin = role === 'superadmin';
     const isAdmin = role === 'admin';
+    const isUser = role === 'residente' || role === 'familiar';
 
     this.config = {
       title: 'Mantenimiento',
       endpoint: '/maintenance',
       listKey: 'reports',
       singularKey: 'report',
+      allowCreate: true,
+      allowEdit: isSuperadmin || isAdmin,
+      allowDelete: isSuperadmin || isAdmin,
       fields: [
         ...(isSuperadmin
           ? [

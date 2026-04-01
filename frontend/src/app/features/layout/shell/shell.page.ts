@@ -28,7 +28,7 @@ export class ShellPage {
     { label: 'Residentes', route: '/residents', roles: ['superadmin', 'admin'] },
     { label: 'Cargos', route: '/charges', roles: ['superadmin', 'admin'] },
     { label: 'Pagos', route: '/payments', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
-    { label: 'Mantenimiento', route: '/maintenance', roles: ['superadmin', 'admin', 'residente'] },
+    { label: 'Mantenimiento', route: '/maintenance', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
     { label: 'Amenidades', route: '/amenities', roles: ['superadmin', 'admin'] },
     { label: 'Reservaciones', route: '/reservations', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
   ];

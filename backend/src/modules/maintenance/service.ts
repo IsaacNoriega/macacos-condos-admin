@@ -1,5 +1,9 @@
 import Maintenance from './model';
 
+export const findAllMaintenance = () => {
+  return Maintenance.find({});
+};
+
 export const findMaintenanceByTenant = (tenantId?: string) => {
   return Maintenance.find({ tenantId });
 };
