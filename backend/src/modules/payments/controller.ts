@@ -4,6 +4,7 @@ import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as paymentsService from './service';
 import Charge from '../charges/model';
+import { extractBlobNameFromProofUrl, getPaymentProofSasUrl, uploadPaymentProofToAzure } from '../../config/azureBlob';
 
 const DEFAULT_LATE_FEE_PER_DAY = Number(process.env.LATE_FEE_PER_DAY || '10');
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -85,7 +86,16 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
 
 export const createPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { tenantId: requestedTenantId, unitId, userId, chargeId, currency, provider, proofOfPaymentUrl } = req.body;
+    const {
+      tenantId: requestedTenantId,
+      unitId,
+      userId,
+      chargeId,
+      currency,
+      provider,
+      proofOfPaymentUrl,
+      proofOfPaymentBlobName,
+    } = req.body;
     const userRole = req.user?.role;
     const targetTenantId = userRole === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
 
@@ -135,6 +145,7 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
       provider: provider || 'manual',
       status: paymentStatus,
       proofOfPaymentUrl: proofOfPaymentUrl || undefined,
+      proofOfPaymentBlobName: proofOfPaymentBlobName || extractBlobNameFromProofUrl(String(proofOfPaymentUrl || '')) || undefined,
       paymentDate: new Date(),
     };
 
@@ -153,6 +164,58 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
   } catch (err: unknown) {
     logger.error('payments.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al registrar pago', 400, { cause: toError(err).message }));
+  }
+};
+
+export const uploadPaymentProof = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      throw new AppError('Debes seleccionar un comprobante de pago', 400);
+    }
+
+    const tenantId = req.tenantId || req.user?.tenantId || 'global';
+    const uploadedFile = await uploadPaymentProofToAzure(req.file, tenantId, req.user?.id ? String(req.user.id) : undefined);
+
+    logger.log('payments.proof.upload', req.user?.id ? String(req.user.id) : 'system', tenantId, {
+      blobName: uploadedFile.blobName,
+      contentType: req.file.mimetype,
+    });
+
+    res.status(201).json({
+      success: true,
+      proofOfPaymentUrl: uploadedFile.url,
+      blobName: uploadedFile.blobName,
+    });
+  } catch (err: unknown) {
+    logger.error('payments.proof.upload.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al subir comprobante', 400, { cause: toError(err).message }));
+  }
+};
+
+export const getPaymentProof = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const paymentId = String(req.params.id);
+    const payment = await paymentsService.findPaymentById(paymentId);
+
+    if (!payment) {
+      throw new AppError('Pago no encontrado', 404);
+    }
+
+    if (!payment.proofOfPaymentUrl && !payment.proofOfPaymentBlobName) {
+      throw new AppError('El pago no tiene comprobante', 404);
+    }
+
+    const blobName = payment.proofOfPaymentBlobName || extractBlobNameFromProofUrl(String(payment.proofOfPaymentUrl || ''));
+
+    if (!blobName) {
+      throw new AppError('No se pudo resolver el comprobante', 404);
+    }
+
+    const proofUrl = await getPaymentProofSasUrl(blobName);
+    res.json({ success: true, proofUrl });
+  } catch (err: unknown) {
+    logger.error('payments.proof.get.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al abrir comprobante', 400, { cause: toError(err).message }));
   }
 };
 

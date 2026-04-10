@@ -1,20 +1,31 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
+import multer from 'multer';
 import {
   createPayment,
   createStripeCheckoutSession,
   deletePayment,
   getAllPayments,
+  getPaymentProof,
   updatePayment,
   approvePaymentWithProof,
   rejectPaymentWithProof,
+  uploadPaymentProof,
 } from './controller';
 import roleMiddleware from '../../middleware/roleMiddleware';
 import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+});
 
 router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllPayments);
+router.get('/:id/proof', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), param('id').isMongoId().withMessage('ID inválido'), validateRequest, getPaymentProof);
+router.post('/proofs', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), upload.single('file'), uploadPaymentProof);
 router.post('/',
   roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']),
   body('userId').isMongoId().withMessage('userId inválido'),

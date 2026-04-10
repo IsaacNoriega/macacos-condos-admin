@@ -13,6 +13,7 @@ export interface IPayment extends Document {
   provider: 'manual' | 'stripe';
   status: 'pending' | 'in_review' | 'completed' | 'failed' | 'paid';
   proofOfPaymentUrl?: string;
+  proofOfPaymentBlobName?: string;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   paymentDate: Date;
@@ -34,6 +35,7 @@ const paymentSchema = new Schema<IPayment>({
   provider: { type: String, enum: ['manual', 'stripe'], default: 'manual' },
   status: { type: String, enum: ['pending', 'in_review', 'completed', 'failed', 'paid'], default: 'pending', index: true },
   proofOfPaymentUrl: { type: String },
+  proofOfPaymentBlobName: { type: String },
   stripeSessionId: { type: String, unique: true, sparse: true },
   stripePaymentIntentId: { type: String, index: true },
   paymentDate: { type: Date, default: Date.now },

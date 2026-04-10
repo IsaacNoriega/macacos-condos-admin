@@ -14,6 +14,11 @@ const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const tenantId = req.user?.tenantId;
 
     if (!tenantId) {
+      if (req.method === 'POST' && req.path === '/proofs') {
+        req.tenantId = req.user?.tenantId || 'global';
+        return next();
+      }
+
       return res.status(403).json({
         success: false,
         message: 'No tenantId found in token',
