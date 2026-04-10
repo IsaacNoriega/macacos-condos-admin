@@ -1,12 +1,16 @@
 .crud-page {
   display: grid;
   gap: 1rem;
+  max-width: 1320px;
+  margin: 0 auto;
 }
 
 .page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
 }
 
 .page-head h1 {
@@ -16,7 +20,7 @@
 
 .grid-layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: minmax(320px, 410px) 1fr;
   gap: 1rem;
 }
 
@@ -24,7 +28,7 @@
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid #d5e4e8;
   border-radius: 1rem;
-  padding: 1rem;
+  padding: clamp(0.9rem, 1.8vw, 1.2rem);
   box-shadow: 0 12px 30px rgba(8, 31, 41, 0.08);
 }
 
@@ -67,6 +71,7 @@
   display: flex;
   gap: 0.5rem;
   margin-top: 0.25rem;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -96,6 +101,7 @@
 .table-wrap {
   overflow: auto;
   max-height: 72vh;
+  border-radius: 0.7rem;
 }
 
 table {
@@ -130,6 +136,7 @@ th {
   color: #244d59;
   border-radius: 0.5rem;
   padding: 0.25rem 0.45rem;
+  margin-bottom: 0.3rem;
 }
 
 .btn-mini.danger {

@@ -13,13 +13,18 @@ export class UnitsPage {
   readonly config: CrudConfig;
 
   constructor(private readonly auth: AuthService) {
-    const isSuperadmin = this.auth.role() === 'superadmin';
+    const role = this.auth.role();
+    const isSuperadmin = role === 'superadmin';
+    const canManageUnits = role === 'superadmin' || role === 'admin';
 
     this.config = {
       title: 'Unidades',
       endpoint: '/units',
       listKey: 'units',
       singularKey: 'unit',
+      allowCreate: canManageUnits,
+      allowEdit: canManageUnits,
+      allowDelete: canManageUnits,
       fields: [
         ...(isSuperadmin
           ? [

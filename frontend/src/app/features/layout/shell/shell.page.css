@@ -1,7 +1,7 @@
 .shell {
 	min-height: 100dvh;
 	display: grid;
-	grid-template-columns: 270px 1fr;
+	grid-template-columns: clamp(250px, 23vw, 300px) 1fr;
 	background: radial-gradient(circle at 20% -20%, #b3e9f0 0, transparent 35%),
 		linear-gradient(150deg, #edf9fb, #f8fbff 45%, #fff4ea 95%);
 }
@@ -73,8 +73,14 @@ footer button {
 	cursor: pointer;
 }
 
-main {
-	padding: 1rem;
+.shell-main {
+	padding: clamp(0.9rem, 2vw, 1.5rem);
+}
+
+.shell-main > * {
+	max-width: 1320px;
+	margin: 0 auto;
+	width: 100%;
 }
 
 .menu-toggle {
@@ -96,7 +102,7 @@ main {
 		left: -100%;
 		top: 0;
 		height: 100dvh;
-		width: min(280px, 84vw);
+		width: min(300px, 88vw);
 		z-index: 11;
 		transition: left 0.24s ease;
 	}

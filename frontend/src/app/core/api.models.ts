@@ -168,4 +168,6 @@ export interface CrudConfig {
   allowCreate?: boolean;
   allowEdit?: boolean;
   allowDelete?: boolean;
+  canEditItem?: (item: Record<string, unknown>) => boolean;
+  canDeleteItem?: (item: Record<string, unknown>) => boolean;
 }

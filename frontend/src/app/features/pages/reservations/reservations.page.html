@@ -1,0 +1,79 @@
+<section class="calendar-shell">
+  <header class="calendar-header">
+    <div>
+      <h2>Calendario de reservaciones</h2>
+      <p>Vista semanal para detectar traslapes por amenidad y horario.</p>
+    </div>
+
+    <div class="calendar-nav">
+      <button type="button" (click)="previousWeek()">Semana anterior</button>
+      <button type="button" class="secondary" (click)="goToCurrentWeek()">Semana actual</button>
+      <button type="button" (click)="nextWeek()">Semana siguiente</button>
+    </div>
+  </header>
+
+  <form class="calendar-filters" [formGroup]="calendarForm" (ngSubmit)="applyCalendarFilters()">
+    @if (isSuperadmin()) {
+    <label>
+      Tenant
+      <select formControlName="tenantId">
+        <option value="">Todos</option>
+        @for (tenant of tenants(); track tenant._id) {
+        <option [value]="tenant._id">{{ tenant.name }}</option>
+        }
+      </select>
+    </label>
+    }
+
+    <label>
+      Semana (inicio)
+      <input type="date" formControlName="weekStart" />
+    </label>
+
+    <label>
+      Amenidad
+      <select formControlName="amenity">
+        <option value="">Todas</option>
+        @for (amenity of amenities(); track amenity) {
+        <option [value]="amenity">{{ amenity }}</option>
+        }
+      </select>
+    </label>
+
+    <button type="submit">Actualizar</button>
+  </form>
+
+  @if (calendarError()) {
+  <p class="error">{{ calendarError() }}</p>
+  }
+
+  @if (loadingCalendar()) {
+  <p class="loading">Cargando calendario...</p>
+  } @else {
+  <div class="calendar-grid">
+    @for (day of calendarDays(); track day.isoDate) {
+    <article class="day-column">
+      <h3>{{ day.label }}</h3>
+
+      @if (!day.events.length) {
+      <p class="empty">Sin reservaciones</p>
+      } @else {
+      <ul>
+        @for (event of day.events; track event.id) {
+        <li [class.cancelled]="event.status === 'cancelada'">
+          <p class="amenity">{{ event.amenity }}</p>
+          <p class="time">{{ event.timeRange }}</p>
+          <span class="status">{{ event.status }}</span>
+        </li>
+        }
+      </ul>
+      }
+    </article>
+    }
+  </div>
+  }
+</section>
+
+<section class="crud-section">
+  <app-crud-page [config]="config" />
+</section>

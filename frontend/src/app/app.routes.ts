@@ -31,7 +31,7 @@ export const routes: Routes = [
 			{
 				path: 'units',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente'] },
+				data: { roles: ['superadmin', 'admin'] },
 				loadComponent: () => import('./features/pages/units/units.page').then((m) => m.UnitsPage),
 			},
 			{

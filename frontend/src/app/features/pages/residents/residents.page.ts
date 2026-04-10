@@ -75,6 +75,7 @@ export class ResidentsPage {
           label: 'Relación',
           type: 'select',
           required: true,
+          placeholder: 'Se ajusta según el rol del usuario seleccionado',
           options: [
             { label: 'Propietario', value: 'propietario' },
             { label: 'Familiar', value: 'familiar' },

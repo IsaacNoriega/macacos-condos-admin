@@ -73,6 +73,13 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('Reservación no encontrada', 404);
     }
 
+    const role = req.user?.role;
+    const isSelfServiceRole = role === 'residente' || role === 'familiar';
+    const currentUserId = req.user?.id ? String(req.user.id) : '';
+    if (isSelfServiceRole && String(currentReservation.userId) !== currentUserId) {
+      throw new AppError('No tienes permiso para actualizar reservaciones de otros usuarios', 403);
+    }
+
     const nextAmenityRaw = req.body.amenity ?? currentReservation.amenity;
     if (Array.isArray(nextAmenityRaw)) {
       throw new AppError('Amenidad inválida', 400);
@@ -93,12 +100,19 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
-    const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, {
+    const payload: Record<string, unknown> = {
       ...req.body,
       amenity: nextAmenity,
       start: nextStart,
       end: nextEnd,
-    });
+    };
+
+    if (isSelfServiceRole) {
+      delete payload.userId;
+      delete payload.tenantId;
+    }
+
+    const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, payload);
 
     logger.log('reservations.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
     res.json({ success: true, reservation });
@@ -110,6 +124,18 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
 
 export const deleteReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const currentReservation = await findReservationByIdInTenant(String(req.params.id), req.tenantId);
+    if (!currentReservation) {
+      throw new AppError('Reservación no encontrada', 404);
+    }
+
+    const role = req.user?.role;
+    const isSelfServiceRole = role === 'residente' || role === 'familiar';
+    const currentUserId = req.user?.id ? String(req.user.id) : '';
+    if (isSelfServiceRole && String(currentReservation.userId) !== currentUserId) {
+      throw new AppError('No tienes permiso para eliminar reservaciones de otros usuarios', 403);
+    }
+
     const reservation = await deleteReservationInTenant(String(req.params.id), req.tenantId);
     if (!reservation) {
       throw new AppError('Reservación no encontrada', 404);

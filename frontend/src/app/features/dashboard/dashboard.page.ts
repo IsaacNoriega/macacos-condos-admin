@@ -31,7 +31,7 @@ export class DashboardPage implements OnInit {
 
   private readonly cardConfig: DashboardCardConfig[] = [
     { label: 'Usuarios', endpoint: '/users', key: 'users', roles: ['superadmin', 'admin'] },
-    { label: 'Unidades', endpoint: '/units', key: 'units', roles: ['superadmin', 'admin', 'residente'] },
+    { label: 'Unidades', endpoint: '/units', key: 'units', roles: ['superadmin', 'admin'] },
     { label: 'Residentes', endpoint: '/residents', key: 'residents', roles: ['superadmin', 'admin'] },
     { label: 'Cargos', endpoint: '/charges', key: 'charges', roles: ['superadmin', 'admin'] },
     { label: 'Pagos', endpoint: '/payments', key: 'payments', roles: ['superadmin', 'admin', 'residente', 'familiar'] },

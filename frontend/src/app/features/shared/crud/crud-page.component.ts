@@ -53,6 +53,7 @@ export class CrudPageComponent implements OnInit {
   readonly canCreate = computed(() => this.config.allowCreate !== false);
   readonly canEdit = computed(() => this.config.allowEdit !== false);
   readonly canDelete = computed(() => this.config.allowDelete !== false);
+  readonly hasRowActions = computed(() => this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)));
 
   ngOnInit(): void {
     this.buildForm();
@@ -129,7 +130,7 @@ export class CrudPageComponent implements OnInit {
   }
 
   startEdit(item: Record<string, unknown>): void {
-    if (!this.canEdit()) {
+    if (!this.canEditItem(item)) {
       return;
     }
 
@@ -155,10 +156,17 @@ export class CrudPageComponent implements OnInit {
     }
 
     this.form.patchValue(patch);
+
+    if (this.config.endpoint === '/residents') {
+      const emailValue = this.form.get('email')?.value;
+      if (typeof emailValue === 'string' && emailValue) {
+        this.syncResidentRelationshipByRole(emailValue);
+      }
+    }
   }
 
   deleteItem(item: Record<string, unknown>): void {
-    if (!this.canDelete()) {
+    if (!this.canDeleteItem(item)) {
       return;
     }
 
@@ -199,6 +207,27 @@ export class CrudPageComponent implements OnInit {
   }
 
   getFieldOptions(field: CrudField): CrudFieldOption[] {
+    if (this.config.endpoint === '/residents' && field.key === 'relationship') {
+      const baseOptions = field.options || [];
+      const emailValue = this.form.get('email')?.value;
+      if (typeof emailValue !== 'string' || !emailValue) {
+        return baseOptions;
+      }
+
+      const selectedResidentUser = this.optionLookupByField.get('email')?.get(emailValue);
+      const selectedRole = String(selectedResidentUser?.['role'] ?? '');
+
+      if (selectedRole === 'familiar') {
+        return baseOptions.filter((option) => option.value === 'familiar');
+      }
+
+      if (selectedRole === 'residente') {
+        return baseOptions.filter((option) => option.value === 'propietario' || option.value === 'inquilino');
+      }
+
+      return baseOptions;
+    }
+
     const dynamic = this.dynamicOptions()[field.key];
     if (dynamic) {
       return dynamic;
@@ -208,6 +237,10 @@ export class CrudPageComponent implements OnInit {
   }
 
   onSelectChange(field: CrudField, rawValue: string): void {
+    if (this.config.endpoint === '/residents' && field.key === 'email') {
+      this.syncResidentRelationshipByRole(rawValue);
+    }
+
     if (!field.autoFill?.length) {
       return;
     }
@@ -224,6 +257,26 @@ export class CrudPageComponent implements OnInit {
     }
 
     this.form.patchValue(patch);
+  }
+
+  private syncResidentRelationshipByRole(emailValue: string): void {
+    const selectedResidentUser = this.optionLookupByField.get('email')?.get(emailValue);
+    const selectedRole = String(selectedResidentUser?.['role'] ?? '');
+    const currentRelationship = String(this.form.get('relationship')?.value ?? '');
+
+    if (selectedRole === 'familiar') {
+      if (currentRelationship !== 'familiar') {
+        this.form.patchValue({ relationship: 'familiar' });
+      }
+      return;
+    }
+
+    if (selectedRole === 'residente') {
+      const allowed = currentRelationship === 'propietario' || currentRelationship === 'inquilino';
+      if (!allowed) {
+        this.form.patchValue({ relationship: 'propietario' });
+      }
+    }
   }
 
   onTenantIdChange(value: string): void {
@@ -268,6 +321,22 @@ export class CrudPageComponent implements OnInit {
   isInvalid(fieldKey: string): boolean {
     const control = this.form.get(fieldKey);
     return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
+  canEditItem(item: Record<string, unknown>): boolean {
+    if (!this.canEdit()) {
+      return false;
+    }
+
+    return this.config.canEditItem ? this.config.canEditItem(item) : true;
+  }
+
+  canDeleteItem(item: Record<string, unknown>): boolean {
+    if (!this.canDelete()) {
+      return false;
+    }
+
+    return this.config.canDeleteItem ? this.config.canDeleteItem(item) : true;
   }
 
   private buildForm(): void {

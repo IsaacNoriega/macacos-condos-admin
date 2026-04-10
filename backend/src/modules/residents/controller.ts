@@ -2,8 +2,41 @@ import { NextFunction, Request, Response } from 'express';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as residentsService from './service';
+import { findUserByEmailInTenant } from '../users/service';
 
 const MAX_RESIDENTS_PER_UNIT = 5;
+
+const getAllowedRelationshipsByRole = (role: string): string[] => {
+  if (role === 'familiar') {
+    return ['familiar'];
+  }
+
+  if (role === 'residente') {
+    return ['propietario', 'inquilino'];
+  }
+
+  return [];
+};
+
+const ensureLinkedResidentUser = async (email: string, tenantId: string) => {
+  const linkedUser = await findUserByEmailInTenant(email, tenantId);
+  if (!linkedUser) {
+    throw new AppError('El email seleccionado no corresponde a un usuario del tenant', 400);
+  }
+
+  if (linkedUser.role !== 'residente' && linkedUser.role !== 'familiar') {
+    throw new AppError('Solo se permiten usuarios con rol residente o familiar para residentes', 400);
+  }
+
+  return linkedUser;
+};
+
+const ensureRelationshipMatchesRole = (role: string, relationship: string) => {
+  const allowed = getAllowedRelationshipsByRole(role);
+  if (!allowed.includes(relationship)) {
+    throw new AppError(`La relacion seleccionada no coincide con el rol del usuario. Permitidas para ${role}: ${allowed.join(', ')}`, 400);
+  }
+};
 
 export const getAllResidents = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -40,7 +73,7 @@ export const getResidentById = async (req: Request, res: Response, next: NextFun
 
 export const createResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { unitId, tenantId: requestedTenantId } = req.body;
+    const { unitId, tenantId: requestedTenantId, email, relationship } = req.body;
     const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
 
     if (!targetTenantId) {
@@ -56,6 +89,9 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
     if (currentResidents >= MAX_RESIDENTS_PER_UNIT) {
       throw new AppError(`La unidad ya tiene el maximo permitido de ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
     }
+
+    const linkedUser = await ensureLinkedResidentUser(String(email), targetTenantId);
+    ensureRelationshipMatchesRole(String(linkedUser.role), String(relationship));
 
     const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
     logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { residentId: String(resident._id), unitId });
@@ -85,6 +121,16 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
         throw new AppError(`La unidad destino ya tiene ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
       }
     }
+
+    const targetEmail = req.body.email ? String(req.body.email) : String(currentResident.email);
+    const targetRelationship = req.body.relationship ? String(req.body.relationship) : String(currentResident.relationship);
+
+    if (!req.tenantId) {
+      throw new AppError('No se pudo determinar el tenant actual', 400);
+    }
+
+    const linkedUser = await ensureLinkedResidentUser(targetEmail, req.tenantId);
+    ensureRelationshipMatchesRole(String(linkedUser.role), targetRelationship);
 
     const resident = await residentsService.updateResidentInTenant(String(req.params.id), req.tenantId, req.body);
 
