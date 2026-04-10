@@ -251,26 +251,55 @@ td {
 
 .resident-charges {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.9rem;
 }
 
 .resident-charge-item {
   border: 1px solid #d3e0e6;
-  border-radius: 0.7rem;
-  padding: 0.75rem;
+  border-radius: 1rem;
+  padding: 1rem;
   display: grid;
-  gap: 0.5rem;
-  grid-template-columns: 1fr auto;
-  align-items: center;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fcfd 100%);
+  box-shadow: 0 1px 0 rgba(10, 140, 155, 0.04);
 }
 
 .resident-charge-item h3 {
-  margin: 0;
+  margin: 0 0 0.35rem 0;
   color: #204652;
 }
 
-.resident-charge-item p {
-  margin: 0.2rem 0;
+.charge-summary {
+  min-width: 0;
+}
+
+.charge-meta {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.charge-meta p {
+  margin: 0;
+  color: #365861;
+}
+
+.charge-total {
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid #dbe7eb;
+  font-weight: 700;
+  color: #0a8c9b;
+}
+
+.charge-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+  min-width: 180px;
+  justify-content: center;
 }
 
 @media (max-width: 1000px) {
@@ -280,5 +309,9 @@ td {
 
   .resident-charge-item {
     grid-template-columns: 1fr;
+  }
+
+  .charge-actions {
+    min-width: 0;
   }
 }

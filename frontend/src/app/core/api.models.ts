@@ -86,6 +86,7 @@ export interface Payment {
   provider: 'manual' | 'stripe';
   status: 'pending' | 'in_review' | 'completed' | 'failed' | 'paid';
   proofOfPaymentUrl?: string;
+  proofOfPaymentBlobName?: string;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   paymentDate: string;
@@ -116,6 +117,12 @@ export interface StripeCheckoutResponse {
   success: boolean;
   sessionId: string;
   checkoutUrl: string;
+}
+
+export interface PaymentProofUploadResponse {
+  success: boolean;
+  proofOfPaymentUrl: string;
+  blobName: string;
 }
 
 export interface CrudFieldOption {

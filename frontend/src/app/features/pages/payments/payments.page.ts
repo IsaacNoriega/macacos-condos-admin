@@ -1,8 +1,8 @@
 ﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
-import { Payment, StripeCheckoutResponse } from '../../../core/api.models';
+import { firstValueFrom, finalize } from 'rxjs';
+import { Payment, PaymentProofUploadResponse, StripeCheckoutResponse } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -262,7 +262,67 @@ export class PaymentsPage implements OnInit {
       });
   }
 
-  submitProofForSelectedCharge(): void {
+  private async uploadSelectedProof(): Promise<PaymentProofUploadResponse> {
+    const file = this.selectedFile();
+
+    if (!file) {
+      throw new Error('Debes seleccionar un comprobante de pago.');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    return firstValueFrom(this.api.postFormData<PaymentProofUploadResponse>('/payments/proofs', formData));
+  }
+
+  private async createManualPayment(
+    payload: {
+      tenantId?: string;
+      userId: string;
+      unitId?: string;
+      chargeId: string;
+      amount: number;
+      currency: string;
+    },
+    successMessage: string
+  ): Promise<void> {
+    const uploadedProof = await this.uploadSelectedProof();
+
+    await firstValueFrom(
+      this.api.post('/payments', {
+        ...(payload.tenantId ? { tenantId: payload.tenantId } : {}),
+        userId: payload.userId,
+        unitId: payload.unitId,
+        chargeId: payload.chargeId,
+        amount: payload.amount,
+        currency: payload.currency,
+        provider: 'manual',
+        proofOfPaymentUrl: uploadedProof.proofOfPaymentUrl,
+        proofOfPaymentBlobName: uploadedProof.blobName,
+      })
+    );
+
+    this.message.set(successMessage);
+    this.error.set(null);
+    this.selectedFile.set(null);
+  }
+
+  async openPaymentProof(payment: Payment): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.api.get<{ success: boolean; proofUrl: string }>(`/payments/${payment._id}/proof`));
+
+      if (response.proofUrl) {
+        window.open(response.proofUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        this.error.set('No se pudo abrir el comprobante.');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo abrir el comprobante.';
+      this.error.set(message);
+    }
+  }
+
+  async submitProofForSelectedCharge(): Promise<void> {
     const chargeId = this.selectedChargeForProof();
     const charge = this.residentCharges().find((item) => String(item._id) === String(chargeId));
 
@@ -276,31 +336,27 @@ export class PaymentsPage implements OnInit {
       return;
     }
 
-    const proofUrl = URL.createObjectURL(this.selectedFile()!);
-
-    this.api
-      .post('/payments', {
-        userId: this.userId(),
-        unitId: charge.unitId,
-        chargeId: charge._id,
-        amount: Number(charge.amount),
-        currency: 'mxn',
-        provider: 'manual',
-        proofOfPaymentUrl: proofUrl,
-      })
-      .subscribe({
-        next: () => {
-          this.message.set('Comprobante enviado. Tu pago quedó en revisión.');
-          this.error.set(null);
-          this.selectedFile.set(null);
-          this.selectedChargeForProof.set(null);
-          this.loadPayments();
+    try {
+      await this.createManualPayment(
+        {
+          userId: String(this.userId()),
+          unitId: charge.unitId,
+          chargeId: charge._id,
+          amount: Number(charge.amount),
+          currency: 'mxn',
         },
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible enviar el comprobante.'),
-      });
+        'Comprobante enviado. Tu pago quedó en revisión.'
+      );
+
+      this.selectedChargeForProof.set(null);
+      this.loadPayments();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No fue posible enviar el comprobante.';
+      this.error.set(message);
+    }
   }
 
-  registerPaymentWithProof(): void {
+  async registerPaymentWithProof(): Promise<void> {
     if (this.paymentForm.invalid) {
       this.paymentForm.markAllAsTouched();
       return;
@@ -318,29 +374,25 @@ export class PaymentsPage implements OnInit {
       return;
     }
 
-    const proofUrl = URL.createObjectURL(this.selectedFile()!);
-
-    this.api
-      .post('/payments', {
-        ...(this.isSuperadmin() && tenantId ? { tenantId } : {}),
-        userId,
-        unitId,
-        chargeId,
-        amount: Number(amount),
-        currency,
-        provider: 'manual',
-        proofOfPaymentUrl: proofUrl,
-      })
-      .subscribe({
-        next: () => {
-          this.message.set('Pago registrado pendiente de revisión.');
-          this.error.set(null);
-          this.selectedFile.set(null);
-          this.paymentForm.reset({ provider: 'stripe' });
-          this.loadPayments();
+    try {
+      await this.createManualPayment(
+        {
+          ...(this.isSuperadmin() && tenantId ? { tenantId } : {}),
+          userId,
+          unitId: unitId || undefined,
+          chargeId,
+          amount: Number(amount),
+          currency: currency || 'mxn',
         },
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible registrar el pago.'),
-      });
+        'Pago registrado pendiente de revisión.'
+      );
+
+      this.paymentForm.reset({ provider: 'stripe' });
+      this.loadPayments();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No fue posible registrar el pago.';
+      this.error.set(message);
+    }
   }
 
   goToStripeCheckout(): void {

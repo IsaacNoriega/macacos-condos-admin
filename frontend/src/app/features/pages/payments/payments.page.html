@@ -82,7 +82,7 @@
         <div class="file-upload-section">
           <label>
             Comprobante (opcional si usarás Stripe)
-            <input type="file" accept="image/*,.pdf" (change)="onFileSelected($event)" />
+            <input type="file" accept="image/*" (change)="onFileSelected($event)" />
           </label>
           @if (selectedFile()) {
           <p class="file-selected">{{ selectedFile()!.name }}</p>
@@ -110,19 +110,23 @@
       <div class="resident-charges">
         @for (charge of residentCharges(); track charge._id) {
         <div class="resident-charge-item">
-          <div>
+          <div class="charge-summary">
             <h3>{{ charge.description }}</h3>
-            <p>Unidad: {{ getUnitLabel(charge.unitId) }}</p>
-            <p>Monto: {{ charge.amount | currency : 'MXN' }}</p>
+            <div class="charge-meta">
+              <p>Unidad: {{ getUnitLabel(charge.unitId) }}</p>
+              <p>Monto base: {{ charge.amount | currency : 'MXN' }}</p>
+              @if (getChargeLateFeeAmount(charge) > 0) {
+              <p>Recargo por atraso: {{ getChargeLateFeeAmount(charge) | currency : 'MXN' }}</p>
+              }
+              @if (charge.dueDate) {
+              <p>Vence: {{ charge.dueDate | date : 'mediumDate' }}</p>
+              }
+            </div>
             @if (getChargeLateFeeAmount(charge) > 0) {
-            <p>Recargo por atraso: {{ getChargeLateFeeAmount(charge) | currency : 'MXN' }}</p>
-            <p>Total a pagar: {{ getChargeTotalAmount(charge) | currency : 'MXN' }}</p>
-            }
-            @if (charge.dueDate) {
-            <p>Vence: {{ charge.dueDate | date : 'mediumDate' }}</p>
+            <p class="charge-total">Total a pagar: {{ getChargeTotalAmount(charge) | currency : 'MXN' }}</p>
             }
           </div>
-          <div class="actions">
+          <div class="charge-actions">
             <button class="btn primary" type="button" (click)="payChargeWithStripe(charge)">
               Pagar con Stripe
             </button>
@@ -139,7 +143,7 @@
         <h3>Subir comprobante</h3>
         <label>
           Archivo del comprobante
-          <input type="file" accept="image/*,.pdf" (change)="onFileSelected($event)" />
+          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
         </label>
         @if (selectedFile()) {
         <p class="file-selected">{{ selectedFile()!.name }}</p>
@@ -196,8 +200,8 @@
               </td>
               <td>{{ payment.paymentDate | date : 'short' }}</td>
               <td>
-                @if (payment.proofOfPaymentUrl) {
-                <a [href]="payment.proofOfPaymentUrl" target="_blank" class="btn-small view">Ver archivo</a>
+                @if (payment.proofOfPaymentUrl || payment.proofOfPaymentBlobName) {
+                <button type="button" class="btn-small view" (click)="openPaymentProof(payment)">Ver archivo</button>
                 } @else {
                 -
                 }
