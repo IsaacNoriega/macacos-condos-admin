@@ -1,26 +1,59 @@
-<div class="shell">
-	<aside class="sidebar" [class.open]="menuOpen()">
-		<header>
-			<h1>Macacos Condos</h1>
-			<p>Admin SaaS</p>
+<div class="shell" [class.sidebar-collapsed]="sidebarCollapsed()">
+	<aside class="sidebar" [class.open]="menuOpen()" [class.collapsed]="sidebarCollapsed()">
+		<header class="sidebar-header">
+			<div class="brand-copy">
+				<h1>Macacos Condos</h1>
+				<p>Admin SaaS</p>
+			</div>
+			<button class="collapse-toggle" type="button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir sidebar' : 'Contraer sidebar'">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<path d="M6 7l6 5-6 5" />
+					<path d="M12 7l6 5-6 5" />
+				</svg>
+			</button>
 		</header>
 
-		<nav>
-			@for (item of availableItems(); track item.route) {
-			<a [routerLink]="item.route" routerLinkActive="active" (click)="closeMenu()">
-				{{ item.label }}
-			</a>
+		<nav class="sidebar-nav">
+			@for (section of availableSections(); track section.title) {
+			<section class="nav-group">
+				<h2>{{ section.title }}</h2>
+				<div class="nav-links">
+					@for (item of section.items; track item.route) {
+					<a [routerLink]="item.route" routerLinkActive="active" (click)="closeMenu()">
+						<span class="nav-icon" aria-hidden="true">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+								<path [attr.d]="iconPath(item.icon)" />
+							</svg>
+						</span>
+						<span class="nav-copy">
+							<span class="nav-label">{{ item.label }}</span>
+							@if (item.hint) {
+							<small>{{ item.hint }}</small>
+							}
+						</span>
+					</a>
+					}
+				</div>
+			</section>
 			}
 		</nav>
 
 		<footer>
-			<p>{{ auth.user()?.name }}</p>
-			<small>{{ auth.user()?.role }}</small>
-			<button type="button" (click)="logout()">Cerrar sesion</button>
+			<div class="profile-card">
+				<div class="avatar" aria-hidden="true">{{ userInitials() }}</div>
+				<div class="profile-copy">
+					<p>{{ auth.user()?.name }}</p>
+					<small>{{ auth.user()?.role }}</small>
+				</div>
+			</div>
+			<button class="logout-button" type="button" (click)="logout()">
+				<span aria-hidden="true">⎋</span>
+				<span>Cerrar sesión</span>
+			</button>
 		</footer>
 	</aside>
 
-	<main>
+	<main class="shell-main">
 		<button class="menu-toggle" type="button" (click)="toggleMenu()">Menu</button>
 		<router-outlet />
 	</main>

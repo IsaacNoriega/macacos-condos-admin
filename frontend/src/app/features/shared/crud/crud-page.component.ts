@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 import { CrudConfig, CrudField, CrudFieldOption } from '../../../core/api.models';
@@ -12,7 +12,7 @@ import { ApiService } from '../../../core/services/api.service';
   templateUrl: './crud-page.component.html',
   styleUrl: './crud-page.component.css',
 })
-export class CrudPageComponent implements OnInit {
+export class CrudPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
 
@@ -29,6 +29,7 @@ export class CrudPageComponent implements OnInit {
   readonly loadingOptions = signal(false);
   readonly selectedTenantIdForFiltering = signal<string | null>(null);
   readonly filterValues = signal<Record<string, string>>({});
+  private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
   readonly filteredItems = computed(() => {
     const activeFilters = this.filterValues();
@@ -55,10 +56,37 @@ export class CrudPageComponent implements OnInit {
   readonly canDelete = computed(() => this.config.allowDelete !== false);
   readonly hasRowActions = computed(() => this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)));
 
+  readonly isTenantsView = computed(() => this.config.endpoint === '/tenants');
+
+  readonly createCardTitle = computed(() => {
+    if (this.isTenantsView()) {
+      return this.editingId() ? 'Editar Condominio' : 'Añadir Nuevo Condominio';
+    }
+
+    return this.editingId() ? 'Editar registro' : 'Nuevo registro';
+  });
+
+  readonly tableCardTitle = computed(() => (this.isTenantsView() ? 'Condominios Registrados' : 'Registros'));
+
   ngOnInit(): void {
     this.buildForm();
     this.form.valueChanges.subscribe(() => this.syncFormFilters());
     this.loadSelectOptions();
+
+    if (this.config.endpoint === '/reservations') {
+      this.refreshIntervalId = setInterval(() => {
+        if (!this.editingId()) {
+          this.loadItems();
+        }
+      }, 60_000);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
   }
 
   loadItems(): void {
@@ -292,6 +320,21 @@ export class CrudPageComponent implements OnInit {
     const value = item[key];
     if (value === null || value === undefined || value === '') {
       return '-';
+    }
+
+    if (this.config.endpoint === '/reservations' && key === 'status') {
+      const currentStatus = String(item['currentStatus'] ?? '');
+      if (currentStatus === 'finalizada' || currentStatus === 'cancelada') {
+        return currentStatus;
+      }
+
+      const endValue = item['end'];
+      if (typeof endValue === 'string') {
+        const endDate = new Date(endValue);
+        if (!Number.isNaN(endDate.getTime()) && endDate.getTime() <= Date.now()) {
+          return 'finalizada';
+        }
+      }
     }
 
     const field = this.config.fields.find((candidate) => candidate.key === key);

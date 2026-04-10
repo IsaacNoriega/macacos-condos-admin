@@ -17,11 +17,11 @@
     @if (isStaff()) {
     <article class="card">
       <h2>Registrar pago</h2>
-      <form [formGroup]="paymentForm" class="form-grid">
+      <form [formGroup]="paymentForm" class="form-grid staff-form-grid">
         <!-- SuperAdmin: Selector de Tenant -->
         @if (isSuperadmin()) {
         <label>
-          Tenant *
+          <span class="field-title">Tenant *</span>
           <select formControlName="tenantId" (change)="onTenantChange()">
             <option value="">Selecciona...</option>
             @for (tenant of tenants(); track tenant.value) {
@@ -34,7 +34,7 @@
         <!-- Admin/SuperAdmin: Selector de Unidad -->
         @if (isSuperadmin() || isAdmin()) {
         <label>
-          Unidad @if (isSuperadmin() || isAdmin()) { <span>*</span> }
+          <span class="field-title">Unidad *</span>
           <select formControlName="unitId" (change)="onUserOrUnitChange()">
             <option value="">Selecciona...</option>
             @for (unit of units(); track unit.value) {
@@ -47,7 +47,7 @@
         <!-- Admin/SuperAdmin: Selector de Usuario -->
         @if (isSuperadmin() || isAdmin()) {
         <label>
-          Usuario *
+          <span class="field-title">Usuario *</span>
           <select formControlName="userId" (change)="onUserOrUnitChange()">
             <option value="">Selecciona...</option>
             @for (user of users(); track user.value) {
@@ -58,7 +58,7 @@
         }
 
         <label>
-          Cargo *
+          <span class="field-title">Cargo *</span>
           <select formControlName="chargeId" (change)="onChargeSelected()">
             <option value="">Selecciona...</option>
             @for (charge of visibleCharges(); track charge._id) {
@@ -70,18 +70,18 @@
         </label>
 
         <label>
-          Monto *
+          <span class="field-title">Monto *</span>
           <input type="number" formControlName="amount" readonly />
         </label>
 
-        <label>
-          Moneda
+        <label class="full-width">
+          <span class="field-title">Moneda</span>
           <input type="text" formControlName="currency" value="mxn" />
         </label>
 
-        <div class="file-upload-section">
+        <div class="file-upload-section full-width">
           <label>
-            Comprobante (opcional si usarás Stripe)
+            <span class="field-title">Comprobante (opcional si usarás Stripe)</span>
             <input type="file" accept="image/*" (change)="onFileSelected($event)" />
           </label>
           @if (selectedFile()) {
@@ -89,7 +89,7 @@
           }
         </div>
 
-        <div class="actions">
+        <div class="actions full-width">
           <button class="btn primary" type="button" (click)="registerPaymentWithProof()">
             Registrar pago con comprobante
           </button>

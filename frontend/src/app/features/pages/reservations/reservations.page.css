@@ -119,6 +119,11 @@ button.secondary {
   background: #fff7f7;
 }
 
+.day-column li.finished {
+  border-left-color: #8a6d1f;
+  background: #fffaf0;
+}
+
 .amenity {
   margin: 0;
   font-weight: 700;
@@ -137,6 +142,10 @@ button.secondary {
 .status {
   text-transform: capitalize;
   color: #396671;
+}
+
+.day-column li.finished .status {
+  color: #8a6d1f;
 }
 
 .empty,

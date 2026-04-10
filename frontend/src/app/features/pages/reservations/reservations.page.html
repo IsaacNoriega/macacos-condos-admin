@@ -60,7 +60,7 @@
       } @else {
       <ul>
         @for (event of day.events; track event.id) {
-        <li [class.cancelled]="event.status === 'cancelada'">
+        <li [class.cancelled]="event.status === 'cancelada'" [class.finished]="event.status === 'finalizada'">
           <p class="amenity">{{ event.amenity }}</p>
           <p class="time">{{ event.timeRange }}</p>
           <span class="status">{{ event.status }}</span>

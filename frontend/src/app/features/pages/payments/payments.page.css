@@ -31,6 +31,25 @@ header {
   gap: 0.7rem;
 }
 
+.staff-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.staff-form-grid label {
+  min-width: 0;
+  width: 100%;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.field-title {
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 label {
   display: grid;
   gap: 0.3rem;
@@ -39,10 +58,17 @@ label {
 
 input,
 select {
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid #b8cfd7;
   border-radius: 0.65rem;
   padding: 0.5rem;
   font: inherit;
+}
+
+.staff-form-grid input,
+.staff-form-grid select {
+  min-width: 0;
 }
 
 .actions {
@@ -50,6 +76,10 @@ select {
   gap: 0.5rem;
   margin-top: 0.2rem;
   flex-wrap: wrap;
+}
+
+.actions.full-width {
+  justify-content: flex-start;
 }
 
 .btn {
@@ -161,6 +191,10 @@ td {
   padding: 0.4rem;
   background: #fff;
   cursor: pointer;
+}
+
+.file-upload-section input[type='file'] {
+  width: 100%;
 }
 
 .file-selected {
@@ -304,6 +338,10 @@ td {
 
 @media (max-width: 1000px) {
   .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-form-grid {
     grid-template-columns: 1fr;
   }
 

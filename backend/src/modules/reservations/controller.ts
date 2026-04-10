@@ -8,6 +8,7 @@ import {
   findReservationConflict,
   findAllReservations,
   findReservationsByTenant,
+  serializeReservation,
   updateReservationInTenant,
 } from './service';
 
@@ -20,7 +21,7 @@ export const getAllReservations = async (req: Request, res: Response, next: Next
         : await findAllReservations()
       : await findReservationsByTenant(req.tenantId);
 
-    res.json({ success: true, reservations });
+    res.json({ success: true, reservations: reservations.map((reservation) => serializeReservation(reservation)) });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reservaciones', 500, { cause: toError(err).message }));
   }
@@ -59,7 +60,7 @@ export const createReservation = async (req: Request, res: Response, next: NextF
       targetTenantId
     );
     logger.log('reservations.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { reservationId: String(reservation._id) });
-    res.status(201).json({ success: true, reservation });
+    res.status(201).json({ success: true, reservation: serializeReservation(reservation) });
   } catch (err: unknown) {
     logger.error('reservations.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al crear reservación', 400, { cause: toError(err).message }));
@@ -115,7 +116,7 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
     const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, payload);
 
     logger.log('reservations.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
-    res.json({ success: true, reservation });
+    res.json({ success: true, reservation: serializeReservation(reservation) });
   } catch (err: unknown) {
     logger.error('reservations.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al actualizar reservación', 400, { cause: toError(err).message }));

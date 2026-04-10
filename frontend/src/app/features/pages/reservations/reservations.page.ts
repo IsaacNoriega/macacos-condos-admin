@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { CrudConfig, Reservation } from '../../../core/api.models';
@@ -15,7 +15,7 @@ interface TenantOption {
 interface CalendarEventView {
   id: string;
   amenity: string;
-  status: 'activa' | 'cancelada';
+  status: 'activa' | 'cancelada' | 'finalizada';
   timeRange: string;
 }
 
@@ -32,7 +32,7 @@ interface CalendarDay {
   templateUrl: './reservations.page.html',
   styleUrl: './reservations.page.css',
 })
-export class ReservationsPage implements OnInit {
+export class ReservationsPage implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
 
   readonly config: CrudConfig;
@@ -41,6 +41,8 @@ export class ReservationsPage implements OnInit {
   readonly loadingCalendar = signal(false);
   readonly calendarError = signal<string | null>(null);
   readonly isSuperadmin = computed(() => this.auth.role() === 'superadmin');
+  readonly nowTick = signal(Date.now());
+  private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
   readonly calendarForm = this.fb.group({
     tenantId: [''],
@@ -57,6 +59,7 @@ export class ReservationsPage implements OnInit {
     const weekStartRaw = this.calendarForm.get('weekStart')?.value || this.toDateInputValue(this.startOfWeek(new Date()));
     const base = this.startOfWeek(new Date(`${weekStartRaw}T00:00:00`));
     const amenityFilter = (this.calendarForm.get('amenity')?.value || '').trim();
+    const now = this.nowTick();
     const events = this.reservations().filter((item) => {
       if (amenityFilter && item.amenity !== amenityFilter) {
         return false;
@@ -76,7 +79,7 @@ export class ReservationsPage implements OnInit {
         .map((event) => ({
           id: event._id,
           amenity: event.amenity,
-          status: event.status,
+          status: this.getReservationDisplayStatus(event, now),
           timeRange: `${this.toTimeLabel(event.start)} - ${this.toTimeLabel(event.end)}`,
         }));
 
@@ -188,6 +191,18 @@ export class ReservationsPage implements OnInit {
     }
 
     this.loadCalendarReservations();
+
+    this.refreshIntervalId = setInterval(() => {
+      this.nowTick.set(Date.now());
+      this.loadCalendarReservations();
+    }, 60_000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
   }
 
   previousWeek(): void {
@@ -279,5 +294,22 @@ export class ReservationsPage implements OnInit {
       minute: '2-digit',
       hour12: false,
     }).format(date);
+  }
+
+  private getReservationDisplayStatus(reservation: Reservation, now = Date.now()): 'activa' | 'cancelada' | 'finalizada' {
+    if (reservation.status === 'cancelada') {
+      return 'cancelada';
+    }
+
+    if (reservation.currentStatus === 'finalizada') {
+      return 'finalizada';
+    }
+
+    const endTime = new Date(reservation.end).getTime();
+    if (!Number.isNaN(endTime) && endTime <= now) {
+      return 'finalizada';
+    }
+
+    return 'activa';
   }
 }

@@ -111,6 +111,7 @@ export interface Reservation {
   start: string;
   end: string;
   status: 'activa' | 'cancelada';
+  currentStatus?: 'activa' | 'cancelada' | 'finalizada';
 }
 
 export interface StripeCheckoutResponse {

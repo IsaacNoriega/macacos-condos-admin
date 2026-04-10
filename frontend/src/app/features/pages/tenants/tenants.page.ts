@@ -3,7 +3,7 @@ import { CrudConfig } from '../../../core/api.models';
 import { CrudPageComponent } from '../../shared/crud/crud-page.component';
 
 const config: CrudConfig = {
-  title: 'Tenants (Condominios)',
+  title: 'Inquilinos (Condominios)',
   endpoint: '/tenants',
   listKey: 'tenants',
   singularKey: 'tenant',

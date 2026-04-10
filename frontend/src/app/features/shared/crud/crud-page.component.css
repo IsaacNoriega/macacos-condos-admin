@@ -172,3 +172,236 @@ th {
     grid-template-columns: 1fr;
   }
 }
+
+.crud-page.tenants-skin {
+  gap: 0.7rem;
+}
+
+.crud-page.tenants-skin .page-head {
+  align-items: center;
+}
+
+.crud-page.tenants-skin .page-head h1 {
+  font-size: clamp(1.7rem, 3.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1a3f4a;
+}
+
+.crud-page.tenants-skin .btn-ghost {
+  border-radius: 999px;
+  background: rgba(222, 242, 246, 0.72);
+  border-color: #abd5dc;
+  color: #1c6b79;
+  padding: 0.35rem 0.65rem;
+}
+
+.crud-page.tenants-skin .grid-layout {
+  grid-template-columns: minmax(300px, 1.2fr) minmax(0, 2.2fr);
+  gap: 0.55rem;
+}
+
+.crud-page.tenants-skin .card {
+  border-radius: 0.75rem;
+  border-color: #bcd3d9;
+  box-shadow: 0 8px 16px rgba(32, 69, 80, 0.16);
+  background: linear-gradient(180deg, rgba(243, 250, 252, 0.92), rgba(238, 246, 248, 0.9));
+  padding: 0.6rem 0.65rem;
+}
+
+.crud-page.tenants-skin .form-card h2,
+.crud-page.tenants-skin .table-card h2 {
+  margin-bottom: 0.45rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #203f49;
+}
+
+.crud-page.tenants-skin .form-grid {
+  gap: 0.45rem;
+}
+
+.crud-page.tenants-skin .field {
+  gap: 0.2rem;
+  font-size: 0.78rem;
+}
+
+.crud-page.tenants-skin .field span {
+  color: #23434d;
+  font-weight: 600;
+}
+
+.crud-page.tenants-skin .field input,
+.crud-page.tenants-skin .field textarea,
+.crud-page.tenants-skin .field select {
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border-color: #88b0b9;
+  background: rgba(239, 247, 249, 0.95);
+  min-height: 1.65rem;
+  width: 100%;
+}
+
+.crud-page.tenants-skin .actions {
+  margin-top: 0.2rem;
+}
+
+.crud-page.tenants-skin .btn-primary {
+  background: linear-gradient(180deg, #3a8493, #2e6f7d);
+  border-color: #3e7e8d;
+  color: #eaf9fc;
+}
+
+.crud-page.tenants-skin .table-wrap {
+  max-height: 62vh;
+  border: 1px solid #c7d9de;
+  background: rgba(247, 251, 252, 0.88);
+}
+
+.crud-page.tenants-skin table {
+  font-size: 0.8rem;
+}
+
+.crud-page.tenants-skin th,
+.crud-page.tenants-skin td {
+  padding: 0.4rem 0.45rem;
+}
+
+.crud-page.tenants-skin th {
+  background: rgba(227, 239, 243, 0.95);
+  color: #244853;
+  font-weight: 700;
+}
+
+.crud-page.tenants-skin .btn-mini {
+  border-radius: 999px;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  margin-right: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  background: #e3eff3;
+  border: 1px solid #d0e2ea;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crud-page.tenants-skin .btn-mini:hover {
+  background: #d5e8f0;
+  border-color: #b8d8e5;
+  transform: scale(1.08);
+}
+
+.crud-page.tenants-skin .btn-mini::before {
+  content: '✎';
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2e6978;
+}
+
+.crud-page.tenants-skin .btn-mini.danger {
+  background: #ffebeb;
+  border-color: #ffcccc;
+}
+
+.crud-page.tenants-skin .btn-mini.danger:hover {
+  background: #ffe0e0;
+  border-color: #ffb3b3;
+}
+
+.crud-page.tenants-skin .btn-mini.danger::before {
+  content: '🗑';
+  font-size: 0.95rem;
+  color: #d32f2f;
+}
+
+/* Input icons for tenants form */
+.crud-page.tenants-skin .input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.crud-page.tenants-skin .input-wrapper::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  pointer-events: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.crud-page.tenants-skin .field-name .input-wrapper::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%237a9aaa" stroke-width="1.5"><circle cx="12" cy="7" r="3.5"/><path d="M 6 21 C 6 17.5 8.5 15 12 15 C 15.5 15 18 17.5 18 21"/></svg>');
+}
+
+.crud-page.tenants-skin .field-address .input-wrapper::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%237a9aaa" stroke-width="1.5"><path d="M 12 2 C 8.7 2 6 4.7 6 8 C 6 13 12 22 12 22 S 18 13 18 8 C 18 4.7 15.3 2 12 2 M 12 10 C 10.9 10 10 9.1 10 8 C 10 6.9 10.9 6 12 6 C 13.1 6 14 6.9 14 8 C 14 9.1 13.1 10 12 10"/></svg>');
+}
+
+.crud-page.tenants-skin .field-contactEmail .input-wrapper::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%237a9aaa" stroke-width="1.5"><path d="M 3 5 H 21 C 21.5 5 22 5.5 22 6 V 18 C 22 18.5 21.5 19 21 19 H 3 C 2.5 19 2 18.5 2 18 V 6 C 2 5.5 2.5 5 3 5 M 3 5 L 12 12 L 21 5"/></svg>');
+}
+
+.crud-page.tenants-skin .input-wrapper input {
+  padding-left: 2.2rem;
+  padding-right: 0.55rem;
+}
+
+/* Button icons for tenants form */
+.crud-page.tenants-skin .actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.crud-page.tenants-skin .btn-primary,
+.crud-page.tenants-skin .btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.crud-page.tenants-skin .btn-primary::before {
+  content: '';
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>');
+}
+
+.crud-page.tenants-skin .btn-ghost::before {
+  content: '';
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23255362" stroke-width="2"><path d="M 3 3 L 21 3 L 18 13 C 17 17 13 20 9 20 C 5 20 1 17 0 13 L 3 3"/><line x1="6" y1="3" x2="6" y2="10"/><line x1="10" y1="3" x2="10" y2="10"/><line x1="14" y1="3" x2="14" y2="10"/><line x1="18" y1="3" x2="18" y2="10"/></svg>');
+}
+
+.crud-page.tenants-skin .row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .crud-page.tenants-skin .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}

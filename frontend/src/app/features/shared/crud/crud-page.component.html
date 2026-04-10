@@ -1,4 +1,4 @@
-<section class="crud-page">
+<section class="crud-page" [class.tenants-skin]="isTenantsView()">
   <header class="page-head">
     <h1>{{ config.title }}</h1>
     <button class="btn btn-ghost" type="button" (click)="loadItems()" [disabled]="loading()">
@@ -17,11 +17,11 @@
   <div class="grid-layout">
     @if (canCreate() || canEdit()) {
     <article class="card form-card">
-      <h2>{{ editingId() ? 'Editar registro' : 'Nuevo registro' }}</h2>
+      <h2>{{ createCardTitle() }}</h2>
 
       <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
         @for (field of config.fields; track field.key) {
-        <label class="field">
+        <label class="field" [class]="'field-' + field.key">
           <span>{{ field.label }}</span>
 
           @switch (field.type) {
@@ -40,7 +40,9 @@
               </select>
             }
             @default {
-              <input [type]="field.type" [formControlName]="field.key" [placeholder]="field.placeholder || ''" />
+              <div class="input-wrapper">
+                <input [type]="field.type" [formControlName]="field.key" [placeholder]="field.placeholder || ''" />
+              </div>
             }
           }
 
@@ -61,7 +63,7 @@
     }
 
     <article class="card table-card">
-      <h2>Registros</h2>
+      <h2>{{ tableCardTitle() }}</h2>
 
       @if (loading()) {
       <p>Cargando...</p>

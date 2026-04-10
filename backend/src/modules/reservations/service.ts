@@ -1,5 +1,32 @@
 import Reservation from './model';
 
+export type ReservationDisplayStatus = 'activa' | 'cancelada' | 'finalizada';
+
+export const getReservationDisplayStatus = (
+  reservation: { status: 'activa' | 'cancelada'; end: Date | string },
+  now = new Date()
+): ReservationDisplayStatus => {
+  if (reservation.status === 'cancelada') {
+    return 'cancelada';
+  }
+
+  const endDate = new Date(reservation.end);
+  if (Number.isNaN(endDate.getTime())) {
+    return 'activa';
+  }
+
+  return now.getTime() >= endDate.getTime() ? 'finalizada' : 'activa';
+};
+
+export const serializeReservation = (reservation: any, now = new Date()) => {
+  const plainReservation = typeof reservation?.toObject === 'function' ? reservation.toObject() : { ...reservation };
+
+  return {
+    ...plainReservation,
+    currentStatus: getReservationDisplayStatus(plainReservation, now),
+  };
+};
+
 export const findAllReservations = () => {
   return Reservation.find({});
 };
