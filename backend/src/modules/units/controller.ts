@@ -20,7 +20,10 @@ export const getAllUnits = async (req: Request, res: Response, next: NextFunctio
 
 export const getUnitById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await unitsService.findUnitByIdInTenant(String(req.params.id), req.tenantId);
+    const queryTenantId = req.query.tenantId ? String(req.query.tenantId) : undefined;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || req.tenantId) : req.tenantId;
+
+    const unit = await unitsService.findUnitByIdInTenant(String(req.params.id), tenantScope);
     if (!unit) {
       throw new AppError('Unidad no encontrada', 404);
     }
@@ -51,7 +54,10 @@ export const createUnit = async (req: Request, res: Response, next: NextFunction
 
 export const updateUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await unitsService.updateUnitInTenant(String(req.params.id), req.tenantId, req.body);
+    const queryTenantId = req.query.tenantId ? String(req.query.tenantId) : undefined;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || req.tenantId) : req.tenantId;
+
+    const unit = await unitsService.updateUnitInTenant(String(req.params.id), tenantScope, req.body);
 
     if (!unit) {
       throw new AppError('Unidad no encontrada', 404);
@@ -67,7 +73,10 @@ export const updateUnit = async (req: Request, res: Response, next: NextFunction
 
 export const deleteUnit = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const unit = await unitsService.deleteUnitInTenant(String(req.params.id), req.tenantId);
+    const queryTenantId = req.query.tenantId ? String(req.query.tenantId) : undefined;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || req.tenantId) : req.tenantId;
+
+    const unit = await unitsService.deleteUnitInTenant(String(req.params.id), tenantScope);
     if (!unit) {
       throw new AppError('Unidad no encontrada', 404);
     }

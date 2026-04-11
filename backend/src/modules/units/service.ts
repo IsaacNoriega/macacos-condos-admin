@@ -5,11 +5,13 @@ export const findAllUnits = () => {
 };
 
 export const findUnitsByTenant = (tenantId?: string) => {
-  return Unit.find({ tenantId });
+  const filter = tenantId ? { tenantId } : {};
+  return Unit.find(filter);
 };
 
 export const findUnitByIdInTenant = (unitId: string, tenantId?: string) => {
-  return Unit.findOne({ _id: unitId, tenantId });
+  const filter = tenantId ? { _id: unitId, tenantId } : { _id: unitId };
+  return Unit.findOne(filter);
 };
 
 export const createUnitInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {
@@ -19,13 +21,15 @@ export const createUnitInTenant = async (payload: Record<string, unknown>, tenan
 };
 
 export const updateUnitInTenant = (unitId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
+  const filter = tenantId ? { _id: unitId, tenantId } : { _id: unitId };
   return Unit.findOneAndUpdate(
-    { _id: unitId, tenantId },
+    filter,
     payload,
     { new: true }
   );
 };
 
 export const deleteUnitInTenant = (unitId: string, tenantId?: string) => {
-  return Unit.findOneAndDelete({ _id: unitId, tenantId });
+  const filter = tenantId ? { _id: unitId, tenantId } : { _id: unitId };
+  return Unit.findOneAndDelete(filter);
 };
