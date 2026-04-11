@@ -1,0 +1,148 @@
+<section class="users-page">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Gestión administrativa</p>
+      <h1>Gestión de Usuarios - Macacos Condos</h1>
+      <p class="hero-note">Crea o edita usuarios en el panel izquierdo y revisa el listado a la derecha.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button class="pill-button secondary" type="button" (click)="refresh()">Refrescar</button>
+      <button class="pill-button primary" type="button" (click)="startCreate()">+ Nuevo Usuario</button>
+    </div>
+  </header>
+
+  @if (formMessage()) {
+  <p class="status-banner">{{ formMessage() }}</p>
+  }
+
+  <div class="content-grid">
+    <aside class="editor-panel">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Crear y editar</p>
+          <h2>{{ selectedUser() ? 'Editar usuario seleccionado' : 'Nuevo usuario' }}</h2>
+        </div>
+        <span class="mode-chip">{{ isSuperadmin() ? 'Superadmin' : currentRole() }}</span>
+      </div>
+
+      <form class="editor-form" [formGroup]="form" (ngSubmit)="saveUser()">
+        <label>
+          <span>Nombre</span>
+          <input type="text" formControlName="name" placeholder="Nombre" />
+        </label>
+
+        <label>
+          <span>Email</span>
+          <input type="email" formControlName="email" placeholder="Email" />
+        </label>
+
+        <label>
+          <span>Contraseña</span>
+          <input type="password" formControlName="password" placeholder="Contraseña" />
+        </label>
+
+        @if (isSuperadmin()) {
+        <label>
+          <span>Tenant</span>
+          <select formControlName="tenant">
+            <option value="">Selecciona un tenant</option>
+            @for (tenant of tenantOptions(); track tenant.value) {
+            <option [value]="tenant.value">{{ tenant.label }}</option>
+            }
+          </select>
+        </label>
+        } @else {
+        <div class="tenant-note">
+          <span>Tenant</span>
+          <p>Se asigna automáticamente según tu rol.</p>
+        </div>
+        }
+
+        <label>
+          <span>Rol</span>
+          <select formControlName="role">
+            <option value="superadmin">Superadmin</option>
+            <option value="admin">Admin</option>
+            <option value="residente">Residente</option>
+            <option value="familiar">Familiar</option>
+          </select>
+        </label>
+
+        <div class="form-actions">
+          <button class="pill-button primary" type="submit">Guardar</button>
+          <button class="pill-button secondary" type="button" (click)="resetForm()">Limpiar</button>
+        </div>
+      </form>
+    </aside>
+
+    <section class="results-column">
+      <section class="board-tools">
+        <label class="search-input">
+          <span aria-hidden="true">⌕</span>
+          <input [value]="searchTerm()" (input)="setSearch($any($event.target).value)" type="search" placeholder="Buscar usuarios..." />
+        </label>
+
+        <nav class="filter-bar" aria-label="Filtros por rol">
+          @for (filter of roleFilters; track filter.value) {
+          <button class="filter-chip" type="button" [class.active]="activeFilter() === filter.value" (click)="setFilter(filter.value)">
+            {{ filter.label }}
+          </button>
+          }
+        </nav>
+      </section>
+
+      <section class="board">
+        <div class="board-head">
+          <div>
+            <p class="section-label">Usuarios</p>
+            <h2>{{ filteredUsers().length }} resultados</h2>
+          </div>
+          <p class="board-meta">Mostrando {{ pagedUsers().length }} de {{ filteredUsers().length }}</p>
+        </div>
+
+      <div class="users-grid">
+        @for (user of pagedUsers(); track trackByUserId($index, user)) {
+        <article class="user-card" [class.selected]="selectedUser()?.id === user.id" (click)="selectUser(user)">
+          <div class="card-top">
+            <div class="avatar" [style.background]="user.avatarBg">{{ initials(user.name) }}</div>
+
+            <div class="card-copy">
+              <h3>{{ user.name }}</h3>
+              <p>{{ user.email }}</p>
+            </div>
+
+            <div class="card-actions">
+              <button type="button" class="icon-button" (click)="editUser(user); $event.stopPropagation()" aria-label="Editar usuario">✎</button>
+              <button type="button" class="icon-button danger" (click)="deleteUser(user); $event.stopPropagation()" aria-label="Eliminar usuario">🗑</button>
+            </div>
+          </div>
+
+          <div class="card-meta">
+            <span class="role-pill">{{ roleLabel(user.role) }}</span>
+            <span class="tenant-label">{{ user.tenant }}</span>
+          </div>
+
+          <div class="card-foot">
+            <small>{{ user.status }}</small>
+            <strong>{{ relativeTime(user.lastActivity) }}</strong>
+          </div>
+        </article>
+        }
+      </div>
+
+        <footer class="pagination">
+          <button class="page-button" type="button" (click)="previousPage()" [disabled]="page() === 1">«</button>
+
+          @for (pageNumber of pageNumbers(); track pageNumber) {
+          <button class="page-button page-number" type="button" [class.active]="page() === pageNumber" (click)="goToPage(pageNumber)">
+            {{ pageNumber }}
+          </button>
+          }
+
+          <button class="page-button" type="button" (click)="nextPage()" [disabled]="page() === totalPages()">»</button>
+        </footer>
+      </section>
+    </section>
+  </div>
+</section>
