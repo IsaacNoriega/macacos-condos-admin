@@ -1,0 +1,142 @@
+<section class="users-page">
+  <header class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Gestión administrativa</p>
+      <h1>Gestión de Unidades - Macacos Condos</h1>
+      <p class="hero-note">Crea o edita unidades en el panel izquierdo y revisa el listado detallado a la derecha.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button class="pill-button secondary" type="button" (click)="refresh()">Refrescar</button>
+      <button class="pill-button primary" type="button" (click)="startCreate()">+ Nueva Unidad</button>
+    </div>
+  </header>
+
+  @if (formMessage()) {
+  <p class="status-banner">{{ formMessage() }}</p>
+  }
+
+  <div class="content-grid">
+    <aside class="editor-panel">
+      <div class="panel-head">
+        <div>
+          <p class="section-label">Crear y editar</p>
+          <h2>{{ selectedUnit() ? 'Editar unidad' : 'Nueva unidad' }}</h2>
+        </div>
+        <span class="mode-chip">{{ isSuperadmin() ? 'Superadmin' : currentRole() }}</span>
+      </div>
+
+      <form class="editor-form" [formGroup]="form" (ngSubmit)="saveUnit()">
+        @if (isSuperadmin()) {
+        <label>
+          <span>Tenant</span>
+          <select formControlName="tenantId">
+            <option value="">Selecciona un tenant</option>
+            @for (tenant of tenantOptions(); track tenant.value) {
+            <option [value]="tenant.value">{{ tenant.label }}</option>
+            }
+          </select>
+        </label>
+        }
+
+        <label>
+          <span>Código</span>
+          <input type="text" formControlName="code" placeholder="Código" />
+        </label>
+
+        <label>
+          <span>Tipo</span>
+          <select formControlName="type">
+            <option value="departamento">Departamento</option>
+            <option value="casa">Casa</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Descripción</span>
+          <textarea formControlName="description" rows="3" placeholder="Descripción"></textarea>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" formControlName="isActive" />
+          <span>Disponible</span>
+        </label>
+
+        <div class="form-actions">
+          <button class="pill-button primary" type="submit" [disabled]="loading()">Guardar</button>
+          <button class="pill-button secondary" type="button" (click)="resetForm()">Limpiar</button>
+        </div>
+      </form>
+    </aside>
+
+    <section class="results-column">
+      <section class="board-tools">
+        <label class="search-input">
+          <span aria-hidden="true">⌕</span>
+          <input [value]="searchTerm()" (input)="setSearch($any($event.target).value)" type="search" placeholder="Buscar unidades..." />
+        </label>
+
+        <nav class="filter-bar" aria-label="Filtros de unidades">
+          @for (filter of filters; track filter.value) {
+          <button class="filter-chip" type="button" [class.active]="activeFilter() === filter.value" (click)="setFilter(filter.value)">
+            {{ filter.label }}
+          </button>
+          }
+        </nav>
+      </section>
+
+      <section class="board">
+        <div class="board-head">
+          <div>
+            <p class="section-label">Unidades</p>
+            <h2>{{ filteredUnits().length }} resultados</h2>
+          </div>
+          <p class="board-meta">Mostrando {{ pagedUnits().length }} de {{ filteredUnits().length }}</p>
+        </div>
+
+        <div class="users-grid">
+          @for (unit of pagedUnits(); track trackByUnitId($index, unit)) {
+          <article class="user-card" [class.selected]="selectedUnit()?.id === unit.id" (click)="selectUnit(unit)">
+            <div class="card-top">
+              <div class="avatar" [style.background]="unit.avatarBg">{{ initials(unit.code) }}</div>
+
+              <div class="card-copy">
+                <h3>{{ unit.code }}</h3>
+                <p>{{ unit.description || 'Sin descripción' }}</p>
+              </div>
+
+              <div class="card-actions">
+                <button type="button" class="icon-button" (click)="selectUnit(unit); $event.stopPropagation()" aria-label="Editar unidad">✎</button>
+                <button type="button" class="icon-button danger" (click)="deleteUnit(unit); $event.stopPropagation()" aria-label="Eliminar unidad">🗑</button>
+              </div>
+            </div>
+
+            <div class="card-meta">
+              <span class="role-pill">{{ unitTypeLabel(unit.type) }}</span>
+              <span class="tenant-label">{{ unit.tenant }}</span>
+            </div>
+
+            <div class="card-foot">
+              <small>Estado</small>
+              <strong>{{ unit.isActive ? 'Disponible' : 'Ocupada' }}</strong>
+              <strong>{{ relativeTime(unit.lastActivity) }}</strong>
+            </div>
+          </article>
+          }
+        </div>
+
+        <footer class="pagination">
+          <button class="page-button" type="button" (click)="previousPage()" [disabled]="page() === 1">«</button>
+
+          @for (pageNumber of pageNumbers(); track pageNumber) {
+          <button class="page-button page-number" type="button" [class.active]="page() === pageNumber" (click)="goToPage(pageNumber)">
+            {{ pageNumber }}
+          </button>
+          }
+
+          <button class="page-button" type="button" (click)="nextPage()" [disabled]="page() === totalPages()">»</button>
+        </footer>
+      </section>
+    </section>
+  </div>
+</section>
