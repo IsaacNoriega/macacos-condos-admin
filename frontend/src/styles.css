@@ -1,18 +1,67 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-/* Global Glassmorphism Variables */
+/* ═══════════════════════════════════════════
+   GLOBAL DESIGN SYSTEM — Glassmorphism Tokens
+   ═══════════════════════════════════════════ */
 :root {
+	/* ── Glass surfaces ── */
 	--glass-bg: rgba(255, 255, 255, 0.45);
 	--glass-bg-hover: rgba(255, 255, 255, 0.65);
 	--glass-bg-active: rgba(255, 255, 255, 0.75);
 	--glass-border: rgba(255, 255, 255, 0.6);
 	--glass-shadow: 0 10px 40px -10px rgba(18, 48, 66, 0.15);
 	--glass-blur: blur(16px);
-  --glass-drop-shadow: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
-  --font-primary: 'Outfit', system-ui, -apple-system, sans-serif;
-  --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+	--glass-drop-shadow: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
+
+	/* ── Primary palette ── */
+	--color-primary: #0ea5e9;
+	--color-primary-dark: #0284c7;
+	--color-primary-gradient: linear-gradient(135deg, #0ea5e9, #0284c7);
+	--color-primary-glow: rgba(14, 165, 233, 0.25);
+	--color-primary-glow-hover: rgba(14, 165, 233, 0.35);
+
+	/* ── Semantic colors ── */
+	--color-danger: #ef4444;
+	--color-danger-bg: rgba(254, 226, 226, 0.55);
+	--color-danger-border: rgba(239, 68, 68, 0.2);
+	--color-success: #10b981;
+	--color-success-bg: #e9f9f1;
+	--color-success-border: #a8e4c8;
+	--color-warning-bg: #fef3c7;
+	--color-warning-text: #92400e;
+	--color-info-bg: #dbeafe;
+	--color-info-text: #1e40af;
+
+	/* ── Text hierarchy ── */
+	--text-heading: #0f172a;
+	--text-primary: #1e293b;
+	--text-secondary: #475569;
+	--text-muted: #64748b;
+	--text-on-primary: #ffffff;
+
+	/* ── Typography ── */
+	--font-primary: 'Outfit', system-ui, -apple-system, sans-serif;
+
+	/* ── Transitions ── */
+	--transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+	--transition-fast: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+
+	/* ── Spacing ── */
+	--radius-sm: 0.65rem;
+	--radius-md: 1rem;
+	--radius-lg: 1.2rem;
+	--radius-xl: 1.5rem;
+	--radius-pill: 999px;
+
+	/* ── Input tokens ── */
+	--input-bg: rgba(255, 255, 255, 0.45);
+	--input-bg-focus: rgba(255, 255, 255, 0.85);
+	--input-border: rgba(255, 255, 255, 0.55);
+	--input-border-focus: #38bdf8;
+	--input-focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
+/* ── Base resets ── */
 html,
 body {
 	margin: 0;
@@ -20,22 +69,53 @@ body {
 	width: 100%;
 	min-height: 100dvh;
 	overflow-x: hidden;
-  font-family: var(--font-primary);
-  background: 
-    radial-gradient(circle at 10% 20%, #e0f2fe 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, #fef3c7 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, #eff6ff 0%, transparent 60%),
-    linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  background-attachment: fixed;
-  color: #1e293b;
+	font-family: var(--font-primary);
+	background:
+		radial-gradient(circle at 10% 20%, #e0f2fe 0%, transparent 40%),
+		radial-gradient(circle at 90% 80%, #fef3c7 0%, transparent 40%),
+		radial-gradient(circle at 50% 50%, #eff6ff 0%, transparent 60%),
+		linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	background-attachment: fixed;
+	color: var(--text-primary);
 }
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-primary);
-  font-weight: 700;
-  color: #0f172a;
+	font-family: var(--font-primary);
+	font-weight: 700;
+	color: var(--text-heading);
+}
+
+/* ── Global form element baseline ── */
+input,
+select,
+textarea {
+	font-family: var(--font-primary);
+	font-size: 0.9rem;
+	color: var(--text-primary);
+	border: 1px solid var(--input-border);
+	border-radius: var(--radius-sm);
+	padding: 0.6rem 0.75rem;
+	background: var(--input-bg);
+	transition: var(--transition-fast);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+	outline: none;
+	background: var(--input-bg-focus);
+	border-color: var(--input-border-focus);
+	box-shadow: var(--input-focus-ring);
+}
+
+/* ── Global button baseline ── */
+button {
+	font-family: var(--font-primary);
+	cursor: pointer;
+	border: none;
+	transition: var(--transition-smooth);
 }

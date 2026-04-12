@@ -158,7 +158,8 @@
 	height: 2.25rem;
 	display: inline-grid;
 	place-items: center;
-	color: #769199;
+	color: var(--color-primary);
+	opacity: 0.7;
 }
 
 .card-icon svg {
@@ -172,24 +173,24 @@
 	font-weight: 700;
 	line-height: 0.95;
 	font-family: inherit;
-	color: #0f172a;
+	color: var(--text-heading);
 }
 
 .card h2 {
 	margin: 0;
 	font-size: 1.42rem;
 	line-height: 1.1;
-	color: #2f454d;
+	color: var(--text-secondary);
 	font-weight: 500;
 }
 
 .error {
 	margin: 0;
-	border: 1px solid #e2a8a8;
-	background: #fdeaea;
-	color: #8a2323;
-	border-radius: 0.7rem;
-	padding: 0.55rem 0.7rem;
+	border: 1px solid rgba(239, 68, 68, 0.25);
+	background: rgba(254, 226, 226, 0.6);
+	color: #991b1b;
+	border-radius: var(--radius-sm);
+	padding: 0.6rem 0.75rem;
 }
 
 @media (max-width: 1200px) {

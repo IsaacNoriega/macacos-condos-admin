@@ -5,11 +5,13 @@
 .calendar-shell {
   display: grid;
   gap: 1rem;
-  padding: clamp(0.9rem, 1.8vw, 1.2rem);
-  border: 1px solid #d5e4e8;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 12px 30px rgba(8, 31, 41, 0.08);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
   max-width: 1320px;
   margin: 0 auto;
 }
@@ -24,12 +26,13 @@
 
 .calendar-header h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
+  color: var(--text-heading);
 }
 
 .calendar-header p {
   margin: 0.25rem 0 0;
-  color: #4f6f78;
+  color: var(--text-muted);
 }
 
 .calendar-nav {
@@ -39,18 +42,35 @@
 }
 
 button {
-  border: 1px solid #0a8c9b;
-  background: #0a8c9b;
-  color: #fff;
-  border-radius: 999px;
-  padding: 0.45rem 0.85rem;
+  background: var(--color-primary-gradient);
+  color: var(--text-on-primary);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 0.5rem 0.9rem;
   cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 4px 12px var(--color-primary-glow);
+  transition: var(--transition-smooth);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--color-primary-glow-hover);
 }
 
 button.secondary {
-  background: #fff;
-  border-color: #99b6bd;
-  color: #255362;
+  background: var(--glass-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--glass-border);
+  color: var(--color-primary);
+  box-shadow: none;
+}
+
+button.secondary:hover {
+  background: var(--glass-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--glass-drop-shadow);
 }
 
 .calendar-filters {
@@ -64,16 +84,13 @@ button.secondary {
   display: grid;
   gap: 0.3rem;
   font-weight: 600;
-  color: #244d59;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 
 .calendar-filters input,
 .calendar-filters select {
-  border: 1px solid #bfd6dc;
-  border-radius: 0.65rem;
-  padding: 0.5rem 0.6rem;
-  font: inherit;
-  background: #f7fcfd;
+  width: 100%;
 }
 
 .calendar-grid {
@@ -85,17 +102,26 @@ button.secondary {
 }
 
 .day-column {
-  border: 1px solid #d6e6ea;
-  border-radius: 0.9rem;
-  background: #fff;
-  padding: 0.65rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.75rem;
   min-height: 240px;
+  transition: var(--transition-smooth);
+}
+
+.day-column:hover {
+  background: var(--glass-bg-hover);
+  box-shadow: var(--glass-drop-shadow);
 }
 
 .day-column h3 {
   margin: 0;
-  font-size: 0.95rem;
-  color: #274f5a;
+  font-size: 0.92rem;
+  color: var(--text-heading);
+  font-weight: 700;
 }
 
 .day-column ul {
@@ -107,27 +133,34 @@ button.secondary {
 }
 
 .day-column li {
-  border: 1px solid #d4e7eb;
-  border-left: 4px solid #0b8ea0;
+  border: 1px solid var(--glass-border);
+  border-left: 4px solid var(--color-primary);
   border-radius: 0.7rem;
-  padding: 0.45rem;
-  background: #f6fcfd;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.55);
+  transition: var(--transition-fast);
+}
+
+.day-column li:hover {
+  background: rgba(255, 255, 255, 0.75);
+  transform: translateX(2px);
 }
 
 .day-column li.cancelled {
-  border-left-color: #8c2f39;
-  background: #fff7f7;
+  border-left-color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .day-column li.finished {
-  border-left-color: #8a6d1f;
-  background: #fffaf0;
+  border-left-color: #d97706;
+  background: rgba(254, 243, 199, 0.4);
 }
 
 .amenity {
   margin: 0;
   font-weight: 700;
-  color: #244d59;
+  color: var(--text-heading);
+  font-size: 0.88rem;
 }
 
 .time,
@@ -136,25 +169,26 @@ button.secondary {
 .loading,
 .error {
   margin: 0.15rem 0 0;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
 }
 
 .status {
   text-transform: capitalize;
-  color: #396671;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .day-column li.finished .status {
-  color: #8a6d1f;
+  color: #d97706;
 }
 
 .empty,
 .loading {
-  color: #5f7a82;
+  color: var(--text-muted);
 }
 
 .error {
-  color: #9f1c29;
+  color: var(--color-danger);
 }
 
 .crud-section {
