@@ -3,6 +3,7 @@
   gap: 1rem;
   max-width: 1320px;
   margin: 0 auto;
+  padding-bottom: 2rem;
 }
 
 header {
@@ -116,14 +117,16 @@ select {
 }
 
 .btn.secondary {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: rgba(14, 165, 233, 0.06);
+  border: 1px solid rgba(14, 165, 233, 0.25);
   color: var(--color-primary);
   backdrop-filter: blur(4px);
+  font-weight: 700;
 }
 
 .btn.secondary:hover {
-  background: var(--glass-bg-hover);
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(14, 165, 233, 0.4);
 }
 
 .msg {
@@ -148,6 +151,7 @@ select {
 .table-wrap {
   overflow: auto;
   border-radius: var(--radius-md);
+  max-height: 72vh;
 }
 
 table {
