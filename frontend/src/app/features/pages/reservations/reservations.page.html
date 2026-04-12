@@ -16,12 +16,7 @@
     @if (isSuperadmin()) {
     <label>
       Tenant
-      <select formControlName="tenantId">
-        <option value="">Todos</option>
-        @for (tenant of tenants(); track tenant._id) {
-        <option [value]="tenant._id">{{ tenant.name }}</option>
-        }
-      </select>
+      <app-fancy-select formControlName="tenantId" [placeholder]="'Todos'" [options]="tenantFilterOptions()" />
     </label>
     }
 
@@ -32,12 +27,7 @@
 
     <label>
       Amenidad
-      <select formControlName="amenity">
-        <option value="">Todas</option>
-        @for (amenity of amenities(); track amenity) {
-        <option [value]="amenity">{{ amenity }}</option>
-        }
-      </select>
+      <app-fancy-select formControlName="amenity" [placeholder]="'Todas'" [options]="amenityFilterOptions()" />
     </label>
 
     <button type="submit">Actualizar</button>

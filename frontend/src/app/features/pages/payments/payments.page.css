@@ -29,6 +29,7 @@ header {
   padding: clamp(1.2rem, 2vw, 1.5rem);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
+  align-content: start;
 }
 
 .form-grid {
@@ -51,7 +52,8 @@ header {
 }
 
 .field-title {
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 0.82rem;
   line-height: 1.2;
   color: var(--text-secondary);
 }
@@ -59,15 +61,28 @@ header {
 label {
   display: grid;
   gap: 0.3rem;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: 700;
 }
 
 input,
 select {
   width: 100%;
   box-sizing: border-box;
+  min-height: 2.45rem;
+  padding: 0.62rem 0.78rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(14, 165, 233, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+input:focus,
+select:focus {
+  border-color: rgba(14, 165, 233, 0.45);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
+  background: #ffffff;
 }
 
 .staff-form-grid input,
@@ -117,16 +132,15 @@ select {
 }
 
 .btn.secondary {
-  background: rgba(14, 165, 233, 0.06);
-  border: 1px solid rgba(14, 165, 233, 0.25);
-  color: var(--color-primary);
-  backdrop-filter: blur(4px);
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  color: #0c4a6e;
   font-weight: 700;
 }
 
 .btn.secondary:hover {
-  background: rgba(14, 165, 233, 0.12);
-  border-color: rgba(14, 165, 233, 0.4);
+  background: linear-gradient(135deg, #bae6fd, #bfdbfe);
+  border-color: rgba(14, 165, 233, 0.42);
 }
 
 .msg {

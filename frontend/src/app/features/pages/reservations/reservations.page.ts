@@ -6,6 +6,7 @@ import { CrudConfig, Reservation } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CrudPageComponent } from '../../shared/crud/crud-page.component';
+import { FancySelectComponent } from '../../shared/form/fancy-select.component';
 
 interface TenantOption {
   _id: string;
@@ -28,7 +29,7 @@ interface CalendarDay {
 @Component({
   selector: 'app-reservations-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CrudPageComponent],
+  imports: [CommonModule, ReactiveFormsModule, CrudPageComponent, FancySelectComponent],
   templateUrl: './reservations.page.html',
   styleUrl: './reservations.page.css',
 })
@@ -54,6 +55,9 @@ export class ReservationsPage implements OnInit, OnDestroy {
     const unique = new Set(this.reservations().map((item) => item.amenity).filter(Boolean));
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
   });
+
+  readonly tenantFilterOptions = computed(() => this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })));
+  readonly amenityFilterOptions = computed(() => this.amenities().map((amenity) => ({ label: amenity, value: amenity })));
 
   readonly calendarDays = computed<CalendarDay[]>(() => {
     const weekStartRaw = this.calendarForm.get('weekStart')?.value || this.toDateInputValue(this.startOfWeek(new Date()));

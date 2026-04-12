@@ -22,12 +22,7 @@
         @if (isSuperadmin()) {
         <label>
           <span class="field-title">Tenant *</span>
-          <select formControlName="tenantId" (change)="onTenantChange()">
-            <option value="">Selecciona...</option>
-            @for (tenant of tenants(); track tenant.value) {
-            <option [value]="tenant.value">{{ tenant.label }}</option>
-            }
-          </select>
+          <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona...'" [options]="tenants()" (selectionChange)="onTenantChange()" />
         </label>
         }
 
@@ -35,12 +30,7 @@
         @if (isSuperadmin() || isAdmin()) {
         <label>
           <span class="field-title">Unidad *</span>
-          <select formControlName="unitId" (change)="onUserOrUnitChange()">
-            <option value="">Selecciona...</option>
-            @for (unit of units(); track unit.value) {
-            <option [value]="unit.value">{{ unit.label }}</option>
-            }
-          </select>
+          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona...'" [options]="units()" (selectionChange)="onUserOrUnitChange()" />
         </label>
         }
 
@@ -48,25 +38,13 @@
         @if (isSuperadmin() || isAdmin()) {
         <label>
           <span class="field-title">Usuario *</span>
-          <select formControlName="userId" (change)="onUserOrUnitChange()">
-            <option value="">Selecciona...</option>
-            @for (user of users(); track user.value) {
-            <option [value]="user.value">{{ user.label }}</option>
-            }
-          </select>
+          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona...'" [options]="users()" (selectionChange)="onUserOrUnitChange()" />
         </label>
         }
 
         <label>
           <span class="field-title">Cargo *</span>
-          <select formControlName="chargeId" (change)="onChargeSelected()">
-            <option value="">Selecciona...</option>
-            @for (charge of visibleCharges(); track charge._id) {
-            <option [value]="charge._id">
-              {{ charge.description }} - {{ getChargeTotalAmount(charge) | currency : 'MXN' }}
-            </option>
-            }
-          </select>
+          <app-fancy-select formControlName="chargeId" [placeholder]="'Selecciona...'" [options]="chargeOptions()" (selectionChange)="onChargeSelected()" />
         </label>
 
         <label>

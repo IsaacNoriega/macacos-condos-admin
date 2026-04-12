@@ -5,6 +5,7 @@ import { firstValueFrom, finalize } from 'rxjs';
 import { Payment, PaymentProofUploadResponse, StripeCheckoutResponse } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { FancySelectComponent } from '../../shared/form/fancy-select.component';
 
 interface SelectOption {
   label: string;
@@ -25,7 +26,7 @@ interface PaymentCharge {
 @Component({
   selector: 'app-payments-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe, CurrencyPipe],
+  imports: [CommonModule, ReactiveFormsModule, DatePipe, CurrencyPipe, FancySelectComponent],
   templateUrl: './payments.page.html',
   styleUrl: './payments.page.css',
 })
@@ -116,6 +117,13 @@ export class PaymentsPage implements OnInit {
       return true;
     });
   });
+
+  readonly chargeOptions = computed(() =>
+    this.visibleCharges().map((charge) => ({
+      value: charge._id,
+      label: `${charge.description} - ${new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(this.getChargeTotalAmount(charge))}`,
+    }))
+  );
 
   readonly paymentForm = this.fb.group({
     tenantId: [''],
