@@ -8,12 +8,17 @@ vi.mock('../../utils/logger', () => ({
 }));
 
 vi.mock('./service', () => ({
+  findAllReservations: vi.fn(),
   findReservationsByTenant: vi.fn(),
   findReservationByIdInTenant: vi.fn(),
   findReservationConflict: vi.fn(),
   createReservationInTenant: vi.fn(),
   updateReservationInTenant: vi.fn(),
   deleteReservationInTenant: vi.fn(),
+  serializeReservation: vi.fn((reservation: any) => ({
+    ...reservation,
+    currentStatus: 'activa',
+  })),
 }));
 
 import { createReservation, getAllReservations } from './controller';
@@ -37,7 +42,7 @@ describe('reservations controller', () => {
     expect(findReservationsByTenant).toHaveBeenCalledWith('tenant-1');
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      reservations: [{ _id: 'r1', amenity: 'Pool' }],
+      reservations: [{ _id: 'r1', amenity: 'Pool', currentStatus: 'activa' }],
     });
     expect(next).not.toHaveBeenCalled();
   });
