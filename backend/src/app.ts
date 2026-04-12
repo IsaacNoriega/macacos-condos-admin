@@ -23,8 +23,13 @@ import logger from './utils/logger';
 const app = express();
 
 // Middleware de seguridad
-app.use(helmet());
-app.use(cors());
+app.use(helmet({ crossOriginResourcePolicy: false }));
+app.use(cors({
+  origin: ['http://localhost:4200', 'https://delightful-bay-02eed360f.2.azurestaticapps.net'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id']
+}));
 
 // Middleware de logging
 app.use(morgan('combined'));
