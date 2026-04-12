@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserRole } from '../../../core/api.models';
 import { AuthService } from '../../../core/services/auth.service';
@@ -37,9 +37,10 @@ const NAV_ICONS = {
   templateUrl: './shell.page.html',
   styleUrl: './shell.page.css',
 })
-export class ShellPage {
+export class ShellPage implements OnInit {
   readonly menuOpen = signal(false);
   readonly sidebarCollapsed = signal(false);
+  readonly darkMode = signal(false);
 
   private readonly navSections: NavSection[] = [
     {
@@ -117,6 +118,34 @@ export class ShellPage {
     readonly auth: AuthService,
     private readonly router: Router
   ) {}
+
+  ngOnInit(): void {
+    const savedTheme = localStorage.getItem('macacos-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    this.darkMode.set(isDark);
+    this.applyTheme(isDark, false);
+  }
+
+  toggleTheme(): void {
+    const newValue = !this.darkMode();
+    this.darkMode.set(newValue);
+    this.applyTheme(newValue, true);
+    localStorage.setItem('macacos-theme', newValue ? 'dark' : 'light');
+  }
+
+  private applyTheme(isDark: boolean, animate: boolean): void {
+    const html = document.documentElement;
+    if (animate) {
+      html.classList.add('theme-transitioning');
+      setTimeout(() => html.classList.remove('theme-transitioning'), 600);
+    }
+    if (isDark) {
+      html.setAttribute('data-theme', 'dark');
+    } else {
+      html.removeAttribute('data-theme');
+    }
+  }
 
   toggleMenu(): void {
     this.menuOpen.update((current) => !current);

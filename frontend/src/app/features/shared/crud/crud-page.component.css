@@ -128,7 +128,7 @@ table {
 
 th,
 td {
-  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  border-bottom: 1px solid var(--table-border);
   padding: 0.55rem 0.5rem;
   text-align: left;
   vertical-align: top;
@@ -137,7 +137,7 @@ td {
 th {
   position: sticky;
   top: 0;
-  background: rgba(248, 250, 252, 0.8);
+  background: var(--table-header-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 1;
@@ -153,7 +153,7 @@ tr {
 }
 
 tr:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--table-row-hover);
 }
 
 .row-actions {
@@ -306,7 +306,7 @@ tr:hover {
   max-height: 62vh;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-bg);
 }
 
 .crud-page.tenants-skin table {
@@ -319,7 +319,7 @@ tr:hover {
 }
 
 .crud-page.tenants-skin th {
-  background: rgba(248, 250, 252, 0.8);
+  background: var(--table-header-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: var(--text-secondary);

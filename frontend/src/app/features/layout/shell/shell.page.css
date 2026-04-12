@@ -208,12 +208,12 @@ footer {
 	border-radius: 50%;
 	display: grid;
 	place-items: center;
-	background: linear-gradient(180deg, #dfe8ea, #cfdadd);
-	color: #2f4852;
+	background: var(--glass-bg-active);
+	color: var(--text-heading);
 	font-weight: 800;
 	font-size: 0.9rem;
 	letter-spacing: 0.04em;
-	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+	box-shadow: inset 0 0 0 1px var(--glass-border);
 }
 
 .profile-card p {
@@ -228,6 +228,40 @@ footer {
 	text-transform: uppercase;
 	font-size: 0.72rem;
 	letter-spacing: 0.06em;
+}
+
+.footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+.theme-toggle {
+	width: 2.15rem;
+	height: 2.15rem;
+	border: 1px solid var(--glass-border);
+	border-radius: 999px;
+	background: var(--glass-bg);
+	color: var(--text-muted);
+	display: inline-grid;
+	place-items: center;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: var(--transition-smooth);
+	backdrop-filter: blur(4px);
+	padding: 0;
+}
+
+.theme-toggle:hover {
+	background: var(--glass-bg-hover);
+	transform: scale(1.08);
+	color: var(--color-primary);
+	box-shadow: 0 0 12px var(--color-primary-glow);
+}
+
+.theme-toggle svg {
+	width: 1.05rem;
+	height: 1.05rem;
 }
 
 .logout-button {
@@ -352,14 +386,30 @@ footer {
 	font-size: 0.72rem;
 }
 
+.shell.sidebar-collapsed .footer-actions {
+	flex-direction: column;
+	gap: 0.35rem;
+	align-items: center;
+}
+
+.shell.sidebar-collapsed .theme-toggle {
+	width: 2rem;
+	height: 2rem;
+}
+
+.shell.sidebar-collapsed .theme-toggle svg {
+	width: 0.95rem;
+	height: 0.95rem;
+}
+
 .shell.sidebar-collapsed .logout-button {
 	justify-content: center;
 	width: 2.1rem;
 	height: 2.1rem;
 	border-radius: 999px;
 	margin: 0 auto;
-	background: rgba(245, 248, 249, 0.9);
-	box-shadow: inset 0 0 0 1px rgba(181, 204, 210, 0.45);
+	background: var(--glass-bg);
+	box-shadow: inset 0 0 0 1px var(--glass-border);
 }
 
 .shell.sidebar-collapsed .logout-button span[aria-hidden='true'] {

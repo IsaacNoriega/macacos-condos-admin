@@ -59,6 +59,84 @@
 	--input-border: rgba(255, 255, 255, 0.55);
 	--input-border-focus: #38bdf8;
 	--input-focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.2);
+
+	/* ── Body background ── */
+	--body-bg:
+		radial-gradient(circle at 10% 20%, #e0f2fe 0%, transparent 40%),
+		radial-gradient(circle at 90% 80%, #fef3c7 0%, transparent 40%),
+		radial-gradient(circle at 50% 50%, #eff6ff 0%, transparent 60%),
+		linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+
+	/* ── Hero ── */
+	--hero-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.85), rgba(2, 132, 199, 0.95));
+	--hero-shadow: 0 10px 30px rgba(2, 132, 199, 0.2);
+
+	/* ── Table ── */
+	--table-header-bg: rgba(248, 250, 252, 0.8);
+	--table-border: rgba(226, 232, 240, 0.6);
+	--table-row-hover: rgba(255, 255, 255, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   🌙 DARK MODE — Variable Overrides
+   ═══════════════════════════════════════════ */
+[data-theme="dark"] {
+	/* ── Glass surfaces ── */
+	--glass-bg: rgba(30, 41, 59, 0.6);
+	--glass-bg-hover: rgba(30, 41, 59, 0.75);
+	--glass-bg-active: rgba(30, 41, 59, 0.85);
+	--glass-border: rgba(100, 116, 139, 0.3);
+	--glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+	--glass-drop-shadow: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+
+	/* ── Primary palette ── */
+	--color-primary: #38bdf8;
+	--color-primary-dark: #0ea5e9;
+	--color-primary-gradient: linear-gradient(135deg, #38bdf8, #0ea5e9);
+	--color-primary-glow: rgba(56, 189, 248, 0.2);
+	--color-primary-glow-hover: rgba(56, 189, 248, 0.35);
+
+	/* ── Semantic colors ── */
+	--color-danger: #f87171;
+	--color-danger-bg: rgba(127, 29, 29, 0.3);
+	--color-danger-border: rgba(248, 113, 113, 0.25);
+	--color-success: #34d399;
+	--color-success-bg: rgba(6, 78, 59, 0.3);
+	--color-success-border: rgba(52, 211, 153, 0.3);
+	--color-warning-bg: rgba(120, 53, 15, 0.3);
+	--color-warning-text: #fcd34d;
+	--color-info-bg: rgba(30, 58, 138, 0.3);
+	--color-info-text: #93c5fd;
+
+	/* ── Text hierarchy ── */
+	--text-heading: #f1f5f9;
+	--text-primary: #e2e8f0;
+	--text-secondary: #94a3b8;
+	--text-muted: #64748b;
+	--text-on-primary: #ffffff;
+
+	/* ── Input tokens ── */
+	--input-bg: rgba(30, 41, 59, 0.5);
+	--input-bg-focus: rgba(30, 41, 59, 0.8);
+	--input-border: rgba(100, 116, 139, 0.35);
+	--input-border-focus: #38bdf8;
+	--input-focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.15);
+
+	/* ── Body background ── */
+	--body-bg:
+		radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+		radial-gradient(circle at 90% 80%, rgba(251, 191, 36, 0.05) 0%, transparent 40%),
+		radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.06) 0%, transparent 60%),
+		linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+
+	/* ── Hero ── */
+	--hero-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(2, 132, 199, 0.35));
+	--hero-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+	/* ── Table ── */
+	--table-header-bg: rgba(30, 41, 59, 0.85);
+	--table-border: rgba(100, 116, 139, 0.2);
+	--table-row-hover: rgba(255, 255, 255, 0.04);
 }
 
 /* ── Base resets ── */
@@ -70,13 +148,10 @@ body {
 	min-height: 100dvh;
 	overflow-x: hidden;
 	font-family: var(--font-primary);
-	background:
-		radial-gradient(circle at 10% 20%, #e0f2fe 0%, transparent 40%),
-		radial-gradient(circle at 90% 80%, #fef3c7 0%, transparent 40%),
-		radial-gradient(circle at 50% 50%, #eff6ff 0%, transparent 60%),
-		linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+	background: var(--body-bg);
 	background-attachment: fixed;
 	color: var(--text-primary);
+	transition: background 0.5s ease, color 0.4s ease;
 }
 
 * {
@@ -118,4 +193,12 @@ button {
 	cursor: pointer;
 	border: none;
 	transition: var(--transition-smooth);
+}
+
+/* ── Theme transition helper ── */
+html.theme-transitioning,
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+	transition: background 0.5s ease, background-color 0.5s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease !important;
 }
