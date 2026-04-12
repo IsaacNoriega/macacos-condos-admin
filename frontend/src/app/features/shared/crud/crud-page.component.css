@@ -1,6 +1,6 @@
 .crud-page {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
   max-width: 1320px;
   margin: 0 auto;
 }
@@ -22,7 +22,7 @@
 .grid-layout {
   display: grid;
   grid-template-columns: minmax(320px, 410px) 1fr;
-  gap: 1rem;
+  gap: 1.1rem;
 }
 
 .card {
@@ -30,10 +30,27 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: clamp(1.2rem, 2vw, 1.5rem);
+  border-radius: 1.6rem;
+  padding: clamp(1.25rem, 2vw, 1.6rem);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
+  opacity: 0.7;
+}
+
+.card:hover {
+  transform: translateY(-2px) scale(1.004);
+  box-shadow: 0 24px 52px -28px rgba(14, 165, 233, 0.3), var(--glass-shadow);
+  background: var(--glass-bg-hover);
 }
 
 .form-card h2,
@@ -42,6 +59,14 @@
   font-size: 1.05rem;
   letter-spacing: 0.01em;
   color: var(--text-heading);
+}
+
+.form-card {
+  overflow: visible;
+}
+
+.form-card::before {
+  display: none;
 }
 
 .form-grid {
@@ -77,11 +102,11 @@
 .btn {
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
-  padding: 0.5rem 0.85rem;
+  padding: 0.55rem 0.92rem;
   font: inherit;
   cursor: pointer;
   font-weight: 600;
-  transition: var(--transition-smooth);
+  transition: all 0.3s ease;
 }
 
 .btn:disabled {
@@ -97,7 +122,8 @@
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.015);
+  filter: brightness(1.04);
   box-shadow: 0 6px 18px var(--color-primary-glow-hover);
 }
 
@@ -110,7 +136,8 @@
 
 .btn-ghost:hover {
   background: var(--glass-bg-hover);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
   box-shadow: var(--glass-drop-shadow);
 }
 
@@ -154,6 +181,7 @@ tr {
 
 tr:hover {
   background: var(--table-row-hover);
+  filter: brightness(1.03);
 }
 
 .row-actions {
@@ -173,7 +201,8 @@ tr:hover {
 
 .btn-mini:hover {
   background: var(--glass-bg-hover);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.03);
+  filter: brightness(1.05);
   box-shadow: var(--glass-drop-shadow);
 }
 
@@ -214,6 +243,89 @@ tr:hover {
   .grid-layout {
     grid-template-columns: 1fr;
   }
+}
+
+/* ═══════════════════════════════════════
+   RESIDENTS FORM SKIN — Reservations/Tenants/Charges/Maintenance
+   ═══════════════════════════════════════ */
+.crud-page.residents-form-skin .form-grid {
+  gap: 0.7rem;
+  align-content: start;
+}
+
+.crud-page.residents-form-skin .field {
+  gap: 0.3rem;
+}
+
+.crud-page.residents-form-skin .field span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.crud-page.residents-form-skin .field input,
+.crud-page.residents-form-skin .field select,
+.crud-page.residents-form-skin .field textarea {
+  min-height: 2.45rem;
+  padding: 0.62rem 0.78rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(14, 165, 233, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.crud-page.residents-form-skin .field input:focus,
+.crud-page.residents-form-skin .field select:focus,
+.crud-page.residents-form-skin .field textarea:focus {
+  border-color: rgba(14, 165, 233, 0.45);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
+  background: #ffffff;
+}
+
+.crud-page.residents-form-skin .field textarea {
+  min-height: 5.1rem;
+  resize: vertical;
+}
+
+.crud-page.residents-form-skin .field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.15rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #0284c7 50%),
+    linear-gradient(135deg, #0284c7 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% - 3px),
+    calc(100% - 10px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.crud-page.residents-form-skin .btn {
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+
+.crud-page.residents-form-skin .btn-primary {
+  background: var(--color-primary-gradient);
+  color: var(--text-on-primary);
+  border: none;
+  box-shadow: 0 4px 14px var(--color-primary-glow);
+}
+
+.crud-page.residents-form-skin .btn-primary:hover {
+  box-shadow: 0 6px 18px var(--color-primary-glow-hover);
+}
+
+.crud-page.residents-form-skin .btn-ghost {
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  color: #0c4a6e;
+}
+
+.crud-page.residents-form-skin .btn-ghost:hover {
+  background: linear-gradient(135deg, #bae6fd, #bfdbfe);
 }
 
 /* ═══════════════════════════════════════

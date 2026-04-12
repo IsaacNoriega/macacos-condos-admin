@@ -4,11 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 import { CrudConfig, CrudField, CrudFieldOption } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
+import { FancySelectComponent } from '../form/fancy-select.component';
 
 @Component({
   selector: 'app-crud-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FancySelectComponent],
   templateUrl: './crud-page.component.html',
   styleUrl: './crud-page.component.css',
 })
@@ -56,17 +57,15 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   readonly canDelete = computed(() => this.config.allowDelete !== false);
   readonly hasRowActions = computed(() => this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)));
 
-  readonly isTenantsView = computed(() => this.config.endpoint === '/tenants');
+  readonly isResidentsFormSkin = computed(() =>
+    ['/reservations', '/tenants', '/charges', '/maintenance'].includes(this.config.endpoint)
+  );
 
   readonly createCardTitle = computed(() => {
-    if (this.isTenantsView()) {
-      return this.editingId() ? 'Editar Condominio' : 'Añadir Nuevo Condominio';
-    }
-
     return this.editingId() ? 'Editar registro' : 'Nuevo registro';
   });
 
-  readonly tableCardTitle = computed(() => (this.isTenantsView() ? 'Condominios Registrados' : 'Registros'));
+  readonly tableCardTitle = computed(() => 'Registros');
 
   ngOnInit(): void {
     this.buildForm();
@@ -262,6 +261,10 @@ export class CrudPageComponent implements OnInit, OnDestroy {
     }
 
     return field.options || [];
+  }
+
+  getFieldOptionsWithPlaceholder(field: CrudField): CrudFieldOption[] {
+    return [{ label: 'Selecciona...', value: '' }, ...this.getFieldOptions(field)];
   }
 
   onSelectChange(field: CrudField, rawValue: string): void {
