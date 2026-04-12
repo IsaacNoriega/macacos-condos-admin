@@ -2,20 +2,19 @@
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 15% 8%, #8edee9 0, transparent 34%),
-    radial-gradient(circle at 85% 95%, #ffd0a9 0, transparent 35%),
-    linear-gradient(140deg, #edfafd, #f8feff 45%, #fff7f0 100%);
   padding: clamp(1rem, 2vw, 1.8rem);
 }
 
 .card {
   width: min(540px, 100%);
-  border: 1px solid #d6e8ed;
-  border-radius: 1.2rem;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(5px);
-  box-shadow: 0 20px 50px rgba(19, 52, 62, 0.16);
-  padding: clamp(1rem, 2vw, 1.4rem);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
+  padding: clamp(1.5rem, 3vw, 2rem);
+  transition: var(--transition-smooth);
 }
 
 header h1 {
@@ -36,17 +35,22 @@ header p {
 }
 
 .tabs button {
-  border: 1px solid #c9dde2;
-  background: #f6fcfd;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 999px;
   padding: 0.5rem;
   cursor: pointer;
+  transition: var(--transition-smooth);
+  color: #64748b;
+  font-weight: 500;
 }
 
-.tabs button.active {
-  border-color: #0b8c9d;
-  color: #0b8c9d;
+.tabs button.active, .tabs button:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.8);
+  color: #0284c7;
   font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .form-grid {
@@ -61,25 +65,37 @@ label {
 }
 
 input {
-  border: 1px solid #c0d8df;
-  border-radius: 0.65rem;
-  padding: 0.55rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 0.75rem;
+  padding: 0.65rem;
   font: inherit;
+  background: rgba(255, 255, 255, 0.5);
+  transition: var(--transition-smooth);
 }
 
 input:focus {
-  outline: 2px solid #55b8c5;
-  border-color: #55b8c5;
+  outline: none;
+  border-color: #38bdf8;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
 button.primary {
   border: none;
   border-radius: 999px;
-  padding: 0.62rem;
-  background: linear-gradient(90deg, #0c7f90, #0ba5b4);
+  padding: 0.75rem;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
   color: #fff;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+  transition: var(--transition-smooth);
+  margin-top: 0.5rem;
+}
+
+button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
 }
 
 @media (max-width: 640px) {

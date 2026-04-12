@@ -1,10 +1,41 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+/* Global Glassmorphism Variables */
+:root {
+	--glass-bg: rgba(255, 255, 255, 0.45);
+	--glass-bg-hover: rgba(255, 255, 255, 0.65);
+	--glass-bg-active: rgba(255, 255, 255, 0.75);
+	--glass-border: rgba(255, 255, 255, 0.6);
+	--glass-shadow: 0 10px 40px -10px rgba(18, 48, 66, 0.15);
+	--glass-blur: blur(16px);
+  --glass-drop-shadow: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
+  --font-primary: 'Outfit', system-ui, -apple-system, sans-serif;
+  --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
 
 html,
 body {
 	margin: 0;
 	padding: 0;
 	width: 100%;
-	min-height: 100%;
+	min-height: 100dvh;
 	overflow-x: hidden;
+  font-family: var(--font-primary);
+  background: 
+    radial-gradient(circle at 10% 20%, #e0f2fe 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, #fef3c7 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, #eff6ff 0%, transparent 60%),
+    linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background-attachment: fixed;
+  color: #1e293b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
+  font-weight: 700;
+  color: #0f172a;
 }
