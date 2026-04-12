@@ -121,8 +121,7 @@ export class ShellPage implements OnInit {
 
   ngOnInit(): void {
     const savedTheme = localStorage.getItem('macacos-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+    const isDark = savedTheme === 'dark';
     this.darkMode.set(isDark);
     this.applyTheme(isDark, false);
   }

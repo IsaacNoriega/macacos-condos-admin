@@ -5,20 +5,20 @@
    ═══════════════════════════════════════════ */
 :root {
 	/* ── Glass surfaces ── */
-	--glass-bg: rgba(255, 255, 255, 0.45);
-	--glass-bg-hover: rgba(255, 255, 255, 0.65);
-	--glass-bg-active: rgba(255, 255, 255, 0.75);
-	--glass-border: rgba(255, 255, 255, 0.6);
-	--glass-shadow: 0 10px 40px -10px rgba(18, 48, 66, 0.15);
-	--glass-blur: blur(16px);
-	--glass-drop-shadow: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.05));
+	--glass-bg: rgba(255, 255, 255, 0.74);
+	--glass-bg-hover: rgba(255, 255, 255, 0.84);
+	--glass-bg-active: rgba(255, 255, 255, 0.9);
+	--glass-border: rgba(148, 163, 184, 0.36);
+	--glass-shadow: 0 22px 46px -24px rgba(15, 23, 42, 0.28), 0 10px 22px -14px rgba(148, 163, 184, 0.42);
+	--glass-blur: blur(24px) saturate(165%);
+	--glass-drop-shadow: drop-shadow(0 12px 24px rgba(15, 23, 42, 0.2));
 
 	/* ── Primary palette ── */
-	--color-primary: #0ea5e9;
-	--color-primary-dark: #0284c7;
-	--color-primary-gradient: linear-gradient(135deg, #0ea5e9, #0284c7);
-	--color-primary-glow: rgba(14, 165, 233, 0.25);
-	--color-primary-glow-hover: rgba(14, 165, 233, 0.35);
+	--color-primary: #60a5fa;
+	--color-primary-dark: #3b82f6;
+	--color-primary-gradient: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+	--color-primary-glow: rgba(96, 165, 250, 0.28);
+	--color-primary-glow-hover: rgba(167, 139, 250, 0.34);
 
 	/* ── Semantic colors ── */
 	--color-danger: #ef4444;
@@ -34,7 +34,7 @@
 
 	/* ── Text hierarchy ── */
 	--text-heading: #0f172a;
-	--text-primary: #1e293b;
+	--text-primary: #0f172a;
 	--text-secondary: #475569;
 	--text-muted: #64748b;
 	--text-on-primary: #ffffff;
@@ -43,7 +43,7 @@
 	--font-primary: 'Outfit', system-ui, -apple-system, sans-serif;
 
 	/* ── Transitions ── */
-	--transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+	--transition-smooth: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 	--transition-fast: all 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 
 	/* ── Spacing ── */
@@ -54,22 +54,22 @@
 	--radius-pill: 999px;
 
 	/* ── Input tokens ── */
-	--input-bg: rgba(255, 255, 255, 0.45);
-	--input-bg-focus: rgba(255, 255, 255, 0.85);
-	--input-border: rgba(255, 255, 255, 0.55);
+	--input-bg: rgba(255, 255, 255, 0.88);
+	--input-bg-focus: #ffffff;
+	--input-border: rgba(148, 163, 184, 0.44);
 	--input-border-focus: #38bdf8;
 	--input-focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.2);
 
 	/* ── Body background ── */
 	--body-bg:
-		radial-gradient(circle at 10% 20%, #e0f2fe 0%, transparent 40%),
-		radial-gradient(circle at 90% 80%, #fef3c7 0%, transparent 40%),
-		radial-gradient(circle at 50% 50%, #eff6ff 0%, transparent 60%),
-		linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+		radial-gradient(1100px circle at -10% -14%, rgba(96, 165, 250, 0.2) 0%, transparent 46%),
+		radial-gradient(980px circle at 112% -2%, rgba(167, 139, 250, 0.2) 0%, transparent 46%),
+		radial-gradient(900px circle at 90% 104%, rgba(244, 114, 182, 0.16) 0%, transparent 48%),
+		linear-gradient(145deg, #eef4ff 0%, #f8fafc 100%);
 
 	/* ── Hero ── */
-	--hero-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.85), rgba(2, 132, 199, 0.95));
-	--hero-shadow: 0 10px 30px rgba(2, 132, 199, 0.2);
+	--hero-bg: linear-gradient(135deg, rgba(96, 165, 250, 0.62), rgba(167, 139, 250, 0.58), rgba(244, 114, 182, 0.56));
+	--hero-shadow: 0 16px 34px rgba(96, 165, 250, 0.24);
 
 	/* ── Table ── */
 	--table-header-bg: rgba(248, 250, 252, 0.8);
@@ -82,12 +82,12 @@
    ═══════════════════════════════════════════ */
 [data-theme="dark"] {
 	/* ── Glass surfaces ── */
-	--glass-bg: rgba(30, 41, 59, 0.6);
-	--glass-bg-hover: rgba(30, 41, 59, 0.75);
-	--glass-bg-active: rgba(30, 41, 59, 0.85);
-	--glass-border: rgba(100, 116, 139, 0.3);
-	--glass-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
-	--glass-drop-shadow: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
+	--glass-bg: rgba(15, 23, 42, 0.38);
+	--glass-bg-hover: rgba(15, 23, 42, 0.5);
+	--glass-bg-active: rgba(15, 23, 42, 0.58);
+	--glass-border: rgba(148, 163, 184, 0.26);
+	--glass-shadow: 0 24px 46px -20px rgba(0, 0, 0, 0.58);
+	--glass-drop-shadow: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.36));
 
 	/* ── Primary palette ── */
 	--color-primary: #38bdf8;
@@ -124,10 +124,10 @@
 
 	/* ── Body background ── */
 	--body-bg:
-		radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
-		radial-gradient(circle at 90% 80%, rgba(251, 191, 36, 0.05) 0%, transparent 40%),
-		radial-gradient(circle at 50% 50%, rgba(30, 58, 138, 0.06) 0%, transparent 60%),
-		linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+		radial-gradient(980px circle at -10% 0%, rgba(56, 189, 248, 0.14) 0%, transparent 46%),
+		radial-gradient(840px circle at 110% 0%, rgba(14, 165, 233, 0.12) 0%, transparent 44%),
+		radial-gradient(760px circle at 85% 100%, rgba(167, 139, 250, 0.14) 0%, transparent 46%),
+		linear-gradient(145deg, #050b17 0%, #0b1323 48%, #0f172a 100%);
 
 	/* ── Hero ── */
 	--hero-bg: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(2, 132, 199, 0.35));
@@ -152,6 +152,33 @@ body {
 	background-attachment: fixed;
 	color: var(--text-primary);
 	transition: background 0.5s ease, color 0.4s ease;
+}
+
+body::before,
+body::after {
+	content: '';
+	position: fixed;
+	z-index: -1;
+	border-radius: 50%;
+	filter: blur(70px);
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+body::before {
+	width: 28rem;
+	height: 28rem;
+	top: -8rem;
+	right: -8rem;
+	background: radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 74%);
+}
+
+body::after {
+	width: 26rem;
+	height: 26rem;
+	bottom: -7rem;
+	left: -8rem;
+	background: radial-gradient(circle at center, rgba(245, 232, 212, 0.45) 0%, rgba(245, 232, 212, 0) 74%);
 }
 
 * {
@@ -185,6 +212,24 @@ textarea:focus {
 	background: var(--input-bg-focus);
 	border-color: var(--input-border-focus);
 	box-shadow: var(--input-focus-ring);
+}
+
+/* Improve native dropdown menu option styling across forms */
+select option {
+	background: #ffffff;
+	color: var(--text-primary);
+	padding: 0.5rem 0.65rem;
+}
+
+select option:checked,
+select option:selected {
+	background: linear-gradient(135deg, #0ea5e9, #0284c7);
+	color: #ffffff;
+}
+
+select option:hover {
+	background: #e0f2fe;
+	color: #0c4a6e;
 }
 
 /* ── Global button baseline ── */

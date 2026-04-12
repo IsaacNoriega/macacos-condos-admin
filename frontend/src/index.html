@@ -11,8 +11,7 @@
       // Instant theme load — prevents flash of incorrect theme
       (function() {
         var saved = localStorage.getItem('macacos-theme');
-        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (saved === 'dark' || (!saved && prefersDark)) {
+        if (saved === 'dark') {
           document.documentElement.setAttribute('data-theme', 'dark');
         }
       })();
