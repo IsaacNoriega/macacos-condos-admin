@@ -5,9 +5,10 @@ import { finalize } from 'rxjs';
 import { Tenant, Unit } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { FancySelectComponent } from '../../shared/form/fancy-select.component';
 
 type UnitType = 'departamento' | 'casa';
-type UnitFilter = 'all' | 'departamentos' | 'locales' | 'oficinas' | 'disponible' | 'ocupada';
+type UnitFilter = 'all' | 'departamentos' | 'locales' | 'disponible' | 'ocupada';
 
 interface UnitCard {
   id: string;
@@ -25,9 +26,13 @@ const FILTERS: Array<{ label: string; value: UnitFilter }> = [
   { label: 'Todas', value: 'all' },
   { label: 'Departamentos', value: 'departamentos' },
   { label: 'Locales', value: 'locales' },
-  { label: 'Oficinas', value: 'oficinas' },
   { label: 'Disponible', value: 'disponible' },
   { label: 'Ocupada', value: 'ocupada' },
+];
+
+const UNIT_TYPE_OPTIONS = [
+  { label: 'Departamento', value: 'departamento' },
+  { label: 'Casa', value: 'casa' },
 ];
 
 const AVATAR_BACKGROUNDS = [
@@ -43,7 +48,7 @@ const AVATAR_BACKGROUNDS = [
 @Component({
   selector: 'app-units-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FancySelectComponent],
   templateUrl: './units.page.html',
   styleUrl: './units.page.css',
 })
@@ -62,6 +67,7 @@ export class UnitsPage {
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
   readonly tenantOptions = computed(() => this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })));
+  readonly unitTypeOptions = UNIT_TYPE_OPTIONS;
   readonly form: FormGroup;
 
   readonly selectedUnit = computed(() => this.units().find((unit) => unit.id === this.selectedUnitId()) ?? null);
@@ -81,7 +87,6 @@ export class UnitsPage {
         activeFilter === 'all' ||
         (activeFilter === 'departamentos' && unit.type === 'departamento') ||
         (activeFilter === 'locales' && /local/i.test(`${unit.code} ${unit.description || ''}`)) ||
-        (activeFilter === 'oficinas' && /ofi|oficina/i.test(`${unit.code} ${unit.description || ''}`)) ||
         (activeFilter === 'disponible' && unit.isActive) ||
         (activeFilter === 'ocupada' && !unit.isActive);
 

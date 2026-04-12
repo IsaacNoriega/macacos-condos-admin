@@ -5,6 +5,7 @@ import { finalize } from 'rxjs';
 import { User as ApiUser, Tenant } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { FancySelectComponent } from '../../shared/form/fancy-select.component';
 
 type UserRole = 'superadmin' | 'admin' | 'residente' | 'familiar';
 type UserRoleFilter = 'all' | 'inquilinos' | 'residentes' | 'admin' | 'familiar' | 'superadmin';
@@ -35,6 +36,13 @@ const ROLE_FILTERS: RoleFilter[] = [
   { label: 'Superadmin', value: 'superadmin' },
 ];
 
+const ROLE_OPTIONS = [
+  { label: 'Superadmin', value: 'superadmin' },
+  { label: 'Admin', value: 'admin' },
+  { label: 'Residente', value: 'residente' },
+  { label: 'Familiar', value: 'familiar' },
+];
+
 const AVATAR_BACKGROUNDS = [
   'linear-gradient(180deg, #90b9d7, #4b7f9d)',
   'linear-gradient(180deg, #b6d5cf, #6d9d95)',
@@ -48,7 +56,7 @@ const AVATAR_BACKGROUNDS = [
 @Component({
   selector: 'app-users-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FancySelectComponent],
   templateUrl: './users.page.html',
   styleUrl: './users.page.css',
 })
@@ -67,6 +75,7 @@ export class UsersPage {
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
   readonly tenantOptions = computed(() => this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })));
+  readonly roleOptions = ROLE_OPTIONS;
   readonly form: FormGroup;
 
   readonly selectedUser = computed(() => this.users().find((user) => user.id === this.selectedUserId()) ?? null);
