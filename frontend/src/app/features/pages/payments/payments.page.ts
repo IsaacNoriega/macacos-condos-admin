@@ -144,9 +144,58 @@ export class PaymentsPage implements OnInit {
     if (this.isResidente()) {
       this.paymentForm.patchValue({ userId: this.userId() });
     }
-    
+
     this.loadOptions();
     this.loadPayments();
+    this.handleStripeReturn();
+  }
+
+  private handleStripeReturn(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const stripeResult = params.get('stripe');
+
+    const isSuccessReturn = stripeResult === 'success' || (!!sessionId && !stripeResult);
+    if (!sessionId || !isSuccessReturn) {
+      return;
+    }
+
+    this.api
+      .post<{ success: boolean; paid: boolean; message?: string }>(`/payments/checkout-session/${encodeURIComponent(sessionId)}/confirm`, {})
+      .subscribe({
+        next: (response) => {
+          if (response.paid) {
+            this.message.set('Pago confirmado con Stripe y registrado correctamente.');
+            this.error.set(null);
+            this.loadPayments();
+            this.loadOptions();
+          } else {
+            this.message.set(response.message || 'Stripe aún está procesando el pago.');
+          }
+          this.clearStripeReturnParams(params);
+        },
+        error: (err) => {
+          this.error.set(err?.error?.message || 'No fue posible confirmar el pago de Stripe.');
+          this.clearStripeReturnParams(params);
+        },
+      });
+  }
+
+  private clearStripeReturnParams(params: URLSearchParams): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    params.delete('session_id');
+    params.delete('stripe');
+
+    const query = params.toString();
+    const cleanUrl = `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`;
+    window.history.replaceState({}, document.title, cleanUrl);
   }
 
   onTenantChange(): void {

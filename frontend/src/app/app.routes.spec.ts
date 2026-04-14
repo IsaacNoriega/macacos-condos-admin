@@ -24,6 +24,8 @@ describe('app routes role matrix', () => {
 
   it('keeps payments, maintenance and reservations open to end users', () => {
     expect(routeRoles('payments')).toEqual(['superadmin', 'admin', 'residente', 'familiar']);
+    expect(routeRoles('pagos/exito')).toEqual(['superadmin', 'admin', 'residente', 'familiar']);
+    expect(routeRoles('pagos/cancelado')).toEqual(['superadmin', 'admin', 'residente', 'familiar']);
     expect(routeRoles('maintenance')).toEqual(['superadmin', 'admin', 'residente', 'familiar']);
     expect(routeRoles('reservations')).toEqual(['superadmin', 'admin', 'residente', 'familiar']);
   });
