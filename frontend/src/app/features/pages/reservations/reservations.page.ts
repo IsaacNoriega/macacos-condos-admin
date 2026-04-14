@@ -1,7 +1,12 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
+import { CalendarOptions, EventInput } from '@fullcalendar/core';
+import interactionPlugin from '@fullcalendar/interaction';
+import localeEs from '@fullcalendar/core/locales/es';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import { CrudConfig, Reservation } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -26,21 +31,33 @@ interface CalendarDay {
   events: CalendarEventView[];
 }
 
+interface SummaryCard {
+  label: string;
+  value: string;
+  note: string;
+  color: string;
+}
+
 @Component({
   selector: 'app-reservations-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CrudPageComponent, FancySelectComponent],
+  imports: [CommonModule, ReactiveFormsModule, CrudPageComponent, FancySelectComponent, FullCalendarModule],
   templateUrl: './reservations.page.html',
   styleUrl: './reservations.page.css',
 })
-export class ReservationsPage implements OnInit, OnDestroy {
+export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
+  private readonly document = inject(DOCUMENT);
+
+  @ViewChild(FullCalendarComponent) private calendarComponent?: FullCalendarComponent;
 
   readonly config: CrudConfig;
   readonly reservations = signal<Reservation[]>([]);
   readonly tenants = signal<TenantOption[]>([]);
   readonly loadingCalendar = signal(false);
   readonly calendarError = signal<string | null>(null);
+  readonly calendarRangeLabel = signal('');
+  readonly selectedAmenityFilter = signal('');
   readonly isSuperadmin = computed(() => this.auth.role() === 'superadmin');
   readonly nowTick = signal(Date.now());
   private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -58,6 +75,67 @@ export class ReservationsPage implements OnInit, OnDestroy {
 
   readonly tenantFilterOptions = computed(() => this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })));
   readonly amenityFilterOptions = computed(() => this.amenities().map((amenity) => ({ label: amenity, value: amenity })));
+
+  readonly calendarEvents = computed<EventInput[]>(() => {
+    const amenityFilter = this.selectedAmenityFilter().trim();
+    const now = this.nowTick();
+
+    return this.reservations()
+      .filter((reservation) => !amenityFilter || reservation.amenity === amenityFilter)
+      .map((reservation) => {
+        const status = this.getReservationDisplayStatus(reservation, now);
+
+        return {
+          id: reservation._id,
+          title: reservation.amenity,
+          start: reservation.start,
+          end: reservation.end,
+          backgroundColor: this.getReservationStatusColor(status),
+          borderColor: this.getReservationStatusColor(status),
+          textColor: '#ffffff',
+          extendedProps: {
+            status,
+            timeRange: `${this.toTimeLabel(reservation.start)} - ${this.toTimeLabel(reservation.end)}`,
+          },
+        } satisfies EventInput;
+      });
+  });
+
+  readonly calendarOptions = computed<CalendarOptions>(() => ({
+    plugins: [timeGridPlugin, interactionPlugin],
+    initialView: 'timeGridWeek',
+    locale: localeEs,
+    firstDay: 1,
+    headerToolbar: false,
+    allDaySlot: false,
+    expandRows: true,
+    nowIndicator: true,
+    height: '100%',
+    slotMinTime: '08:00:00',
+    slotMaxTime: '20:00:00',
+    slotLabelInterval: '02:00',
+    slotLabelFormat: { hour: 'numeric', minute: '2-digit', hour12: false },
+    dayHeaderFormat: { weekday: 'short', day: '2-digit', month: 'short' },
+    eventDisplay: 'block',
+    eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+    stickyHeaderDates: true,
+    events: this.calendarEvents(),
+  }));
+
+  readonly summaryCards = computed<SummaryCard[]>(() => {
+    const items = this.reservations();
+    const total = items.length;
+    const active = items.filter((item) => this.getReservationDisplayStatus(item) === 'activa').length;
+    const finished = items.filter((item) => this.getReservationDisplayStatus(item) === 'finalizada').length;
+    const cancelled = items.filter((item) => this.getReservationDisplayStatus(item) === 'cancelada').length;
+
+    return [
+      { label: 'Total semana', value: String(total), note: 'en vista actual', color: '#38bdf8' },
+      { label: 'Activas', value: String(active), note: 'reservas vigentes', color: '#60a5fa' },
+      { label: 'Finalizadas', value: String(finished), note: 'ya cerradas', color: '#34d399' },
+      { label: 'Canceladas', value: String(cancelled), note: 'sin ocupar', color: '#f59e0b' },
+    ];
+  });
 
   readonly calendarDays = computed<CalendarDay[]>(() => {
     const weekStartRaw = this.calendarForm.get('weekStart')?.value || this.toDateInputValue(this.startOfWeek(new Date()));
@@ -190,6 +268,10 @@ export class ReservationsPage implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.toggleNoScroll(true);
+    this.selectedAmenityFilter.set(this.calendarForm.get('amenity')?.value || '');
+    this.syncCalendarView();
+
     if (this.auth.role() === 'superadmin') {
       this.loadTenants();
     }
@@ -202,11 +284,17 @@ export class ReservationsPage implements OnInit, OnDestroy {
     }, 60_000);
   }
 
+  ngAfterViewInit(): void {
+    this.syncCalendarView();
+  }
+
   ngOnDestroy(): void {
     if (this.refreshIntervalId) {
       clearInterval(this.refreshIntervalId);
       this.refreshIntervalId = null;
     }
+
+    this.toggleNoScroll(false);
   }
 
   previousWeek(): void {
@@ -214,6 +302,7 @@ export class ReservationsPage implements OnInit, OnDestroy {
     const previous = new Date(current);
     previous.setDate(current.getDate() - 7);
     this.calendarForm.patchValue({ weekStart: this.toDateInputValue(previous) });
+    this.syncCalendarView(previous);
     this.loadCalendarReservations();
   }
 
@@ -222,15 +311,19 @@ export class ReservationsPage implements OnInit, OnDestroy {
     const next = new Date(current);
     next.setDate(current.getDate() + 7);
     this.calendarForm.patchValue({ weekStart: this.toDateInputValue(next) });
+    this.syncCalendarView(next);
     this.loadCalendarReservations();
   }
 
   goToCurrentWeek(): void {
     this.calendarForm.patchValue({ weekStart: this.toDateInputValue(this.startOfWeek(new Date())) });
+    this.syncCalendarView();
     this.loadCalendarReservations();
   }
 
   applyCalendarFilters(): void {
+    this.selectedAmenityFilter.set(this.calendarForm.get('amenity')?.value || '');
+    this.syncCalendarView();
     this.loadCalendarReservations();
   }
 
@@ -315,5 +408,53 @@ export class ReservationsPage implements OnInit, OnDestroy {
     }
 
     return 'activa';
+  }
+
+  private getReservationStatusColor(status: 'activa' | 'cancelada' | 'finalizada'): string {
+    switch (status) {
+      case 'cancelada':
+        return '#f59e0b';
+      case 'finalizada':
+        return '#8b5cf6';
+      default:
+        return '#3b82f6';
+    }
+  }
+
+  private formatWeekRange(start: Date): string {
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+
+    const formatter = new Intl.DateTimeFormat('es-MX', {
+      day: '2-digit',
+      month: 'short',
+    });
+
+    return `${formatter.format(start)} - ${formatter.format(end)}`;
+  }
+
+  private syncCalendarView(weekStart?: Date): void {
+    const rawValue = this.calendarForm.get('weekStart')?.value || this.toDateInputValue(this.startOfWeek(new Date()));
+    const base = weekStart ? this.startOfWeek(weekStart) : this.startOfWeek(new Date(`${rawValue}T00:00:00`));
+
+    this.calendarRangeLabel.set(this.formatWeekRange(base));
+    queueMicrotask(() => {
+      this.calendarComponent?.getApi().gotoDate(base);
+    });
+  }
+
+  private toggleNoScroll(enabled: boolean): void {
+    const className = 'reservations-no-scroll';
+    const root = this.document.documentElement;
+    const body = this.document.body;
+
+    if (enabled) {
+      root.classList.add(className);
+      body.classList.add(className);
+      return;
+    }
+
+    root.classList.remove(className);
+    body.classList.remove(className);
   }
 }

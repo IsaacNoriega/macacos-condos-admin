@@ -68,8 +68,12 @@
 		</footer>
 	</aside>
 
+	<button class="sidebar-backdrop" type="button" [class.visible]="menuOpen()" (click)="closeMenu()" aria-label="Cerrar menú lateral"></button>
+
 	<main class="shell-main">
-		<button class="menu-toggle" type="button" (click)="toggleMenu()">Menu</button>
+		<button class="menu-toggle" type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="sidebar-panel">
+			Menu
+		</button>
 		<router-outlet />
 	</main>
 </div>

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal, OnInit } from '@angular/core';
+import { Component, HostListener, computed, signal, OnInit } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserRole } from '../../../core/api.models';
 import { AuthService } from '../../../core/services/auth.service';
@@ -148,6 +148,13 @@ export class ShellPage implements OnInit {
 
   toggleMenu(): void {
     this.menuOpen.update((current) => !current);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (window.innerWidth >= 981) {
+      this.menuOpen.set(false);
+    }
   }
 
   toggleSidebar(): void {

@@ -1,69 +1,72 @@
-<section class="calendar-shell">
-  <header class="calendar-header">
-    <div>
-      <h2>Calendario de reservaciones</h2>
-      <p>Vista semanal para detectar traslapes por amenidad y horario.</p>
-    </div>
-
-    <div class="calendar-nav">
-      <button type="button" (click)="previousWeek()">Semana anterior</button>
-      <button type="button" class="secondary" (click)="goToCurrentWeek()">Semana actual</button>
-      <button type="button" (click)="nextWeek()">Semana siguiente</button>
-    </div>
-  </header>
-
-  <form class="calendar-filters" [formGroup]="calendarForm" (ngSubmit)="applyCalendarFilters()">
-    @if (isSuperadmin()) {
-    <label>
-      Tenant
-      <app-fancy-select formControlName="tenantId" [placeholder]="'Todos'" [options]="tenantFilterOptions()" />
-    </label>
-    }
-
-    <label>
-      Semana (inicio)
-      <input type="date" formControlName="weekStart" />
-    </label>
-
-    <label>
-      Amenidad
-      <app-fancy-select formControlName="amenity" [placeholder]="'Todas'" [options]="amenityFilterOptions()" />
-    </label>
-
-    <button type="submit">Actualizar</button>
-  </form>
-
-  @if (calendarError()) {
-  <p class="error">{{ calendarError() }}</p>
-  }
-
-  @if (loadingCalendar()) {
-  <p class="loading">Cargando calendario...</p>
-  } @else {
-  <div class="calendar-grid">
-    @for (day of calendarDays(); track day.isoDate) {
-    <article class="day-column">
-      <h3>{{ day.label }}</h3>
-
-      @if (!day.events.length) {
-      <p class="empty">Sin reservaciones</p>
-      } @else {
-      <ul>
-        @for (event of day.events; track event.id) {
-        <li [class.cancelled]="event.status === 'cancelada'" [class.finished]="event.status === 'finalizada'">
-          <p class="amenity">{{ event.amenity }}</p>
-          <p class="time">{{ event.timeRange }}</p>
-          <span class="status">{{ event.status }}</span>
-        </li>
+<section class="reservations-page">
+  <section class="reservations-workspace">
+    <aside class="insight-rail">
+      <section class="summary-grid" aria-label="Resumen de reservaciones">
+        @for (card of summaryCards(); track card.label) {
+        <article class="summary-card">
+          <div class="summary-topline">
+            <span class="summary-dot" [style.background]="card.color"></span>
+            <span>{{ card.note }}</span>
+          </div>
+          <strong>{{ card.value }}</strong>
+          <h3>{{ card.label }}</h3>
+        </article>
         }
-      </ul>
+      </section>
+
+      <form class="calendar-filters" [formGroup]="calendarForm" (ngSubmit)="applyCalendarFilters()">
+        @if (isSuperadmin()) {
+        <label>
+          Tenant
+          <app-fancy-select formControlName="tenantId" [placeholder]="'Todos'" [options]="tenantFilterOptions()" />
+        </label>
+        }
+
+        <label>
+          Semana
+          <input type="date" formControlName="weekStart" />
+        </label>
+
+        <label>
+          Amenidad
+          <app-fancy-select formControlName="amenity" [placeholder]="'Todas'" [options]="amenityFilterOptions()" />
+        </label>
+
+        <button type="submit">Actualizar</button>
+      </form>
+    </aside>
+
+    <article class="calendar-shell">
+      <header class="calendar-header">
+        <div>
+          <p class="section-kicker">Vista semanal</p>
+          <h3>Calendario de reservaciones</h3>
+        </div>
+
+        <span class="week-range">{{ calendarRangeLabel() }}</span>
+      </header>
+
+      @if (calendarError()) {
+      <p class="error">{{ calendarError() }}</p>
+      }
+
+      @if (loadingCalendar()) {
+      <p class="loading">Cargando calendario...</p>
+      } @else {
+      <div class="calendar-frame">
+        <full-calendar [options]="calendarOptions()"></full-calendar>
+      </div>
       }
     </article>
-    }
-  </div>
-  }
-</section>
 
-<section class="crud-section">
-  <app-crud-page [config]="config" />
+    <article class="crud-shell">
+      <div class="crud-shell-head">
+        <div>
+          <p class="section-kicker">Gestión</p>
+          <h3>Crear, editar y eliminar</h3>
+        </div>
+      </div>
+      <app-crud-page [config]="config" />
+    </article>
+  </section>
 </section>

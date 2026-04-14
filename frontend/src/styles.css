@@ -154,6 +154,18 @@ body {
 	transition: background 0.5s ease, color 0.4s ease;
 }
 
+html.dashboard-no-scroll,
+html.dashboard-no-scroll body {
+	overflow: hidden;
+	height: 100%;
+}
+
+html.reservations-no-scroll,
+html.reservations-no-scroll body {
+	overflow: hidden;
+	height: 100%;
+}
+
 body::before,
 body::after {
 	content: '';
