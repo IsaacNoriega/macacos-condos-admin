@@ -56,6 +56,39 @@ const markChargeAsPaid = async (chargeId: string, tenantId: string) => {
   await Charge.updateOne({ _id: chargeId, tenantId }, { isPaid: true });
 };
 
+const normalizeStripeCheckoutUrl = (baseUrl: string, mode: 'success' | 'cancel') => {
+  const sessionPlaceholder = '{CHECKOUT_SESSION_ID}';
+
+  try {
+    const parsed = new URL(baseUrl);
+    if (parsed.pathname === '/pagos/exito' || parsed.pathname === '/pagos/cancelado') {
+      parsed.pathname = '/payments';
+    }
+
+    if (mode === 'success' && !parsed.searchParams.has('session_id')) {
+      parsed.searchParams.set('session_id', sessionPlaceholder);
+    }
+
+    if (!parsed.searchParams.has('stripe')) {
+      parsed.searchParams.set('stripe', mode);
+    }
+
+    return parsed.toString();
+  } catch {
+    if (mode === 'cancel') {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      return `${baseUrl}${separator}stripe=cancel`;
+    }
+
+    if (baseUrl.includes(sessionPlaceholder)) {
+      return baseUrl;
+    }
+
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    return `${baseUrl}${separator}session_id=${sessionPlaceholder}&stripe=success`;
+  }
+};
+
 const getStripeClient = () => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey) {
@@ -243,10 +276,12 @@ export const createStripeCheckoutSession = async (req: Request, res: Response, n
     }
 
     const stripe = getStripeClient();
+    const resolvedSuccessUrl = normalizeStripeCheckoutUrl(successUrl, 'success');
+    const resolvedCancelUrl = normalizeStripeCheckoutUrl(cancelUrl, 'cancel');
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      success_url: resolvedSuccessUrl,
+      cancel_url: resolvedCancelUrl,
       line_items: [
         {
           quantity: 1,
@@ -268,6 +303,22 @@ export const createStripeCheckoutSession = async (req: Request, res: Response, n
         lateFeeAmount: String(pricing.lateFeeAmount),
         daysOverdue: String(pricing.daysOverdue),
       },
+    });
+
+    await paymentsService.upsertPaymentByStripeSessionId(session.id, {
+      tenantId: targetTenantId,
+      userId,
+      chargeId,
+      baseAmount: pricing.baseAmount,
+      lateFeeAmount: pricing.lateFeeAmount,
+      daysOverdue: pricing.daysOverdue,
+      amount: pricing.totalAmount,
+      currency: (currency || 'mxn').toLowerCase(),
+      provider: 'stripe',
+      status: 'pending',
+      stripeSessionId: session.id,
+      stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+      paymentDate: new Date(),
     });
 
     logger.log('payments.checkoutSession.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { sessionId: session.id, userId, chargeId });
@@ -294,7 +345,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
 
     const event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
 
-    if (event.type === 'checkout.session.completed') {
+    if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
       const session = event.data.object as Stripe.Checkout.Session;
       const metadata = session.metadata || {};
 
@@ -316,7 +367,12 @@ export const stripeWebhook = async (req: Request, res: Response) => {
           paymentDate: new Date(),
         });
         await markChargeAsPaid(String(metadata.chargeId), String(metadata.tenantId));
-        logger.log('payments.webhook.completed', 'stripe-webhook', metadata.tenantId, { sessionId: session.id, userId: metadata.userId, chargeId: metadata.chargeId });
+        logger.log('payments.webhook.completed', 'stripe-webhook', metadata.tenantId, {
+          sessionId: session.id,
+          userId: metadata.userId,
+          chargeId: metadata.chargeId,
+          eventType: event.type,
+        });
       }
     }
 
@@ -324,6 +380,72 @@ export const stripeWebhook = async (req: Request, res: Response) => {
   } catch (err: unknown) {
     logger.error('payments.webhook.error', 'stripe-webhook', 'global', toError(err));
     res.status(400).json({ success: false, message: 'Error en webhook de Stripe', error: toError(err).message });
+  }
+};
+
+export const confirmStripeCheckoutSession = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sessionId = String(req.params.sessionId || '').trim();
+    if (!sessionId) {
+      throw new AppError('sessionId es obligatorio', 400);
+    }
+
+    const stripe = getStripeClient();
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const metadata = session.metadata || {};
+
+    if (!metadata.tenantId || !metadata.userId || !metadata.chargeId || !metadata.amount) {
+      throw new AppError('La sesión de Stripe no contiene metadata de pago suficiente', 400);
+    }
+
+    const targetTenantId = String(metadata.tenantId);
+    const sameTenant = String(req.tenantId || req.user?.tenantId || '') === targetTenantId;
+    const isSuperadmin = req.user?.role === 'superadmin';
+
+    if (!sameTenant && !isSuperadmin) {
+      throw new AppError('No tienes permisos para confirmar esta sesión', 403);
+    }
+
+    if (session.payment_status !== 'paid') {
+      return res.json({
+        success: true,
+        paid: false,
+        message: 'Stripe aún no reporta el pago como liquidado.',
+      });
+    }
+
+    const payment = await paymentsService.upsertPaymentByStripeSessionId(session.id, {
+      tenantId: targetTenantId,
+      userId: metadata.userId,
+      chargeId: metadata.chargeId,
+      baseAmount: metadata.baseAmount ? Number(metadata.baseAmount) : undefined,
+      lateFeeAmount: metadata.lateFeeAmount ? Number(metadata.lateFeeAmount) : 0,
+      daysOverdue: metadata.daysOverdue ? Number(metadata.daysOverdue) : 0,
+      amount: Number(metadata.amount),
+      currency: session.currency || 'mxn',
+      provider: 'stripe',
+      status: 'paid',
+      stripeSessionId: session.id,
+      stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
+      paymentDate: new Date(),
+    });
+
+    await markChargeAsPaid(String(metadata.chargeId), targetTenantId);
+
+    logger.log('payments.checkout.confirm', req.user?.id ? String(req.user.id) : 'system', targetTenantId, {
+      sessionId,
+      chargeId: String(metadata.chargeId),
+      userId: String(metadata.userId),
+    });
+
+    res.json({
+      success: true,
+      paid: true,
+      payment,
+    });
+  } catch (err: unknown) {
+    logger.error('payments.checkout.confirm.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('No fue posible confirmar la sesión de Stripe', 400, { cause: toError(err).message }));
   }
 };
 

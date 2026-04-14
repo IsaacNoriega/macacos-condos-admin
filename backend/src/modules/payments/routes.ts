@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body, param } from 'express-validator';
 import multer from 'multer';
 import {
+  confirmStripeCheckoutSession,
   createPayment,
   createStripeCheckoutSession,
   deletePayment,
@@ -43,6 +44,13 @@ router.post(
   body('amount').isNumeric().withMessage('Monto inválido'),
   validateRequest,
   createStripeCheckoutSession
+);
+router.post(
+  '/checkout-session/:sessionId/confirm',
+  roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']),
+  param('sessionId').isString().notEmpty().withMessage('sessionId inválido'),
+  validateRequest,
+  confirmStripeCheckoutSession
 );
 router.post(
   '/:id/approve',
