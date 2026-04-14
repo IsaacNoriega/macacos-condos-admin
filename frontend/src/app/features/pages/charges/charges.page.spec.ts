@@ -38,4 +38,17 @@ describe('ChargesPage config by role', () => {
     expect(keys).not.toContain('tenantId');
     expect(keys).toContain('userId');
   });
+
+  it('includes paymentStatus as table-only field', () => {
+    authMock.role.mockReturnValue('admin');
+
+    const fixture = TestBed.configureTestingModule({
+      imports: [ChargesPage],
+      providers: [{ provide: AuthService, useValue: authMock }],
+    }).createComponent(ChargesPage);
+
+    const paymentStatusField = fixture.componentInstance.config.fields.find((field) => field.key === 'paymentStatus');
+    expect(paymentStatusField).toBeTruthy();
+    expect(paymentStatusField?.tableOnly).toBe(true);
+  });
 });

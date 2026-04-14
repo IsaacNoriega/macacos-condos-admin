@@ -153,6 +153,7 @@ export interface CrudField {
   key: string;
   label: string;
   type: 'text' | 'email' | 'number' | 'date' | 'datetime-local' | 'textarea' | 'select';
+  tableOnly?: boolean;
   required?: boolean;
   placeholder?: string;
   options?: CrudFieldOption[];

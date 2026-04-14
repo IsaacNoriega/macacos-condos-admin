@@ -20,7 +20,7 @@
       <h2>{{ createCardTitle() }}</h2>
 
       <form class="form-grid" [formGroup]="form" (ngSubmit)="submit()">
-        @for (field of config.fields; track field.key) {
+        @for (field of formFields(); track field.key) {
         <label class="field" [class]="'field-' + field.key">
           <span>{{ field.label }}</span>
 
@@ -71,7 +71,7 @@
         <table>
           <thead>
             <tr>
-              @for (field of config.fields; track field.key) {
+              @for (field of tableFields(); track field.key) {
               <th>{{ field.label }}</th>
               }
               @if (hasRowActions()) {
@@ -82,7 +82,7 @@
           <tbody>
             @for (item of filteredItems(); track trackById($index, item)) {
             <tr>
-              @for (field of config.fields; track field.key) {
+              @for (field of tableFields(); track field.key) {
               <td>
                 {{ formatCell(item, field.key) }}
               </td>

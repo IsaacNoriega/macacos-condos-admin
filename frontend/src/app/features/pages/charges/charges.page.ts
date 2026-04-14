@@ -73,6 +73,12 @@ export class ChargesPage {
           type: 'number',
           placeholder: '10',
         },
+        {
+          key: 'paymentStatus',
+          label: 'Estado de pago',
+          type: 'text',
+          tableOnly: true,
+        },
       ],
     };
   }

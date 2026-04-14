@@ -56,6 +56,8 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   readonly canEdit = computed(() => this.config.allowEdit !== false);
   readonly canDelete = computed(() => this.config.allowDelete !== false);
   readonly hasRowActions = computed(() => this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)));
+  readonly formFields = computed(() => this.config.fields.filter((field) => !field.tableOnly));
+  readonly tableFields = computed(() => this.config.fields);
 
   readonly isResidentsFormSkin = computed(() =>
     ['/reservations', '/tenants', '/charges', '/maintenance'].includes(this.config.endpoint)
@@ -171,7 +173,7 @@ export class CrudPageComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null);
 
     const patch: Record<string, unknown> = {};
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       const rawValue = item[field.key];
       if (field.type === 'date' && typeof rawValue === 'string') {
         patch[field.key] = rawValue.slice(0, 10);
@@ -325,6 +327,19 @@ export class CrudPageComponent implements OnInit, OnDestroy {
       return '-';
     }
 
+    if (this.config.endpoint === '/charges' && key === 'paymentStatus') {
+      const normalizedStatus = String(value).toLowerCase();
+      const labels: Record<string, string> = {
+        pending: 'Pendiente',
+        in_review: 'En revisión',
+        completed: 'Completado',
+        failed: 'Rechazado',
+        paid: 'Pagado',
+      };
+
+      return labels[normalizedStatus] || normalizedStatus;
+    }
+
     if (this.config.endpoint === '/reservations' && key === 'status') {
       const currentStatus = String(item['currentStatus'] ?? '');
       if (currentStatus === 'finalizada' || currentStatus === 'cancelada') {
@@ -386,7 +401,7 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   }
 
   private buildForm(): void {
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       const validators = field.required ? [Validators.required] : [];
       this.form.addControl(field.key, this.fb.control('', validators));
     }
@@ -396,7 +411,7 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   private syncFormFilters(): void {
     const nextFilters: Record<string, string> = {};
 
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       if (field.type !== 'select') {
         continue;
       }
@@ -417,7 +432,7 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   }
 
   private loadSelectOptions(): void {
-    const fieldsWithSource = this.config.fields.filter((field) => field.type === 'select' && !!field.optionsSource);
+    const fieldsWithSource = this.formFields().filter((field) => field.type === 'select' && !!field.optionsSource);
 
     if (!fieldsWithSource.length) {
       this.loadItems();
@@ -483,7 +498,7 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   }
 
   private emptyFormValues(): Record<string, unknown> {
-    return this.config.fields.reduce<Record<string, unknown>>((acc, field) => {
+    return this.formFields().reduce<Record<string, unknown>>((acc, field) => {
       acc[field.key] = '';
       return acc;
     }, {});
@@ -492,7 +507,7 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   private normalizePayload(raw: Record<string, unknown>): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       const value = raw[field.key];
       if (value === '' || value === null || value === undefined) {
         continue;
