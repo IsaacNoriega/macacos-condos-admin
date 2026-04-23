@@ -135,15 +135,31 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
       }
     }
 
-    const targetEmail = req.body.email ? String(req.body.email) : String(currentResident.email);
-    const targetRelationship = req.body.relationship ? String(req.body.relationship) : String(currentResident.relationship);
-
     if (!tenantScope) {
       throw new AppError('No se pudo determinar el tenant actual', 400);
     }
 
-    const linkedUser = await ensureLinkedResidentUser(targetEmail, tenantScope);
-    ensureRelationshipMatchesRole(String(linkedUser.role), targetRelationship);
+    // Only re-run the linked-user / relationship invariants when the
+    // caller actually touches those fields. Legacy resident rows
+    // predate the invariant and would otherwise fail to accept simple
+    // edits (like unitId or isActive) because their stored email no
+    // longer resolves to a live user or their stored relationship
+    // doesn't match the user's current role.
+    const emailChanged =
+      req.body.email !== undefined && String(req.body.email) !== String(currentResident.email);
+    const relationshipChanged =
+      req.body.relationship !== undefined &&
+      String(req.body.relationship) !== String(currentResident.relationship);
+
+    if (emailChanged || relationshipChanged) {
+      const targetEmail = emailChanged ? String(req.body.email) : String(currentResident.email);
+      const targetRelationship = relationshipChanged
+        ? String(req.body.relationship)
+        : String(currentResident.relationship);
+
+      const linkedUser = await ensureLinkedResidentUser(targetEmail, tenantScope);
+      ensureRelationshipMatchesRole(String(linkedUser.role), targetRelationship);
+    }
 
     const resident = await residentsService.updateResidentInTenant(String(req.params.id), tenantScope, req.body);
 
