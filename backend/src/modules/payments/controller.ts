@@ -5,7 +5,6 @@ import { AppError, toError } from '../../utils/httpError';
 import * as paymentsService from './service';
 import Charge from '../charges/model';
 import {
-  extractBlobNameFromProofUrl,
   getPaymentProofSasUrl,
   resolveOwnedProofBlobName,
   uploadPaymentProofToAzure,
@@ -225,7 +224,16 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
       throw new AppError('Debes seleccionar un comprobante de pago', 400);
     }
 
-    const tenantId = req.tenantId || req.user?.tenantId || 'global';
+    // Superadmins are global (no tenantId claim) but can upload proofs
+    // for any tenant — they must tell us which one via form-data so the
+    // blob ends up under proofs/{thatTenant}/... and the later
+    // createPayment ownership check against that tenant passes.
+    const requestedTenantId = String(req.body?.tenantId || '').trim();
+    const tenantId =
+      req.user?.role === 'superadmin' && requestedTenantId
+        ? requestedTenantId
+        : req.tenantId || req.user?.tenantId || 'global';
+
     const uploadedFile = await uploadPaymentProofToAzure(req.file, tenantId, req.user?.id ? String(req.user.id) : undefined);
 
     logger.log('payments.proof.upload', req.user?.id ? String(req.user.id) : 'system', tenantId, {
@@ -265,16 +273,17 @@ export const getPaymentProof = async (req: Request, res: Response, next: NextFun
       throw new AppError('El pago no tiene comprobante', 404);
     }
 
-    const blobName = payment.proofOfPaymentBlobName || extractBlobNameFromProofUrl(String(payment.proofOfPaymentUrl || ''));
-
-    if (blobName) {
-      const proofUrl = await getPaymentProofSasUrl(blobName);
+    // Only mint a fresh SAS URL for blob names that createPayment validated
+    // and persisted. Deriving a path from an arbitrary stored URL (e.g. a
+    // browser blob: URL or a third-party host from legacy records) would
+    // produce a bogus Azure SAS URL for a blob that doesn't exist.
+    if (payment.proofOfPaymentBlobName) {
+      const proofUrl = await getPaymentProofSasUrl(payment.proofOfPaymentBlobName);
       return res.json({ success: true, proofUrl });
     }
 
-    // Legacy payments may only store the original proofOfPaymentUrl without
-    // a resolvable Azure blob name; fall back to returning that URL so
-    // historical records remain accessible.
+    // Legacy payments predate the blob-name migration: return the original
+    // URL as-is so historical records remain openable.
     if (payment.proofOfPaymentUrl) {
       return res.json({ success: true, proofUrl: payment.proofOfPaymentUrl });
     }

@@ -2,6 +2,7 @@ import User, { IUser } from './model';
 import mongoose from 'mongoose';
 import Payment from '../payments/model';
 import Maintenance from '../maintenance/model';
+import Resident from '../residents/model';
 
 export const findAllUsers = () => {
   return User.find({}).select('-password');
@@ -52,7 +53,15 @@ export const deleteUserInTenant = async (userId: string, tenantId?: string) => {
     // Reservations, and Maintenance rows when a user is removed keeps
     // tenant financial history and audit trails intact. We only unset
     // relational references so the historical rows stay queryable.
+    //
+    // Residents are a different case — they are contact/linkage records
+    // keyed by email and are required to point at a live user in the
+    // same tenant (see residents.updateResident). Leaving orphaned
+    // residents would make admins unable to edit them afterwards, so
+    // the matching resident rows are removed when their linked user is
+    // deleted.
     await Promise.all([
+      Resident.deleteMany({ ...scopedFilter, email: user.email }, { session }),
       Payment.updateMany(
         { ...scopedFilter, reviewedBy: userId },
         { $unset: { reviewedBy: 1, reviewedAt: 1 } },

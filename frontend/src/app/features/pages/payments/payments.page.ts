@@ -319,7 +319,7 @@ export class PaymentsPage implements OnInit {
       });
   }
 
-  private async uploadSelectedProof(): Promise<PaymentProofUploadResponse> {
+  private async uploadSelectedProof(tenantId?: string): Promise<PaymentProofUploadResponse> {
     const file = this.selectedFile();
 
     if (!file) {
@@ -328,6 +328,13 @@ export class PaymentsPage implements OnInit {
 
     const formData = new FormData();
     formData.append('file', file, file.name);
+    // Superadmins are global tokens, so tell the upload endpoint which
+    // tenant this proof belongs to; otherwise the blob would be stored
+    // under proofs/global/... and the later /payments ownership check
+    // against the selected tenant would reject it.
+    if (tenantId) {
+      formData.append('tenantId', tenantId);
+    }
 
     return firstValueFrom(this.api.postFormData<PaymentProofUploadResponse>('/payments/proofs', formData));
   }
@@ -343,7 +350,7 @@ export class PaymentsPage implements OnInit {
     },
     successMessage: string
   ): Promise<void> {
-    const uploadedProof = await this.uploadSelectedProof();
+    const uploadedProof = await this.uploadSelectedProof(payload.tenantId);
 
     await firstValueFrom(
       this.api.post('/payments', {
@@ -355,7 +362,6 @@ export class PaymentsPage implements OnInit {
         currency: payload.currency,
         provider: 'manual',
         proofOfPaymentUrl: uploadedProof.proofOfPaymentUrl,
-        proofOfPaymentBlobName: uploadedProof.blobName,
       })
     );
 
