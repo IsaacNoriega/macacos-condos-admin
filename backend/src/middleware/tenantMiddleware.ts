@@ -19,9 +19,12 @@ const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
         return next();
       }
 
-      // Superadmins may be global (no tenantId claim); controllers resolve
-      // the target tenant from the request body/query when needed.
-      if (req.user?.role === 'superadmin') {
+      // Global superadmins (no tenantId claim) are allowed through only for
+      // payment routes, whose controllers resolve the target tenant from
+      // the request body, query, or stored Stripe session metadata. Other
+      // tenant-scoped modules still require a tenant claim so they don't
+      // silently query with tenantId=undefined.
+      if (req.user?.role === 'superadmin' && req.baseUrl === '/api/payments') {
         return next();
       }
 

@@ -408,9 +408,14 @@ export const confirmStripeCheckoutSession = async (req: Request, res: Response, 
 
     const targetTenantId = String(metadata.tenantId);
     const sameTenant = String(req.tenantId || req.user?.tenantId || '') === targetTenantId;
-    const isSuperadmin = req.user?.role === 'superadmin';
+    const role = req.user?.role;
+    const isSuperadmin = role === 'superadmin';
 
     if (!sameTenant && !isSuperadmin) {
+      throw new AppError('No tienes permisos para confirmar esta sesión', 403);
+    }
+
+    if ((role === 'residente' || role === 'familiar') && String(metadata.userId) !== String(req.user?.id)) {
       throw new AppError('No tienes permisos para confirmar esta sesión', 403);
     }
 

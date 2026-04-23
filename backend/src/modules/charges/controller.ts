@@ -49,11 +49,17 @@ const enrichChargesWithPaymentStatus = async <T extends ChargeWithStatusBase>(ch
   return charges.map((charge) => {
     const chargeId = String(charge._id);
     const latestPayment = latestPaymentByCharge.get(chargeId);
-    const fallbackStatus = charge.isPaid ? 'paid' : 'pending';
+
+    // A settled charge must stay 'paid' even if a later abandoned/pending
+    // Stripe attempt exists; only non-settled charges defer to the latest
+    // payment row for display status.
+    const paymentStatus = charge.isPaid
+      ? 'paid'
+      : latestPayment?.status || 'pending';
 
     return {
       ...charge,
-      paymentStatus: latestPayment?.status || fallbackStatus,
+      paymentStatus,
     };
   });
 };
