@@ -228,7 +228,10 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
 export const getPaymentProof = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const paymentId = String(req.params.id);
-    const payment = await paymentsService.findPaymentById(paymentId);
+    const payment =
+      req.user?.role === 'superadmin'
+        ? await paymentsService.findPaymentById(paymentId)
+        : await paymentsService.findPaymentByIdInTenant(paymentId, req.tenantId);
 
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
