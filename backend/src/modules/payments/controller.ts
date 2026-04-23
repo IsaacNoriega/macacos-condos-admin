@@ -105,12 +105,21 @@ const getStripeClient = () => {
 export const getAllPayments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { tenantId: queryTenantId } = req.query;
+    const role = req.user?.role;
     let payments;
 
-    if (req.user?.role === 'superadmin') {
+    if (role === 'superadmin') {
       payments = queryTenantId
         ? await paymentsService.findPaymentsByTenant(String(queryTenantId))
         : await paymentsService.findAllPayments();
+    } else if (role === 'residente' || role === 'familiar') {
+      // Self-service roles must only receive their own rows. Returning the
+      // entire tenant list here exposes other residents' proofOfPaymentUrl
+      // (currently a 24 h Azure SAS URL) to anyone inspecting the
+      // /payments response, even though the Angular UI filters them out.
+      const tenantPayments = await paymentsService.findPaymentsByTenant(req.tenantId);
+      const callerId = req.user?.id ? String(req.user.id) : '';
+      payments = tenantPayments.filter((payment) => String(payment.userId) === callerId);
     } else {
       payments = await paymentsService.findPaymentsByTenant(req.tenantId);
     }
@@ -229,6 +238,12 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
     // blob ends up under proofs/{thatTenant}/... and the later
     // createPayment ownership check against that tenant passes.
     const requestedTenantId = String(req.body?.tenantId || '').trim();
+    if (req.user?.role === 'superadmin' && !req.tenantId && !requestedTenantId) {
+      throw new AppError(
+        'Superadmin debe indicar el tenant destino para cargar el comprobante',
+        400
+      );
+    }
     const tenantId =
       req.user?.role === 'superadmin' && requestedTenantId
         ? requestedTenantId
