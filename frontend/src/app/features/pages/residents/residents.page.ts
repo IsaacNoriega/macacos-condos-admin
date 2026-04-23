@@ -78,6 +78,14 @@ export class ResidentsPage {
   readonly units = signal<Unit[]>([]);
   readonly users = signal<ApiUser[]>([]);
 
+  // Tracks which tenant the resident list is scoped to (superadmin only).
+  // Empty string = superadmin's token tenant (or all, depending on backend).
+  readonly viewTenantId = signal<string>('');
+
+  // Mirrors the value of form.controls.tenantId so computed signals can
+  // react to tenant changes when a superadmin switches target tenants.
+  private readonly formTenantId = signal<string>('');
+
   // Drawer / modal state
   readonly editorOpen = signal(false);
   readonly editorMode = signal<'create' | 'edit'>('create');
@@ -90,9 +98,23 @@ export class ResidentsPage {
 
   readonly tenantOptions = computed(() => this.tenants().map((t) => ({ label: t.name, value: t._id })));
 
-  readonly eligibleUsers = computed(() =>
-    this.users().filter((u) => u.role === 'residente' || u.role === 'familiar')
-  );
+  readonly eligibleUsers = computed(() => {
+    const selectedTenantId = this.formTenantId();
+    const superadmin = this.isSuperadmin();
+
+    // Emails are only unique per tenant on the backend, so for superadmins
+    // we defer showing candidates until a target tenant is chosen and
+    // always filter by that tenant to keep the email selection unambiguous.
+    if (superadmin && !selectedTenantId) {
+      return [];
+    }
+
+    return this.users().filter((u) => {
+      if (u.role !== 'residente' && u.role !== 'familiar') return false;
+      if (superadmin && u.tenantId !== selectedTenantId) return false;
+      return true;
+    });
+  });
 
   readonly userOptions = computed(() =>
     this.eligibleUsers().map((u) => ({ value: u.email, label: `${u.name} (${u.email})` }))
@@ -179,6 +201,22 @@ export class ResidentsPage {
     effect(() => {
       const totalPages = this.totalPages();
       if (this.page() > totalPages) this.page.set(totalPages);
+    });
+
+    // Keep formTenantId signal in sync with the form control so that
+    // eligibleUsers re-computes when the superadmin switches tenants.
+    // Clear the selected user email on tenant changes to avoid picking a
+    // candidate from a different tenant.
+    const tenantControl = this.form.get('tenantId');
+    this.formTenantId.set(String(tenantControl?.value ?? ''));
+    tenantControl?.valueChanges.subscribe((value) => {
+      const next = String(value ?? '');
+      if (next !== this.formTenantId()) {
+        this.formTenantId.set(next);
+        if (this.isSuperadmin() && this.editorMode() === 'create') {
+          this.form.patchValue({ email: '', name: '', unitId: '' }, { emitEvent: false });
+        }
+      }
     });
 
     this.loadInitialData();
@@ -294,6 +332,9 @@ export class ResidentsPage {
       next: () => {
         this.toast.ok(isEditing ? 'Residente actualizado' : 'Residente creado');
         this.closeEditor();
+        if (this.isSuperadmin()) {
+          this.viewTenantId.set(targetTenantId);
+        }
         this.loadResidents();
       },
       error: (err) => this.toast.bad('No se pudo guardar', err?.error?.message),
@@ -319,6 +360,9 @@ export class ResidentsPage {
       .subscribe({
         next: () => {
           this.toast.ok(nextActive ? 'Residente activado' : 'Residente desactivado');
+          if (this.isSuperadmin()) {
+            this.viewTenantId.set(resident.tenantId);
+          }
           this.loadResidents();
         },
         error: (err) => this.toast.bad('No se pudo actualizar', err?.error?.message),
@@ -335,6 +379,9 @@ export class ResidentsPage {
         next: () => {
           this.toast.ok('Residente eliminado', resident.name);
           if (this.editingId() === resident.id) this.closeEditor();
+          if (this.isSuperadmin()) {
+            this.viewTenantId.set(resident.tenantId);
+          }
           this.loadResidents();
         },
         error: (err) => this.toast.bad('No se pudo eliminar', err?.error?.message),
@@ -404,7 +451,11 @@ export class ResidentsPage {
 
   private loadResidents(): void {
     this.loading.set(true);
-    this.api.get<{ success: boolean; residents: ResidentRecord[] }>('/residents')
+    const tenantQuery =
+      this.isSuperadmin() && this.viewTenantId()
+        ? `?tenantId=${encodeURIComponent(this.viewTenantId())}`
+        : '';
+    this.api.get<{ success: boolean; residents: ResidentRecord[] }>(`/residents${tenantQuery}`)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (r) => {
