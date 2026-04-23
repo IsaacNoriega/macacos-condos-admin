@@ -376,12 +376,15 @@ button.secondary:hover {
   grid-area: crud;
   grid-template-rows: auto minmax(0, 1fr);
   margin-top: 0.02rem;
+  min-width: 0;
 }
 
 .crud-shell-head {
   display: flex;
   justify-content: space-between;
-  align-items: start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .crud-shell-head h3 {

@@ -16,6 +16,7 @@ interface Amenity {
   description?: string;
   isActive?: boolean;
   createdAt?: string;
+  maxDailyHours: number;
 }
 
 interface AmenityCard {
@@ -27,6 +28,7 @@ interface AmenityCard {
   tenant: string;
   createdAt: Date;
   avatarBg: string;
+  maxDailyHours: number;
 }
 
 const FILTERS: Array<{ label: string; value: AmenityFilter }> = [
@@ -96,6 +98,11 @@ const AVATAR_BACKGROUNDS = [
               <textarea formControlName="description" rows="3" placeholder="Descripcion"></textarea>
             </label>
 
+            <label>
+              <span>Horas disponibles para reservar</span>
+              <input type="number" formControlName="maxDailyHours" min="1" placeholder="Ej: 4" required />
+            </label>
+
             <label class="checkbox-row">
               <input type="checkbox" formControlName="isActive" />
               <span>Activa</span>
@@ -143,6 +150,8 @@ const AVATAR_BACKGROUNDS = [
                     <h3>{{ amenity.name }}</h3>
                     <p>{{ amenity.description || 'Sin descripcion' }}</p>
                   </div>
+
+                  <div><strong>Horas disponibles:</strong> {{ amenity.maxDailyHours }}</div>
 
                   <div class="card-actions">
                     <button type="button" class="icon-button" (click)="selectAmenity(amenity); $event.stopPropagation()" aria-label="Editar amenidad">
@@ -249,6 +258,7 @@ export class AmenitiesPage {
       tenantId: [''],
       name: ['', Validators.required],
       description: [''],
+      maxDailyHours: [1, [Validators.required, Validators.min(1)]],
       isActive: [true],
     });
 
@@ -260,6 +270,7 @@ export class AmenitiesPage {
             tenantId: '',
             name: '',
             description: '',
+            maxDailyHours: 1,
             isActive: true,
           },
           { emitEvent: false }
@@ -272,6 +283,7 @@ export class AmenitiesPage {
           tenantId: selected.tenantId,
           name: selected.name,
           description: selected.description || '',
+          maxDailyHours: selected.maxDailyHours,
           isActive: selected.isActive,
         },
         { emitEvent: false }
@@ -346,6 +358,7 @@ export class AmenitiesPage {
     const requestBody: Record<string, unknown> = {
       name: String(payload.name || '').trim(),
       description: String(payload.description || '').trim(),
+      maxDailyHours: Number(payload.maxDailyHours) || 1,
       isActive: !!payload.isActive,
     };
 
@@ -497,6 +510,7 @@ export class AmenitiesPage {
       tenant: this.resolveTenantName(amenity.tenantId),
       createdAt: amenity.createdAt ? new Date(amenity.createdAt) : new Date(),
       avatarBg: AVATAR_BACKGROUNDS[index % AVATAR_BACKGROUNDS.length],
+      maxDailyHours: amenity.maxDailyHours,
     };
   }
 

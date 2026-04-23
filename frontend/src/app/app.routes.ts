@@ -85,6 +85,12 @@ export const routes: Routes = [
 				loadComponent: () =>
 					import('./features/pages/reservations/reservations.page').then((m) => m.ReservationsPage),
 			},
+			{
+				path: 'notices',
+				canActivate: [roleGuard],
+				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				loadComponent: () => import('./features/pages/notices/notices.page').then((m) => m.NoticesPage),
+			},
 			{ path: '', pathMatch: 'full', redirectTo: 'dashboard' },
 		],
 	},

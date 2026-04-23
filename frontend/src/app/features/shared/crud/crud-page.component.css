@@ -21,8 +21,8 @@
 
 .grid-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 410px) 1fr;
-  gap: 1.1rem;
+  grid-template-columns: minmax(260px, 340px) 1fr;
+  gap: 0.6rem;
 }
 
 .card {
@@ -30,8 +30,8 @@
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  border-radius: 1.6rem;
-  padding: clamp(1.25rem, 2vw, 1.6rem);
+  border-radius: 1.1rem;
+  padding: clamp(0.6rem, 1vw, 1rem);
   box-shadow: var(--glass-shadow);
   transition: var(--transition-smooth);
   position: relative;
@@ -63,6 +63,10 @@
 
 .form-card {
   overflow: visible;
+  min-width: 0;
+}
+.table-card {
+  min-width: 0;
 }
 
 .form-card::before {
@@ -141,24 +145,31 @@
   box-shadow: var(--glass-drop-shadow);
 }
 
+
 .table-wrap {
-  overflow: auto;
-  max-height: 72vh;
+  overflow-x: auto;
+  max-height: 65vh;
   border-radius: var(--radius-md);
+  width: 100%;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
+  min-width: 700px;
 }
 
 th,
 td {
   border-bottom: 1px solid var(--table-border);
-  padding: 0.55rem 0.5rem;
+  padding: 0.32rem 0.32rem;
   text-align: left;
   vertical-align: top;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 th {

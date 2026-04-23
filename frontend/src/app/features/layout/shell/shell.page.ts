@@ -45,7 +45,15 @@ export class ShellPage implements OnInit {
   private readonly navSections: NavSection[] = [
     {
       title: 'Principal',
-      items: [{ label: 'Inicio', hint: 'Dashboard', icon: 'dashboard', route: '/dashboard', roles: ['superadmin', 'admin', 'residente', 'familiar'] }],
+      items: [
+        { label: 'Inicio', hint: 'Dashboard', icon: 'dashboard', route: '/dashboard', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+      ],
+    },
+    {
+      title: 'Comunidad',
+      items: [
+        { label: 'Avisos', hint: 'Avisos generales', icon: 'dashboard', route: '/notices', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+      ],
     },
     {
       title: 'Personas',
