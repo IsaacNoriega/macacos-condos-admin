@@ -489,14 +489,37 @@ export const confirmStripeCheckoutSession = async (req: Request, res: Response, 
   }
 };
 
+// Superadmins without a tenantId claim are allowed through the tenant
+// middleware on /api/payments, so for mutation handlers that scope by
+// req.tenantId we first resolve the tenant from the stored record when
+// the caller is a superadmin and no token tenant is present. Otherwise
+// the findOne filter becomes { _id, tenantId: undefined } and the
+// operation always misses.
+const resolveTenantScopeForPayment = async (req: Request, paymentId: string): Promise<string | undefined> => {
+  if (req.tenantId) {
+    return req.tenantId;
+  }
+
+  if (req.user?.role === 'superadmin') {
+    const existing = await paymentsService.findPaymentById(paymentId);
+    if (existing?.tenantId) {
+      return String(existing.tenantId);
+    }
+  }
+
+  return req.tenantId;
+};
+
 export const updatePayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payment = await paymentsService.updatePaymentInTenant(String(req.params.id), req.tenantId, req.body);
+    const paymentId = String(req.params.id);
+    const tenantScope = await resolveTenantScopeForPayment(req, paymentId);
+    const payment = await paymentsService.updatePaymentInTenant(paymentId, tenantScope, req.body);
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
     }
 
-    logger.log('payments.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { paymentId: req.params.id });
+    logger.log('payments.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { paymentId });
     res.json({ success: true, payment });
   } catch (err: unknown) {
     logger.error('payments.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -506,12 +529,14 @@ export const updatePayment = async (req: Request, res: Response, next: NextFunct
 
 export const deletePayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const payment = await paymentsService.deletePaymentInTenant(String(req.params.id), req.tenantId);
+    const paymentId = String(req.params.id);
+    const tenantScope = await resolveTenantScopeForPayment(req, paymentId);
+    const payment = await paymentsService.deletePaymentInTenant(paymentId, tenantScope);
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
     }
 
-    logger.log('payments.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { paymentId: req.params.id });
+    logger.log('payments.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { paymentId });
     res.json({ success: true, message: 'Pago eliminado' });
   } catch (err: unknown) {
     logger.error('payments.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
