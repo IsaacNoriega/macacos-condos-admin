@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { UserRole } from '../../core/api.models';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { MacIconComponent, MacIconName } from '../shared/mac-icon/mac-icon.component';
 
 interface DashboardBar {
   label: string;
@@ -82,14 +84,39 @@ const DASHBOARD_COLORS = {
 const CHART_WIDTH = 100;
 const CHART_HEIGHT = 100;
 
+interface DashboardKpiView {
+  label: string;
+  value: number;
+  delta: number;
+  deltaPercent: number;
+  trend: 'up' | 'down' | 'flat';
+  note: string;
+  icon: MacIconName;
+  tone: 'navy' | 'amber' | 'ok' | 'warn';
+}
+
+interface QuickAction {
+  label: string;
+  route: string;
+  icon: MacIconName;
+  primary?: boolean;
+}
+
+const KPI_ICONS: { icon: MacIconName; tone: 'navy' | 'amber' | 'ok' | 'warn' }[] = [
+  { icon: 'users',    tone: 'navy'  },
+  { icon: 'card',     tone: 'amber' },
+  { icon: 'calendar', tone: 'ok'    },
+  { icon: 'wrench',   tone: 'warn'  },
+];
+
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MacIconComponent],
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.css',
 })
-export class DashboardPage implements OnInit {
+export class DashboardPage implements OnInit, OnDestroy {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly now = signal(new Date());
@@ -236,9 +263,64 @@ export class DashboardPage implements OnInit {
       .filter((series): series is DashboardTrendSeries => series !== null);
   });
 
+  readonly kpiViews = computed<DashboardKpiView[]>(() =>
+    this.kpiCards().map((card, index) => {
+      const style = KPI_ICONS[index % KPI_ICONS.length];
+      return {
+        label: card.label,
+        value: card.value,
+        delta: card.delta,
+        deltaPercent: card.deltaPercent,
+        trend: card.trend,
+        note: card.note,
+        icon: style.icon,
+        tone: style.tone,
+      };
+    })
+  );
+
+  readonly greeting = computed(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 19) return 'Buenas tardes';
+    return 'Buenas noches';
+  });
+
+  readonly firstName = computed(() => {
+    const name = this.auth.user()?.name?.trim();
+    if (!name) return '';
+    return name.split(/\s+/)[0] ?? '';
+  });
+
+  readonly todayLabel = computed(() => {
+    const d = this.now();
+    return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+  });
+
+  readonly quickActions = computed<QuickAction[]>(() => {
+    const role = this.auth.role();
+    if (!role) return [];
+    const isStaff = role === 'superadmin' || role === 'admin';
+    const actions: QuickAction[] = [];
+    if (isStaff) {
+      actions.push({ label: 'Cargos pendientes', route: '/charges',  icon: 'receipt' });
+      actions.push({ label: 'Pagos por aprobar', route: '/payments', icon: 'card' });
+    } else {
+      actions.push({ label: 'Mis pagos',    route: '/payments',    icon: 'card' });
+      actions.push({ label: 'Reservaciones', route: '/reservations', icon: 'calendar' });
+    }
+    actions.push({ label: 'Mantenimiento', route: '/maintenance', icon: 'wrench' });
+    return actions;
+  });
+
+  goTo(route: string): void {
+    this.router.navigate([route]);
+  }
+
   constructor(
     private readonly api: ApiService,
-    readonly auth: AuthService
+    readonly auth: AuthService,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {

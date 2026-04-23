@@ -1,79 +1,78 @@
-<div class="shell" [class.sidebar-collapsed]="sidebarCollapsed()">
-	<aside class="sidebar" [class.open]="menuOpen()" [class.collapsed]="sidebarCollapsed()">
-		<header class="sidebar-header">
-			<div class="brand-copy">
-				<h1>Macacos Condos</h1>
-				<p>Admin SaaS</p>
-			</div>
-			<button class="collapse-toggle" type="button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir sidebar' : 'Contraer sidebar'">
-				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-					<path d="M6 7l6 5-6 5" />
-					<path d="M12 7l6 5-6 5" />
-				</svg>
-			</button>
-		</header>
+<div class="mcs app-root" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()" [class.open]="menuOpen()">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <div class="logo-mark">M</div>
+      <div class="wordmark-wrap">
+        <div class="wordmark">Macacos</div>
+        <span class="wordmark-sub">Condos · Admin</span>
+      </div>
+      <button class="collapse-toggle" type="button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir sidebar' : 'Contraer sidebar'">
+        <mac-icon name="panelLeft" [size]="15"/>
+      </button>
+    </div>
 
-		<nav class="sidebar-nav">
-			@for (section of availableSections(); track section.title) {
-			<section class="nav-group">
-				<h2>{{ section.title }}</h2>
-				<div class="nav-links">
-					@for (item of section.items; track item.route) {
-					<a [routerLink]="item.route" routerLinkActive="active" (click)="closeMenu()">
-						<span class="nav-icon" aria-hidden="true">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-								<path [attr.d]="iconPath(item.icon)" />
-							</svg>
-						</span>
-						<span class="nav-copy">
-							<span class="nav-label">{{ item.label }}</span>
-							@if (item.hint) {
-							<small>{{ item.hint }}</small>
-							}
-						</span>
-					</a>
-					}
-				</div>
-			</section>
-			}
-		</nav>
+    <!-- Nav -->
+    <nav class="sidebar-nav mcs-scroll-soft">
+      @for (section of availableSections(); track section.title) {
+        <div class="nav-group">
+          <div class="nav-group-label">{{ section.title }}</div>
+          @for (item of section.items; track item.route) {
+            <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" (click)="closeMenu()" [title]="sidebarCollapsed() ? item.label : null">
+              <span class="ni-icon">
+                <mac-icon [name]="item.icon" [size]="18"/>
+              </span>
+              <span class="ni-label">{{ item.label }}</span>
+              @if (item.badge) {
+                <span class="ni-badge">{{ item.badge }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </nav>
 
-		<footer>
-			<div class="profile-card">
-				<div class="avatar" aria-hidden="true">{{ userInitials() }}</div>
-				<div class="profile-copy">
-					<p>{{ auth.user()?.name }}</p>
-					<small>{{ auth.user()?.role }}</small>
-				</div>
-			</div>
+    <!-- Footer (user chip + dropdown) -->
+    <footer class="sidebar-footer" #footerRef>
+      <button class="user-chip" type="button" (click)="toggleUserMenu()">
+        <div class="mcs-avatar">{{ userInitials() }}</div>
+        <div class="uc-info">
+          <div class="uc-name">{{ auth.user()?.name || 'Invitado' }}</div>
+          <div class="uc-role">{{ roleLabel() }}</div>
+        </div>
+        <span class="uc-caret">
+          <mac-icon [name]="userMenuOpen() ? 'chevronDown' : 'chevronUp'" [size]="14"/>
+        </span>
+      </button>
 
-			<div class="footer-actions">
-				<button class="theme-toggle" type="button" (click)="toggleTheme()" [attr.aria-label]="darkMode() ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
-					@if (darkMode()) {
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<circle cx="12" cy="12" r="5"/>
-						<path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-					</svg>
-					} @else {
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-						<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-					</svg>
-					}
-				</button>
-				<button class="logout-button" type="button" (click)="logout()">
-					<span aria-hidden="true">⎋</span>
-					<span>Cerrar sesión</span>
-				</button>
-			</div>
-		</footer>
-	</aside>
+      @if (userMenuOpen()) {
+        <div class="user-dropdown">
+          <div class="dd-section">
+            <div class="dd-section-label">Sesión</div>
+            <div class="dd-email">{{ auth.user()?.email }}</div>
+          </div>
+          <div class="dd-divider"></div>
+          <button type="button" class="dd-item" (click)="toggleTheme()">
+            <mac-icon [name]="darkMode() ? 'sun' : 'moon'" [size]="15"/>
+            <span>{{ darkMode() ? 'Tema claro' : 'Tema oscuro' }}</span>
+          </button>
+          <div class="dd-divider"></div>
+          <button type="button" class="dd-item danger" (click)="logout()">
+            <mac-icon name="logOut" [size]="15"/>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      }
+    </footer>
+  </aside>
 
-	<button class="sidebar-backdrop" type="button" [class.visible]="menuOpen()" (click)="closeMenu()" aria-label="Cerrar menú lateral"></button>
+  <button class="sidebar-backdrop" type="button" [class.visible]="menuOpen()" (click)="closeMenu()" aria-label="Cerrar menú"></button>
 
-	<main class="shell-main">
-		<button class="menu-toggle" type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()" aria-controls="sidebar-panel">
-			Menu
-		</button>
-		<router-outlet />
-	</main>
+  <main class="main">
+    <button class="menu-toggle mcs-btn ghost sm" type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()">
+      <mac-icon name="panelLeft" [size]="16"/>
+      <span>Menú</span>
+    </button>
+    <router-outlet/>
+  </main>
 </div>

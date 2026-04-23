@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Macacos · Condominios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles/tokens.css"/>
+<link rel="stylesheet" href="styles/app.css"/>
+<script>
+  // early theme init
+  (function(){
+    try {
+      var t = localStorage.getItem('macacos-theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    } catch(e){}
+  })();
+</script>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="lib/tweaks-panel.jsx"></script>
+<script type="text/babel" src="lib/icons.jsx"></script>
+<script type="text/babel" src="lib/mock.jsx"></script>
+<script type="text/babel" src="lib/shell.jsx"></script>
+<script type="text/babel" src="lib/drawers.jsx"></script>
+<script type="text/babel" src="lib/page-login.jsx"></script>
+<script type="text/babel" src="lib/page-dashboard.jsx"></script>
+<script type="text/babel" src="lib/page-residents-units.jsx"></script>
+<script type="text/babel" src="lib/page-charges.jsx"></script>
+<script type="text/babel" src="lib/page-payments.jsx"></script>
+<script type="text/babel" src="lib/page-maintenance-reservations.jsx"></script>
+<script type="text/babel" src="lib/page-tenants-users.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const PAGE_TITLES = {
+  dashboard: ['Dashboard'],
+  residents: ['Residentes'],
+  units: ['Unidades'],
+  charges: ['Cargos'],
+  payments: ['Pagos'],
+  maintenance: ['Mantenimiento'],
+  reservations: ['Reservaciones'],
+  tenants: ['Administración','Condominios'],
+  users: ['Sistema','Usuarios'],
+};
+
+function App() {
+  // Read current screen from URL hash for linking + deep linking
+  const readHash = () => {
+    const h = (window.location.hash || '').replace('#','');
+    const [screen, page] = h.split('/');
+    return { screen: screen || 'login', page: page || 'dashboard' };
+  };
+  const [state, setState] = useState(readHash());
+  const [role, setRole] = useState('Admin');
+  const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
+  const [collapsed, setCollapsed] = useState(false);
+  const [toasts, setToasts] = useState([]);
+
+  useEffect(() => {
+    const onHash = () => setState(readHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('macacos-theme', theme); } catch(e){}
+  }, [theme]);
+
+  // Filter page by role access
+  useEffect(() => {
+    if (role !== 'SuperAdmin' && state.page === 'tenants') navigate('app','dashboard');
+    if (role === 'Residente' && ['residents','tenants','users','charges'].includes(state.page)) navigate('app','dashboard');
+  }, [role, state.page]);
+
+  const navigate = (screen, page) => {
+    window.location.hash = page ? `${screen}/${page}` : screen;
+  };
+
+  const pushToast = (t) => {
+    const id = Date.now() + Math.random();
+    setToasts(ts => [...ts, { ...t, id }]);
+    setTimeout(() => setToasts(ts => ts.filter(x => x.id !== id)), 3800);
+  };
+
+  if (state.screen === 'login') {
+    return <>
+      <LoginPage onLogin={() => navigate('app','dashboard')}/>
+      <Toasts toasts={toasts}/>
+    </>;
+  }
+
+  const crumbs = PAGE_TITLES[state.page] || ['Dashboard'];
+
+  const PageC = {
+    dashboard: DashboardPage,
+    residents: ResidentsPage,
+    units: UnitsPage,
+    charges: ChargesPage,
+    payments: PaymentsPage,
+    maintenance: MaintenancePage,
+    reservations: ReservationsPage,
+    tenants: TenantsPage,
+    users: UsersPage,
+  }[state.page] || DashboardPage;
+
+  return (
+    <div className="app-root" data-screen-label={`App · ${state.page}`}>
+      <Sidebar
+        active={state.page}
+        onNav={(p) => navigate('app', p)}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(v => !v)}
+        role={role}
+        onRoleChange={setRole}
+        onLogout={() => navigate('login')}
+      />
+      <div className="main">
+        <Topbar
+          crumbs={crumbs}
+          pageTitle={crumbs[crumbs.length-1]}
+          onToggleSidebar={() => setCollapsed(v => !v)}
+          role={role}
+          onRoleChange={setRole}
+          theme={theme}
+          onToggleTheme={() => setTheme(t => t==='dark'?'light':'dark')}
+          pushToast={pushToast}
+        />
+        <PageC role={role} pushToast={pushToast}/>
+      </div>
+      <Toasts toasts={toasts}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

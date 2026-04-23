@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1280"/>
+<title>Macacos · Components Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles/tokens.css"/>
+<link rel="stylesheet" href="styles/app.css"/>
+<style>
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); margin: 0; }
+  .lib-shell { max-width: 1280px; margin: 0 auto; padding: 48px 56px 120px; }
+  .lib-hero { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 24px; border-bottom: 1px solid var(--border); padding-bottom: 28px; margin-bottom: 40px; }
+  .lib-hero h1 { font-family: var(--font-display); font-size: 56px; font-weight: 400; letter-spacing: -0.025em; line-height: 1; margin: 0 0 10px; }
+  .lib-hero p { color: var(--text-muted); font-size: 15px; margin: 0; max-width: 560px; }
+  .lib-hero .meta { font-size: 12px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 14px; }
+  .lib-toc { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 48px; padding: 14px 18px; background: var(--surface-muted); border-radius: 12px; }
+  .lib-toc a { font-size: 12.5px; color: var(--text-soft); text-decoration: none; padding: 6px 10px; border-radius: 6px; transition: all .15s; }
+  .lib-toc a:hover { background: var(--bg-elev); color: var(--text); }
+  section.lib-sec { margin-bottom: 72px; scroll-margin-top: 32px; }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle); }
+  .sec-head h2 { font-family: var(--font-display); font-size: 32px; font-weight: 400; letter-spacing: -0.02em; margin: 0; white-space: nowrap; }
+  .sec-head .count { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; white-space: nowrap; }
+  .sub-head { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--text-muted); margin: 24px 0 12px; }
+  .spec-card { background: var(--bg-elev); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 22px; margin-bottom: 14px; }
+  .spec-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; gap: 12px; }
+  .spec-name { font-weight: 600; font-size: 14.5px; }
+  .spec-tag { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted); padding: 3px 8px; background: var(--surface-muted); border-radius: 6px; }
+  .spec-desc { font-size: 13px; color: var(--text-muted); margin-top: -10px; margin-bottom: 16px; max-width: 640px; }
+  .demo-area { padding: 22px; background: var(--surface-muted); border-radius: 10px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .demo-area.stack-demo { flex-direction: column; align-items: stretch; }
+  .demo-area.grid-demo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .demo-area.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  code.inline { font-family: var(--font-mono); font-size: 11.5px; background: var(--surface-muted); padding: 2px 6px; border-radius: 4px; color: var(--text-soft); }
+  .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .swatch { border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; }
+  .swatch .chip-col { height: 56px; }
+  .swatch .chip-meta { padding: 10px 12px; }
+  .swatch .sw-name { font-size: 12px; font-weight: 600; }
+  .swatch .sw-val { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .type-sample { padding: 16px 0; border-bottom: 1px dashed var(--border-subtle); display: flex; align-items: baseline; gap: 20px; }
+  .type-sample:last-child { border-bottom: 0; }
+  .type-sample .t-label { width: 180px; flex-shrink: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .type-sample .t-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); margin-left: auto; white-space: nowrap; }
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 4px; }
+  .icon-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 8px; border-radius: 8px; transition: background .15s; cursor: default; }
+  .icon-cell:hover { background: var(--surface-muted); }
+  .icon-cell .icon-name { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-muted); }
+  .callout { padding: 18px 22px; background: var(--primary-soft); border-radius: 10px; border-left: 3px solid var(--primary); font-size: 13.5px; color: var(--text-soft); line-height: 1.55; }
+  .file-list { font-family: var(--font-mono); font-size: 12px; background: var(--surface-muted); border-radius: 8px; padding: 14px 16px; line-height: 1.85; color: var(--text-soft); }
+  .file-list b { color: var(--text); }
+  .prop-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .prop-table th { text-align: left; padding: 8px 10px; font-weight: 600; color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border-subtle); }
+  .prop-table td { padding: 10px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+  .prop-table td:first-child { font-family: var(--font-mono); color: var(--primary); font-weight: 500; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="lib/icons.jsx"></script>
+
+<script type="text/babel">
+const libStyles = {};
+
+const TOC = [
+  ['tokens','Design tokens'],
+  ['type','Tipografía'],
+  ['icons','Iconos'],
+  ['buttons','Botones'],
+  ['inputs','Inputs'],
+  ['badges','Badges & chips'],
+  ['cards','Cards'],
+  ['nav','Navegación'],
+  ['data','Data display'],
+  ['feedback','Feedback'],
+  ['modals','Modales & drawers'],
+  ['patterns','Patrones'],
+  ['files','Archivos'],
+];
+
+function Section({ id, title, count, children }) {
+  return (
+    <section id={id} className="lib-sec">
+      <div className="sec-head">
+        <h2>{title}</h2>
+        {count && <span className="count">{count}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Spec({ name, tag, desc, children }) {
+  return (
+    <div className="spec-card">
+      <div className="spec-head">
+        <div>
+          <div className="spec-name">{name}</div>
+          {desc && <div className="spec-desc" style={{ marginTop: 4, marginBottom: 0 }}>{desc}</div>}
+        </div>
+        {tag && <span className="spec-tag">{tag}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ---- colors (sampled from tokens.css) ----
+const PALETTES = {
+  'Navy (primary)': [
+    ['--brand-navy-50','oklch(0.97 0.012 255)'],
+    ['--brand-navy-100','oklch(0.93 0.022 255)'],
+    ['--brand-navy-300','oklch(0.72 0.08 255)'],
+    ['--brand-navy-500','oklch(0.45 0.14 258)'],
+    ['--brand-navy-700','oklch(0.30 0.11 260)'],
+    ['--brand-navy-800','oklch(0.24 0.09 260)'],
+    ['--brand-navy-900','oklch(0.18 0.06 260)'],
+  ],
+  'Amber (accent)': [
+    ['--amber-100','oklch(0.96 0.05 80)'],
+    ['--amber-300','oklch(0.88 0.13 80)'],
+    ['--amber-500','oklch(0.78 0.17 78)'],
+    ['--amber-600','oklch(0.68 0.17 70)'],
+    ['--amber-700','oklch(0.56 0.14 62)'],
+  ],
+  'Warm neutrals': [
+    ['--warm-50','oklch(0.985 0.006 80)'],
+    ['--warm-100','oklch(0.965 0.01 78)'],
+    ['--warm-200','oklch(0.93 0.014 78)'],
+    ['--warm-300','oklch(0.88 0.018 78)'],
+    ['--warm-500','oklch(0.64 0.018 78)'],
+    ['--warm-700','oklch(0.40 0.014 78)'],
+    ['--warm-900','oklch(0.22 0.008 78)'],
+  ],
+  'Semánticos': [
+    ['--ok-500','oklch(0.65 0.15 155)'],
+    ['--warn-500','oklch(0.78 0.15 75)'],
+    ['--bad-500','oklch(0.60 0.21 25)'],
+    ['--info-500','oklch(0.62 0.13 240)'],
+  ],
+};
+
+function Swatch({ name, val }) {
+  return (
+    <div className="swatch">
+      <div className="chip-col" style={{ background: `var(${name})` }}/>
+      <div className="chip-meta">
+        <div className="sw-name mono">{name}</div>
+        <div className="sw-val">{val}</div>
+      </div>
+    </div>
+  );
+}
+
+// ---- primitive demos ----
+function StatusBadge({ status }) {
+  const map = {
+    pagado:{c:'ok',l:'Pagado'}, aprobado:{c:'ok',l:'Aprobado'},
+    pendiente:{c:'',l:'Pendiente'}, 'revisión':{c:'amber',l:'Revisión'},
+    vencido:{c:'bad',l:'Vencido'}, rechazado:{c:'bad',l:'Rechazado'},
+  };
+  const { c, l } = map[status] || {c:'',l:status};
+  return <span className={`badge ${c}`}><span className="badge-dot"/>{l}</span>;
+}
+
+function DemoDrawer({ open, onClose }) {
+  if (!open) return null;
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:120 }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'oklch(0.18 0.014 255 / 0.45)', backdropFilter:'blur(3px)' }}/>
+      <div style={{ position:'absolute', right:0, top:0, bottom:0, width:420, maxWidth:'94vw', background:'var(--bg-elev)', borderLeft:'1px solid var(--border)', boxShadow:'var(--shadow-lg)', display:'flex', flexDirection:'column' }}>
+        <div style={{ padding:'18px 22px', borderBottom:'1px solid var(--border-subtle)', display:'flex', alignItems:'flex-start', gap:14 }}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:'var(--font-display)', fontSize:24, lineHeight:1.15, letterSpacing:'-0.015em' }}>Demo drawer</div>
+            <div style={{ fontSize:12.5, color:'var(--text-muted)', marginTop:3 }}>Side panel derecho, backdrop con blur</div>
+          </div>
+          <button className="btn ghost sm icon-only" onClick={onClose}><I.X size={15}/></button>
+        </div>
+        <div style={{ flex:1, padding:'18px 22px', fontSize:13.5, color:'var(--text-soft)', lineHeight:1.65 }}>
+          Todos los drawers de Macacos siguen este patrón: ancho variable (420–540 px), header con título serif + subtítulo, cuerpo con scroll suave, y footer sticky con acciones.
+        </div>
+        <div style={{ padding:'14px 22px', background:'var(--surface-muted)', borderTop:'1px solid var(--border-subtle)', display:'flex', gap:8, justifyContent:'flex-end' }}>
+          <button className="btn" onClick={onClose}>Cerrar</button>
+          <button className="btn primary" onClick={onClose}>Confirmar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DemoModal({ open, onClose }) {
+  if (!open) return null;
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e)=>e.stopPropagation()} style={{ maxWidth: 440 }}>
+        <div className="card-head between" style={{ padding:'18px 22px' }}>
+          <div className="card-title" style={{ fontFamily:'var(--font-display)', fontSize:22 }}>Demo modal</div>
+          <button className="btn ghost sm icon-only" onClick={onClose}><I.X size={14}/></button>
+        </div>
+        <div style={{ padding:22, fontSize:13.5, color:'var(--text-soft)', lineHeight:1.6 }}>
+          Usado solo para confirmaciones destructivas (<code className="inline">ConfirmModal</code>). Todo lo demás va en drawer.
+        </div>
+        <div className="modal-foot">
+          <button className="btn" onClick={onClose}>Cancelar</button>
+          <button className="btn primary" onClick={onClose}>Confirmar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [ch, setCh] = React.useState(false);
+  const [sw, setSw] = React.useState(true);
+  const [drawer, setDrawer] = React.useState(false);
+  const [modal, setModal] = React.useState(false);
+  const [chip, setChip] = React.useState('activos');
+  const [seg, setSeg] = React.useState('grid');
+
+  const iconList = Object.keys(window.I || {}).sort();
+
+  return (
+    <div className="lib-shell">
+      <header className="lib-hero">
+        <div>
+          <div className="meta">Handoff · v1 · Abril 2026</div>
+          <h1>Components Library</h1>
+          <p>Referencia visual completa del prototipo <strong>Macacos</strong>. Todos los tokens, primitivas y patrones agrupados. Tokens en <code className="inline">styles/tokens.css</code>, estilos en <code className="inline">styles/app.css</code>.</p>
+        </div>
+        <div style={{ width: 88, height: 88, borderRadius: 22, background: 'var(--primary)', color: 'white', display: 'grid', placeItems: 'center', fontFamily: 'var(--font-display)', fontSize: 44, lineHeight: 1 }}>M</div>
+      </header>
+
+      <nav className="lib-toc">
+        {TOC.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
+      </nav>
+
+      {/* ============ TOKENS ============ */}
+      <Section id="tokens" title="Design tokens" count={`${Object.values(PALETTES).flat().length} colores · 7 radii · 5 shadows`}>
+        {Object.entries(PALETTES).map(([name, swatches]) => (
+          <div key={name} style={{ marginBottom: 24 }}>
+            <div className="sub-head">{name}</div>
+            <div className="token-grid">
+              {swatches.map(([n, v]) => <Swatch key={n} name={n} val={v}/>)}
+            </div>
+          </div>
+        ))}
+
+        <div className="sub-head">Radius scale</div>
+        <div className="demo-area">
+          {[['xs',4],['sm',6],['md',8],['lg',12],['xl',16],['2xl',20],['pill',999]].map(([k,v]) => (
+            <div key={k} style={{ textAlign: 'center' }}>
+              <div style={{ width: 64, height: 64, background: 'var(--bg-elev)', border: '1px solid var(--border)', borderRadius: v, marginBottom: 6 }}/>
+              <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>--r-{k}</div>
+              <div style={{ fontSize: 10, color: 'var(--text-faint)' }}>{v}px</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="sub-head">Shadows</div>
+        <div className="demo-area">
+          {['xs','sm','md','lg','xl'].map(s => (
+            <div key={s} style={{ width: 120, height: 72, background: 'var(--bg-elev)', borderRadius: 10, boxShadow: `var(--shadow-${s})`, display: 'grid', placeItems: 'center', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>shadow-{s}</div>
+          ))}
+        </div>
+      </Section>
+
+      {/* ============ TYPE ============ */}
+      <Section id="type" title="Tipografía" count="3 familias · 8 escalas">
+        <div className="callout" style={{ marginBottom: 20 }}>
+          <strong>Instrument Serif</strong> para titulares y momentos de "hogar". <strong>Inter</strong> para UI (400/500/600/700). <strong>JetBrains Mono</strong> para valores tabulares y códigos.
+        </div>
+        <div className="spec-card">
+          <div className="type-sample">
+            <div className="t-label">Display 1</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 64, lineHeight: 1, letterSpacing: '-0.025em' }}>Bienvenido a casa</div>
+            <div className="t-meta">Instrument Serif · 64/1.0 · -0.025em</div>
+          </div>
+          <div className="type-sample">
+            <div className="t-label">Display 2</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em' }}>Cargos de abril</div>
+            <div className="t-meta">Instrument Serif · 44/1.05</div>
+          </div>
+          <div className="type-sample">
+            <div className="t-label">Page title (H1)</div>
+            <div className="page-title" style={{ margin: 0 }}>Residentes</div>
+            <div className="t-meta">.page-title · 32/1.12</div>
+          </div>
+          <div className="type-sample">
+            <div className="t-label">Section title</div>
+            <div className="section-title" style={{ margin: 0 }}>Identificación</div>
+            <div className="t-meta">.section-title · 10.5/uppercase</div>
+          </div>
+          <div className="type-sample">
+            <div className="t-label">Body</div>
+            <div style={{ fontSize: 14, lineHeight: 1.55 }}>La plataforma para administrar tu condominio con calma.</div>
+            <div className="t-meta">Inter · 14/1.55</div>
+          </div>
+          <div className="type-sample">
+            <div className="t-label">Mono tabular</div>
+            <div className="mono tabular" style={{ fontSize: 22, fontWeight: 600 }}>$12,450.00</div>
+            <div className="t-meta">JetBrains Mono · tabular-nums</div>
+          </div>
+          <div className="type-sample">
+            <div className="t-label">Caption</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>Última actualización hace 3 minutos</div>
+            <div className="t-meta">Inter · 11.5 · --text-muted</div>
+          </div>
+        </div>
+      </Section>
+
+      {/* ============ ICONS ============ */}
+      <Section id="icons" title="Iconos" count={`${iconList.length} glifos custom · 24×24 · 1.75 stroke`}>
+        <div className="callout" style={{ marginBottom: 20 }}>
+          Sistema propio en <code className="inline">lib/icons.jsx</code>. Uso: <code className="inline">&lt;I.Home size={16}/&gt;</code>. Heredan <code className="inline">currentColor</code>.
+        </div>
+        <div className="spec-card">
+          <div className="icon-grid">
+            {iconList.map(name => {
+              const IC = window.I[name];
+              return (
+                <div key={name} className="icon-cell">
+                  <IC size={20}/>
+                  <div className="icon-name">{name}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Section>
+
+      {/* ============ BUTTONS ============ */}
+      <Section id="buttons" title="Botones" count="4 variantes · 3 tamaños">
+        <Spec name="Variantes" tag=".btn / .btn.primary / .btn.ghost / .btn.danger-soft" desc="Estilo base neutral; primary para acción principal por vista; ghost para acciones secundarias en topbar.">
+          <div className="demo-area">
+            <button className="btn primary"><I.Plus size={14}/>Acción principal</button>
+            <button className="btn">Secundaria</button>
+            <button className="btn ghost">Ghost</button>
+            <button className="btn danger-soft"><I.Trash size={13}/>Destructiva</button>
+          </div>
+        </Spec>
+        <Spec name="Tamaños" tag="default · .sm · .icon-only">
+          <div className="demo-area">
+            <button className="btn primary">Default</button>
+            <button className="btn sm primary">Small</button>
+            <button className="btn sm icon-only"><I.Edit size={13}/></button>
+            <button className="btn sm icon-only ghost"><I.MoreV size={14}/></button>
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ INPUTS ============ */}
+      <Section id="inputs" title="Inputs" count="input · select · textarea · switch · check · chip">
+        <div className="grid cols-2" style={{ gap: 14 }}>
+          <Spec name="Text input" tag=".input">
+            <div className="demo-area stack-demo">
+              <input className="input" placeholder="Nombre completo"/>
+              <div className="input-wrap"><span className="input-icon"><I.Search size={14}/></span><input className="input with-icon" placeholder="Buscar..."/></div>
+            </div>
+          </Spec>
+          <Spec name="Select" tag=".select">
+            <div className="demo-area stack-demo">
+              <select className="select"><option>Departamento</option><option>Casa</option><option>Local</option></select>
+            </div>
+          </Spec>
+          <Spec name="Textarea" tag=".textarea">
+            <div className="demo-area stack-demo">
+              <textarea className="textarea" rows={3} placeholder="Describa la situación..."/>
+            </div>
+          </Spec>
+          <Spec name="Switch" tag=".switch / .switch.on" desc="Button semántico con clase toggle — animación suave del knob.">
+            <div className="demo-area">
+              <button className={`switch ${sw?'on':''}`} onClick={()=>setSw(!sw)}/>
+              <span style={{ fontSize: 13, color:'var(--text-muted)' }}>{sw?'Activo':'Inactivo'}</span>
+            </div>
+          </Spec>
+          <Spec name="Checkbox" tag=".check / .check.on">
+            <div className="demo-area">
+              <button className={`check ${ch?'on':''}`} onClick={()=>setCh(!ch)}>{ch && <I.Check size={11}/>}</button>
+              <span style={{ fontSize: 13, color:'var(--text-muted)' }}>Seleccionar</span>
+            </div>
+          </Spec>
+          <Spec name="Chips (filtros)" tag=".chip / .chip.on">
+            <div className="demo-area">
+              {['todos','activos','inactivos','titular'].map(k => (
+                <button key={k} className={`chip ${chip===k?'on':''}`} onClick={()=>setChip(k)}>{k}</button>
+              ))}
+            </div>
+          </Spec>
+        </div>
+      </Section>
+
+      {/* ============ BADGES ============ */}
+      <Section id="badges" title="Badges" count="7 colores semánticos">
+        <Spec name="Status badges" tag=".badge / .badge.ok / .bad / .amber / .info / .navy" desc="Dot + label; color transmite estado.">
+          <div className="demo-area">
+            <span className="badge ok"><span className="badge-dot"/>Pagado</span>
+            <span className="badge"><span className="badge-dot"/>Pendiente</span>
+            <span className="badge amber"><span className="badge-dot"/>Revisión</span>
+            <span className="badge bad"><span className="badge-dot"/>Vencido</span>
+            <span className="badge info"><span className="badge-dot"/>Info</span>
+            <span className="badge navy"><span className="badge-dot"/>Titular</span>
+          </div>
+        </Spec>
+        <Spec name="StatusBadge (helper)" tag="<StatusBadge status='pagado'/>" desc="Wrapper que mapea los estados del dominio a colores consistentes.">
+          <div className="demo-area">
+            {['pagado','pendiente','revisión','vencido','aprobado','rechazado'].map(s => <StatusBadge key={s} status={s}/>)}
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ CARDS ============ */}
+      <Section id="cards" title="Cards & paneles">
+        <Spec name="Card base" tag=".card / .card.hoverable">
+          <div className="demo-area">
+            <div className="card" style={{ padding: 18, width: 260 }}>
+              <div className="card-title">Card simple</div>
+              <div className="card-sub">Estructura base del contenedor</div>
+            </div>
+            <div className="card hoverable" style={{ padding: 18, width: 260 }}>
+              <div className="card-title">Card hoverable</div>
+              <div className="card-sub">Con lift + shadow en hover</div>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Stat card" tag=".i-round + .mono.tabular" desc="Fila fija con icono redondo, label pequeño, valor grande tabular, sub a la derecha.">
+          <div className="demo-area grid-demo">
+            <div className="card" style={{ padding:16, display:'flex', gap:14, alignItems:'center' }}>
+              <div className="i-round navy"><I.Receipt size={18}/></div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>En cobro este mes</div>
+                <div className="mono tabular" style={{ fontSize:22, fontWeight:600 }}>$124,500</div>
+              </div>
+              <div style={{ fontSize: 11.5, color:'var(--text-faint)' }}>42 cargos</div>
+            </div>
+            <div className="card" style={{ padding:16, display:'flex', gap:14, alignItems:'center' }}>
+              <div className="i-round warn"><I.Clock size={18}/></div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>Pendientes</div>
+                <div className="mono tabular" style={{ fontSize:22, fontWeight:600 }}>$42,800</div>
+              </div>
+              <div style={{ fontSize: 11.5, color:'var(--text-faint)' }}>18 cargos</div>
+            </div>
+            <div className="card" style={{ padding:16, display:'flex', gap:14, alignItems:'center' }}>
+              <div className="i-round bad"><I.AlertTri size={18}/></div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, color:'var(--text-muted)' }}>Vencidos</div>
+                <div className="mono tabular" style={{ fontSize:22, fontWeight:600 }}>$8,300</div>
+              </div>
+              <div style={{ fontSize: 11.5, color:'var(--text-faint)' }}>4 con mora</div>
+            </div>
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ NAV ============ */}
+      <Section id="nav" title="Navegación">
+        <Spec name="Segmented control" tag=".seg">
+          <div className="demo-area">
+            <div className="seg">
+              <button className={seg==='grid'?'on':''} onClick={()=>setSeg('grid')}><I.Grid size={13}/>Grid</button>
+              <button className={seg==='list'?'on':''} onClick={()=>setSeg('list')}><I.List size={13}/>Lista</button>
+              <button className={seg==='kanban'?'on':''} onClick={()=>setSeg('kanban')}><I.Kanban size={13}/>Kanban</button>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Avatar" tag=".avatar / .avatar.lg" desc="Iniciales sobre fondo warm; tamaños sm, md, lg.">
+          <div className="demo-area">
+            <div className="avatar">MG</div>
+            <div className="avatar lg">DR</div>
+            <div className="avatar lg" style={{ width: 72, height: 72, fontSize: 26 }}>AL</div>
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ DATA ============ */}
+      <Section id="data" title="Data display">
+        <Spec name="Field group" tag=".field / .field-label" desc="Wrapper vertical para inputs con label.">
+          <div className="demo-area grid-2">
+            <div className="field">
+              <label className="field-label">Nombre</label>
+              <input className="input" defaultValue="Carolina Herrera"/>
+            </div>
+            <div className="field">
+              <label className="field-label">Unidad</label>
+              <select className="select" defaultValue="D-204"><option>D-204</option><option>A-102</option></select>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Divider & stripes" tag=".divider / .stripes" desc="Stripes para placeholders de imagen (comprobantes, fotos).">
+          <div className="demo-area stack-demo">
+            <div className="divider"/>
+            <div className="stripes" style={{ height: 120, borderRadius: 10 }}>recibo_PAY-142.jpg</div>
+          </div>
+        </Spec>
+        <Spec name="Progress bar">
+          <div className="demo-area stack-demo">
+            <div style={{ height: 6, background: 'var(--border-subtle)', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ width: '68%', height: '100%', background: 'var(--primary)' }}/>
+            </div>
+            <div style={{ fontSize: 11.5, color:'var(--text-muted)' }}>Ocupación 68% · 34 de 50 unidades</div>
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ FEEDBACK ============ */}
+      <Section id="feedback" title="Feedback">
+        <Spec name="Toast" tag="pushToast({kind, title, msg})" desc="Pila de notificaciones en bottom-right. Se desvanecen en 3.8s.">
+          <div className="demo-area stack-demo">
+            <div style={{ padding: '12px 14px', background:'var(--bg-elev)', border:'1px solid var(--border)', borderRadius: 10, display:'flex', gap:10, alignItems:'flex-start', borderLeft:'3px solid var(--ok-500)' }}>
+              <I.CheckCircle size={16} style={{ color:'var(--ok-700)', marginTop: 1 }}/>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>Residente creado</div>
+                <div style={{ fontSize: 12, color:'var(--text-muted)' }}>Carolina Herrera fue añadida a D-204</div>
+              </div>
+            </div>
+            <div style={{ padding: '12px 14px', background:'var(--bg-elev)', border:'1px solid var(--border)', borderRadius: 10, display:'flex', gap:10, alignItems:'flex-start', borderLeft:'3px solid var(--bad-500)' }}>
+              <I.XCircle size={16} style={{ color:'var(--bad-700)', marginTop: 1 }}/>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600 }}>Pago rechazado</div>
+                <div style={{ fontSize: 12, color:'var(--text-muted)' }}>El comprobante no es legible</div>
+              </div>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Empty state" tag="<Empty title message/>">
+          <div className="demo-area stack-demo">
+            <div style={{ textAlign: 'center', padding: 32, color:'var(--text-muted)' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--surface-muted)', display: 'grid', placeItems:'center', margin:'0 auto 10px' }}><I.Search size={22}/></div>
+              <div style={{ fontSize: 14.5, fontWeight: 600, color:'var(--text)' }}>Sin resultados</div>
+              <div style={{ fontSize: 12.5, marginTop: 4 }}>Pruebe ajustar los filtros o la búsqueda.</div>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Callout / info banner" tag=".row + --primary-soft">
+          <div className="demo-area">
+            <div className="row gap-sm" style={{ padding: 10, background:'var(--primary-soft)', borderRadius: 8, fontSize: 12.5 }}>
+              <I.Info size={14} style={{ color:'var(--primary)' }}/>
+              <span style={{ color:'var(--text-soft)' }}>Se notificará por correo a cada residente asociado.</span>
+            </div>
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ MODALS ============ */}
+      <Section id="modals" title="Modales & drawers">
+        <div className="callout" style={{ marginBottom: 20 }}>
+          <strong>Regla:</strong> drawers laterales para creación/edición/detalle; modales solo para confirmaciones destructivas (<code className="inline">ConfirmModal</code>).
+        </div>
+        <Spec name="Drawer lateral" tag="<Drawer open onClose title subtitle width footer/>" desc="Desde la derecha, backdrop con blur, scroll suave en el cuerpo, footer sticky con acciones. Widths: 420 (detail), 480 (resident), 520 (ticket/charge/reservation/payment), 540 (unit/tenant/new-charge).">
+          <div className="demo-area">
+            <button className="btn primary" onClick={()=>setDrawer(true)}>Abrir drawer</button>
+          </div>
+          <DemoDrawer open={drawer} onClose={()=>setDrawer(false)}/>
+        </Spec>
+        <Spec name="Modal (confirmación)" tag="<ConfirmModal open onCancel onConfirm/>" desc="Centrado, max-width 440; usar solo para 'Eliminar', 'Rechazar' y similares.">
+          <div className="demo-area">
+            <button className="btn" onClick={()=>setModal(true)}>Abrir modal</button>
+          </div>
+          <DemoModal open={modal} onClose={()=>setModal(false)}/>
+        </Spec>
+
+        <div className="sub-head">Inventario de drawers</div>
+        <table className="prop-table">
+          <thead><tr><th>Componente</th><th>Tipo</th><th>Props</th><th>Usado en</th></tr></thead>
+          <tbody>
+            <tr><td>UnitDrawer</td><td>Detalle</td><td>unit, onClose, pushToast</td><td>Unidades</td></tr>
+            <tr><td>ResidentDrawer</td><td>Detalle</td><td>resident, onClose, pushToast</td><td>Residentes</td></tr>
+            <tr><td>TicketDrawer</td><td>Detalle</td><td>ticket, onClose, pushToast</td><td>Mantenimiento</td></tr>
+            <tr><td>ChargeDetailModal</td><td>Detalle</td><td>charge, onClose, pushToast</td><td>Cargos</td></tr>
+            <tr><td>ReceiptModal</td><td>Detalle</td><td>payment, onClose, pushToast</td><td>Pagos</td></tr>
+            <tr><td>NewResidentDrawer</td><td>Creación</td><td>open, onClose, pushToast</td><td>Residentes</td></tr>
+            <tr><td>NewUnitDrawer</td><td>Creación</td><td>open, onClose, pushToast</td><td>Unidades</td></tr>
+            <tr><td>NewChargeDrawer</td><td>Creación</td><td>open, onClose, pushToast</td><td>Cargos</td></tr>
+            <tr><td>NewPaymentDrawer</td><td>Creación</td><td>open, onClose, pushToast</td><td>Pagos</td></tr>
+            <tr><td>NewTicketDrawer</td><td>Creación</td><td>open, onClose, pushToast</td><td>Mantenimiento</td></tr>
+            <tr><td>ReservationModal</td><td>Creación</td><td>open, onClose, pushToast</td><td>Reservaciones</td></tr>
+            <tr><td>NewTenantDrawer</td><td>Creación</td><td>open, onClose, pushToast</td><td>Condominios</td></tr>
+          </tbody>
+        </table>
+      </Section>
+
+      {/* ============ PATTERNS ============ */}
+      <Section id="patterns" title="Patrones de layout">
+        <Spec name="Page head" tag=".page-head > h1.page-title + p.page-sub + actions" desc="Cada página arranca con este bloque: título + sub + cluster de acciones a la derecha.">
+          <div className="demo-area stack-demo">
+            <div className="page-head" style={{ background:'var(--bg-elev)', padding: 18, borderRadius: 10, margin: 0 }}>
+              <div>
+                <h1 className="page-title" style={{ margin: 0 }}>Residentes</h1>
+                <p className="page-sub" style={{ margin: '2px 0 0' }}>42 residentes · 38 activos</p>
+              </div>
+              <div className="row gap-sm">
+                <button className="btn"><I.Download size={15}/>Exportar</button>
+                <button className="btn primary"><I.Plus size={15}/>Añadir residente</button>
+              </div>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Filter bar" tag="chips + segmented + search" desc="Orden canónico: búsqueda a la izquierda, chips de filtro al centro/derecha, segmented al final.">
+          <div className="demo-area">
+            <div className="row between" style={{ width:'100%', flexWrap:'wrap', gap: 12 }}>
+              <div className="input-wrap" style={{ maxWidth: 280, flex: 1 }}>
+                <span className="input-icon"><I.Search size={14}/></span>
+                <input className="input with-icon" placeholder="Buscar..."/>
+              </div>
+              <div className="row gap-sm">
+                <button className="chip on">Todos</button>
+                <button className="chip">Activos</button>
+                <button className="chip">Inactivos</button>
+              </div>
+            </div>
+          </div>
+        </Spec>
+        <Spec name="Borde de estado" tag="borderLeft: 3px solid var(--xxx-500)" desc="Todas las cards con estado usan borde izquierdo de 3px del color semántico (tickets por prioridad, cargos por status).">
+          <div className="demo-area grid-demo">
+            <div className="card" style={{ padding: 14, borderLeft: '3px solid var(--ok-500)' }}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>Cargo pagado</div>
+              <div style={{ fontSize: 11.5, color:'var(--text-muted)' }}>CH-012</div>
+            </div>
+            <div className="card" style={{ padding: 14, borderLeft: '3px solid var(--warn-500)' }}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>Pendiente</div>
+              <div style={{ fontSize: 11.5, color:'var(--text-muted)' }}>CH-034</div>
+            </div>
+            <div className="card" style={{ padding: 14, borderLeft: '3px solid var(--bad-500)' }}>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>Vencido · alta</div>
+              <div style={{ fontSize: 11.5, color:'var(--text-muted)' }}>CH-055</div>
+            </div>
+          </div>
+        </Spec>
+      </Section>
+
+      {/* ============ FILES ============ */}
+      <Section id="files" title="Archivos del proyecto">
+        <div className="callout" style={{ marginBottom: 20 }}>
+          Entry: <code className="inline">Macacos Prototype.html</code>. Carga React 18 + Babel standalone (pinned + integrity) y los archivos JSX en orden. Globals por <code className="inline">Object.assign(window, &#123;...&#125;)</code> al final de cada archivo.
+        </div>
+        <div className="file-list">
+          <b>Macacos Prototype.html</b>         — entry + router hash + App<br/>
+          <b>Macacos Components.html</b>        — este catálogo<br/>
+          styles/<br/>
+          &nbsp;&nbsp;├─ <b>tokens.css</b>      — CSS vars: color (light+dark), radii, shadows, fonts<br/>
+          &nbsp;&nbsp;└─ <b>app.css</b>         — primitivas: btn, input, chip, card, badge, switch, etc<br/>
+          lib/<br/>
+          &nbsp;&nbsp;├─ <b>icons.jsx</b>       — sistema I.* (82 glifos custom)<br/>
+          &nbsp;&nbsp;├─ <b>mock.jsx</b>        — MOCK data (residents, units, charges, payments, tickets, etc)<br/>
+          &nbsp;&nbsp;├─ <b>shell.jsx</b>       — Sidebar, Topbar, Empty, ConfirmModal, Toasts, StatusBadge, fmt*<br/>
+          &nbsp;&nbsp;├─ <b>drawers.jsx</b>     — todos los drawers (detail + creation)<br/>
+          &nbsp;&nbsp;├─ <b>page-login.jsx</b>  — split login<br/>
+          &nbsp;&nbsp;├─ <b>page-dashboard.jsx</b>         — KPIs + charts<br/>
+          &nbsp;&nbsp;├─ <b>page-residents-units.jsx</b>   — ResidentsPage, UnitsPage<br/>
+          &nbsp;&nbsp;├─ <b>page-charges.jsx</b><br/>
+          &nbsp;&nbsp;├─ <b>page-payments.jsx</b>          — Admin + Residente views<br/>
+          &nbsp;&nbsp;├─ <b>page-maintenance-reservations.jsx</b> — MaintenancePage, ReservationsPage<br/>
+          &nbsp;&nbsp;└─ <b>page-tenants-users.jsx</b>     — TenantsPage (SuperAdmin), UsersPage<br/>
+        </div>
+
+        <div className="sub-head">Contratos clave</div>
+        <table className="prop-table">
+          <thead><tr><th>Helper</th><th>Firma</th><th>Dónde vive</th></tr></thead>
+          <tbody>
+            <tr><td>pushToast</td><td>(&#123;kind, title, msg&#125;) ⇒ void</td><td>App → se pasa a todas las páginas</td></tr>
+            <tr><td>fmtMoney</td><td>(n) ⇒ "$1,234.00"</td><td>shell.jsx</td></tr>
+            <tr><td>fmtDate</td><td>(iso) ⇒ "23 abr"</td><td>shell.jsx</td></tr>
+            <tr><td>StatusBadge</td><td>&lt;StatusBadge status/&gt;</td><td>shell.jsx</td></tr>
+            <tr><td>navigate</td><td>(screen, page) ⇒ hash</td><td>App (hash-based router)</td></tr>
+            <tr><td>Tema</td><td>data-theme="light|dark" en html</td><td>Topbar toggle · localStorage</td></tr>
+            <tr><td>Rol</td><td>"SuperAdmin" · "Admin" · "Residente"</td><td>state en App; gating por useEffect</td></tr>
+          </tbody>
+        </table>
+      </Section>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,191 @@
+/* ============================================
+   MACACOS — Design Tokens
+   Residencial · Confiable · Hogareño
+   ============================================ */
+
+:root {
+  /* ---- Brand ---- */
+  --brand-navy-900: oklch(0.22 0.055 255);
+  --brand-navy-800: oklch(0.28 0.070 255);
+  --brand-navy-700: oklch(0.34 0.080 255);
+  --brand-navy-600: oklch(0.42 0.088 255);
+  --brand-navy-500: oklch(0.52 0.090 255);
+  --brand-navy-400: oklch(0.64 0.085 255);
+  --brand-navy-300: oklch(0.78 0.060 255);
+  --brand-navy-200: oklch(0.88 0.035 255);
+  --brand-navy-100: oklch(0.94 0.020 255);
+  --brand-navy-50:  oklch(0.975 0.010 255);
+
+  --brand-amber-700: oklch(0.62 0.145 70);
+  --brand-amber-600: oklch(0.72 0.150 75);
+  --brand-amber-500: oklch(0.80 0.135 80);
+  --brand-amber-400: oklch(0.86 0.110 82);
+  --brand-amber-200: oklch(0.94 0.055 85);
+  --brand-amber-100: oklch(0.97 0.030 85);
+
+  /* warm neutrals */
+  --warm-50:  oklch(0.992 0.004 85);
+  --warm-100: oklch(0.975 0.006 85);
+  --warm-200: oklch(0.945 0.008 85);
+  --warm-300: oklch(0.90 0.010 85);
+  --warm-400: oklch(0.80 0.012 85);
+  --warm-500: oklch(0.65 0.014 85);
+  --warm-600: oklch(0.50 0.016 85);
+  --warm-700: oklch(0.38 0.016 85);
+  --warm-800: oklch(0.26 0.014 85);
+  --warm-900: oklch(0.18 0.012 85);
+  --warm-950: oklch(0.12 0.010 85);
+
+  /* status */
+  --ok-700: oklch(0.50 0.12 155);
+  --ok-500: oklch(0.65 0.13 155);
+  --ok-200: oklch(0.92 0.055 155);
+  --ok-100: oklch(0.965 0.030 155);
+
+  --warn-700: oklch(0.58 0.13 65);
+  --warn-500: oklch(0.75 0.145 75);
+  --warn-200: oklch(0.94 0.065 80);
+  --warn-100: oklch(0.975 0.035 80);
+
+  --bad-700: oklch(0.50 0.15 25);
+  --bad-500: oklch(0.62 0.17 27);
+  --bad-200: oklch(0.92 0.055 25);
+  --bad-100: oklch(0.965 0.030 25);
+
+  --info-700: oklch(0.50 0.11 230);
+  --info-500: oklch(0.65 0.12 230);
+  --info-200: oklch(0.92 0.045 230);
+  --info-100: oklch(0.965 0.025 230);
+
+  /* ---- Semantic (light by default) ---- */
+  --bg: var(--warm-100);
+  --bg-elev: #ffffff;
+  --bg-sunken: var(--warm-200);
+  --surface: #ffffff;
+  --surface-hover: var(--warm-100);
+  --surface-muted: var(--warm-200);
+  --sidebar-bg: var(--warm-50);
+  --border: oklch(0.90 0.010 85);
+  --border-strong: oklch(0.82 0.012 85);
+  --border-subtle: oklch(0.94 0.008 85);
+
+  --text: var(--warm-900);
+  --text-soft: var(--warm-700);
+  --text-muted: var(--warm-600);
+  --text-faint: var(--warm-500);
+  --text-invert: var(--warm-50);
+
+  --primary: var(--brand-navy-800);
+  --primary-hover: var(--brand-navy-900);
+  --primary-soft: var(--brand-navy-100);
+  --primary-soft-strong: var(--brand-navy-200);
+  --on-primary: #ffffff;
+
+  --accent: var(--brand-amber-500);
+  --accent-strong: var(--brand-amber-700);
+  --accent-soft: var(--brand-amber-100);
+
+  --shadow-xs: 0 1px 2px oklch(0.30 0.02 85 / 0.05);
+  --shadow-sm: 0 1px 2px oklch(0.30 0.02 85 / 0.05), 0 2px 6px oklch(0.30 0.02 85 / 0.04);
+  --shadow-md: 0 2px 4px oklch(0.30 0.02 85 / 0.05), 0 6px 16px oklch(0.30 0.02 85 / 0.06);
+  --shadow-lg: 0 4px 8px oklch(0.30 0.02 85 / 0.06), 0 16px 32px oklch(0.30 0.02 85 / 0.09);
+  --shadow-focus: 0 0 0 3px oklch(0.52 0.09 255 / 0.18);
+
+  /* radii */
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-full: 999px;
+
+  /* fonts */
+  --font-display: 'Instrument Serif', 'Source Serif 4', ui-serif, Georgia, serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 360ms;
+
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --bg: oklch(0.16 0.014 255);
+  --bg-elev: oklch(0.20 0.016 255);
+  --bg-sunken: oklch(0.13 0.012 255);
+  --surface: oklch(0.21 0.018 255);
+  --surface-hover: oklch(0.24 0.020 255);
+  --surface-muted: oklch(0.19 0.016 255);
+  --sidebar-bg: oklch(0.14 0.014 255);
+  --border: oklch(0.30 0.020 255);
+  --border-strong: oklch(0.38 0.024 255);
+  --border-subtle: oklch(0.25 0.018 255);
+
+  --text: oklch(0.96 0.008 85);
+  --text-soft: oklch(0.84 0.010 85);
+  --text-muted: oklch(0.68 0.012 85);
+  --text-faint: oklch(0.55 0.014 85);
+  --text-invert: oklch(0.18 0.014 255);
+
+  --primary: oklch(0.78 0.085 82);
+  --primary-hover: oklch(0.85 0.095 82);
+  --primary-soft: oklch(0.28 0.040 82 / 0.35);
+  --primary-soft-strong: oklch(0.32 0.050 82 / 0.5);
+  --on-primary: oklch(0.16 0.02 82);
+
+  --accent: oklch(0.80 0.13 80);
+  --accent-strong: oklch(0.86 0.14 80);
+  --accent-soft: oklch(0.30 0.05 80 / 0.30);
+
+  --ok-200: oklch(0.30 0.05 155 / 0.35);
+  --ok-100: oklch(0.26 0.04 155 / 0.25);
+  --warn-200: oklch(0.32 0.06 80 / 0.35);
+  --warn-100: oklch(0.26 0.05 80 / 0.25);
+  --bad-200: oklch(0.30 0.06 25 / 0.35);
+  --bad-100: oklch(0.26 0.05 25 / 0.25);
+  --info-200: oklch(0.30 0.05 230 / 0.35);
+  --info-100: oklch(0.26 0.04 230 / 0.25);
+
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.25);
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.30), 0 2px 6px oklch(0 0 0 / 0.25);
+  --shadow-md: 0 2px 4px oklch(0 0 0 / 0.30), 0 6px 16px oklch(0 0 0 / 0.30);
+  --shadow-lg: 0 4px 8px oklch(0 0 0 / 0.35), 0 16px 32px oklch(0 0 0 / 0.45);
+  --shadow-focus: 0 0 0 3px oklch(0.78 0.09 82 / 0.35);
+
+  color-scheme: dark;
+}
+
+/* ---- Resets ---- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+  text-rendering: optimizeLegibility;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+::selection { background: var(--primary-soft-strong); color: var(--text); }
+
+/* ---- Scrollbar (subtle) ---- */
+.scroll-soft::-webkit-scrollbar { width: 10px; height: 10px; }
+.scroll-soft::-webkit-scrollbar-track { background: transparent; }
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid var(--bg);
+}
+.scroll-soft::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+
+/* ---- Utility ---- */
+.mono { font-family: var(--font-mono); font-feature-settings: 'tnum'; }
+.serif { font-family: var(--font-display); letter-spacing: -0.01em; }
+.tabular { font-variant-numeric: tabular-nums; }
