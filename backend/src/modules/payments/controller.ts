@@ -127,7 +127,6 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
       currency,
       provider,
       proofOfPaymentUrl,
-      proofOfPaymentBlobName,
     } = req.body;
     const userRole = req.user?.role;
     const targetTenantId = userRole === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
@@ -178,7 +177,10 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
       provider: provider || 'manual',
       status: paymentStatus,
       proofOfPaymentUrl: proofOfPaymentUrl || undefined,
-      proofOfPaymentBlobName: proofOfPaymentBlobName || extractBlobNameFromProofUrl(String(proofOfPaymentUrl || '')) || undefined,
+      // Always derive the blob name server-side from the uploaded URL so a
+      // client can't point us at a blob they didn't upload through the
+      // /payments/proofs flow and then receive a signed read URL for it.
+      proofOfPaymentBlobName: extractBlobNameFromProofUrl(String(proofOfPaymentUrl || '')) || undefined,
       paymentDate: new Date(),
     };
 
@@ -248,12 +250,19 @@ export const getPaymentProof = async (req: Request, res: Response, next: NextFun
 
     const blobName = payment.proofOfPaymentBlobName || extractBlobNameFromProofUrl(String(payment.proofOfPaymentUrl || ''));
 
-    if (!blobName) {
-      throw new AppError('No se pudo resolver el comprobante', 404);
+    if (blobName) {
+      const proofUrl = await getPaymentProofSasUrl(blobName);
+      return res.json({ success: true, proofUrl });
     }
 
-    const proofUrl = await getPaymentProofSasUrl(blobName);
-    res.json({ success: true, proofUrl });
+    // Legacy payments may only store the original proofOfPaymentUrl without
+    // a resolvable Azure blob name; fall back to returning that URL so
+    // historical records remain accessible.
+    if (payment.proofOfPaymentUrl) {
+      return res.json({ success: true, proofUrl: payment.proofOfPaymentUrl });
+    }
+
+    throw new AppError('No se pudo resolver el comprobante', 404);
   } catch (err: unknown) {
     logger.error('payments.proof.get.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al abrir comprobante', 400, { cause: toError(err).message }));

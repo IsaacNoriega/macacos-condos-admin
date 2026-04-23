@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { NextFunction, Request, Response, Router } from 'express';
 import { body, param } from 'express-validator';
 import multer from 'multer';
 import {
@@ -24,9 +24,28 @@ const upload = multer({
   },
 });
 
+// Wrap multer so its errors (e.g. LIMIT_FILE_SIZE on files over 10 MB)
+// surface as 4xx validation errors instead of falling through to the
+// global handler and being reported as 500s.
+const uploadProofFile = (req: Request, res: Response, next: NextFunction) => {
+  upload.single('file')(req, res, (err: unknown) => {
+    if (err instanceof multer.MulterError) {
+      const message =
+        err.code === 'LIMIT_FILE_SIZE'
+          ? 'El comprobante supera el tamaño máximo permitido (10 MB)'
+          : `No se pudo procesar el archivo: ${err.message}`;
+      return res.status(400).json({ success: false, message });
+    }
+    if (err) {
+      return next(err);
+    }
+    return next();
+  });
+};
+
 router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllPayments);
 router.get('/:id/proof', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), param('id').isMongoId().withMessage('ID inválido'), validateRequest, getPaymentProof);
-router.post('/proofs', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), upload.single('file'), uploadPaymentProof);
+router.post('/proofs', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), uploadProofFile, uploadPaymentProof);
 router.post('/',
   roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']),
   body('userId').isMongoId().withMessage('userId inválido'),
