@@ -19,6 +19,12 @@ const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
         return next();
       }
 
+      // Superadmins may be global (no tenantId claim); controllers resolve
+      // the target tenant from the request body/query when needed.
+      if (req.user?.role === 'superadmin') {
+        return next();
+      }
+
       return res.status(403).json({
         success: false,
         message: 'No tenantId found in token',

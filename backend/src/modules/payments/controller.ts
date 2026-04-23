@@ -228,13 +228,18 @@ export const uploadPaymentProof = async (req: Request, res: Response, next: Next
 export const getPaymentProof = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const paymentId = String(req.params.id);
+    const role = req.user?.role;
     const payment =
-      req.user?.role === 'superadmin'
+      role === 'superadmin'
         ? await paymentsService.findPaymentById(paymentId)
         : await paymentsService.findPaymentByIdInTenant(paymentId, req.tenantId);
 
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
+    }
+
+    if ((role === 'residente' || role === 'familiar') && String(payment.userId) !== String(req.user?.id)) {
+      throw new AppError('No tienes permisos para ver este comprobante', 403);
     }
 
     if (!payment.proofOfPaymentUrl && !payment.proofOfPaymentBlobName) {
@@ -490,7 +495,10 @@ export const approvePaymentWithProof = async (req: Request, res: Response, next:
     }
 
     const paymentId = String(req.params.id);
-    const payment = await paymentsService.findPaymentById(paymentId);
+    const payment =
+      req.user?.role === 'superadmin'
+        ? await paymentsService.findPaymentById(paymentId)
+        : await paymentsService.findPaymentByIdInTenant(paymentId, req.tenantId);
 
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
@@ -534,7 +542,10 @@ export const rejectPaymentWithProof = async (req: Request, res: Response, next: 
     }
 
     const paymentId = String(req.params.id);
-    const payment = await paymentsService.findPaymentById(paymentId);
+    const payment =
+      req.user?.role === 'superadmin'
+        ? await paymentsService.findPaymentById(paymentId)
+        : await paymentsService.findPaymentByIdInTenant(paymentId, req.tenantId);
 
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
