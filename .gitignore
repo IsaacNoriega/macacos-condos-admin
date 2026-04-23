@@ -137,3 +137,6 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Local seed script (generated from EXECUTION_MANUAL.md instructions)
+backend/seed.js
