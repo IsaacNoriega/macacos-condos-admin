@@ -571,6 +571,19 @@ export const deletePayment = async (req: Request, res: Response, next: NextFunct
       throw new AppError('Pago no encontrado', 404);
     }
 
+    // Remove the uploaded proof blob from Azure so we don't leak the
+    // comprobante file when an admin intentionally deletes the payment.
+    // Best-effort: Mongo row is already gone, so we log the outcome but
+    // don't fail the request if storage cleanup errors out.
+    if (payment.proofOfPaymentBlobName) {
+      const removed = await deletePaymentProofBlob(String(payment.proofOfPaymentBlobName));
+      logger.log('payments.delete.proofCleanup', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', {
+        paymentId,
+        blobName: payment.proofOfPaymentBlobName,
+        removed,
+      });
+    }
+
     logger.log('payments.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { paymentId });
     res.json({ success: true, message: 'Pago eliminado' });
   } catch (err: unknown) {

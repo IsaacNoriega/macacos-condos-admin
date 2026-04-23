@@ -7,7 +7,6 @@ import Payment from '../payments/model';
 import Maintenance from '../maintenance/model';
 import Reservation from '../reservations/model';
 import Amenity from '../amenities/model';
-import mongoose from 'mongoose';
 
 export const findAllTenants = () => {
   return Tenant.find();
@@ -28,37 +27,30 @@ export const updateTenant = (tenantId: string, payload: Record<string, unknown>)
 };
 
 export const deleteTenant = async (tenantId: string) => {
-  const session = await mongoose.startSession();
-
-  try {
-    session.startTransaction();
-
-    const tenant = await Tenant.findById(tenantId).session(session);
-    if (!tenant) {
-      await session.abortTransaction();
-      return null;
-    }
-
-    // Elimina toda la data ligada al tenant para evitar registros huérfanos.
-    await Promise.all([
-      Payment.deleteMany({ tenantId }, { session }),
-      Charge.deleteMany({ tenantId }, { session }),
-      Reservation.deleteMany({ tenantId }, { session }),
-      Maintenance.deleteMany({ tenantId }, { session }),
-      Resident.deleteMany({ tenantId }, { session }),
-      Unit.deleteMany({ tenantId }, { session }),
-      Amenity.deleteMany({ tenantId }, { session }),
-      User.deleteMany({ tenantId }, { session }),
-    ]);
-
-    await Tenant.deleteOne({ _id: tenantId }, { session });
-
-    await session.commitTransaction();
-    return tenant;
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    await session.endSession();
+  const tenant = await Tenant.findById(tenantId);
+  if (!tenant) {
+    return null;
   }
+
+  // Elimina toda la data ligada al tenant para evitar registros huérfanos.
+  // Intencionalmente sin transacción: el ambiente de ejecución actual
+  // (mongod standalone) no soporta transacciones de replica-set, y
+  // correr Promise.all dentro de una sola sesión de transacción falla
+  // porque MongoDB no permite operaciones paralelas sobre la misma
+  // sesión. Sacrificamos atomicidad a cambio de compatibilidad; el
+  // peor caso es una limpieza parcial si el proceso muere a la mitad.
+  await Promise.all([
+    Payment.deleteMany({ tenantId }),
+    Charge.deleteMany({ tenantId }),
+    Reservation.deleteMany({ tenantId }),
+    Maintenance.deleteMany({ tenantId }),
+    Resident.deleteMany({ tenantId }),
+    Unit.deleteMany({ tenantId }),
+    Amenity.deleteMany({ tenantId }),
+    User.deleteMany({ tenantId }),
+  ]);
+
+  await Tenant.deleteOne({ _id: tenantId });
+
+  return tenant;
 };
