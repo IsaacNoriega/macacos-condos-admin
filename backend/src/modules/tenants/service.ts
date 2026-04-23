@@ -7,6 +7,7 @@ import Payment from '../payments/model';
 import Maintenance from '../maintenance/model';
 import Reservation from '../reservations/model';
 import Amenity from '../amenities/model';
+import { deletePaymentProofBlob } from '../../config/azureBlob';
 
 export const findAllTenants = () => {
   return Tenant.find();
@@ -31,6 +32,21 @@ export const deleteTenant = async (tenantId: string) => {
   if (!tenant) {
     return null;
   }
+
+  // Antes de borrar los Payment, remover de Azure cualquier comprobante
+  // subido — si primero borramos la fila de Mongo, perdemos la
+  // referencia al blob y quedaría huérfano (y facturándose) en Storage.
+  const paymentsWithProof = await Payment.find(
+    { tenantId, proofOfPaymentBlobName: { $exists: true, $ne: null } },
+    { proofOfPaymentBlobName: 1 }
+  ).lean();
+
+  await Promise.all(
+    paymentsWithProof
+      .map((p) => String(p.proofOfPaymentBlobName || ''))
+      .filter(Boolean)
+      .map((blobName) => deletePaymentProofBlob(blobName))
+  );
 
   // Elimina toda la data ligada al tenant para evitar registros huérfanos.
   // Intencionalmente sin transacción: el ambiente de ejecución actual

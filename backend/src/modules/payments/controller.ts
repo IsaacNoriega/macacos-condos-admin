@@ -317,10 +317,16 @@ export const getPaymentProof = async (req: Request, res: Response, next: NextFun
       return res.json({ success: true, proofUrl });
     }
 
-    // Legacy payments predate the blob-name migration: return the original
-    // URL as-is so historical records remain openable.
-    if (payment.proofOfPaymentUrl) {
-      return res.json({ success: true, proofUrl: payment.proofOfPaymentUrl });
+    // Legacy payments predate the blob-name migration: return the
+    // original URL as-is so pre-existing records remain openable —
+    // except for browser object URLs (blob:...) that the previous
+    // frontend created via URL.createObjectURL. Those only live inside
+    // the uploader's original browser session, so surfacing them to
+    // reviewers would render a working-looking "Ver archivo" action
+    // that opens a dead link.
+    const legacyProofUrl = payment.proofOfPaymentUrl ? String(payment.proofOfPaymentUrl) : '';
+    if (legacyProofUrl && /^https?:\/\//i.test(legacyProofUrl)) {
+      return res.json({ success: true, proofUrl: legacyProofUrl });
     }
 
     throw new AppError('No se pudo resolver el comprobante', 404);
@@ -545,11 +551,42 @@ const resolveTenantScopeForPayment = async (req: Request, paymentId: string): Pr
   return req.tenantId;
 };
 
+// Whitelist of fields the update endpoint is allowed to mutate. In
+// particular, proofOfPaymentUrl / proofOfPaymentBlobName are set by the
+// /payments and /payments/proofs flow (with an ownership check against
+// our Azure storage) and must not be editable via /payments/:id —
+// otherwise an admin could point a payment at another tenant's blob and
+// then fetch a SAS URL for it via GET /payments/:id/proof.
+const PAYMENT_UPDATABLE_FIELDS = [
+  'status',
+  'amount',
+  'baseAmount',
+  'lateFeeAmount',
+  'daysOverdue',
+  'currency',
+  'provider',
+  'paymentDate',
+  'reviewedBy',
+  'reviewedAt',
+  'unitId',
+] as const;
+
+const pickPaymentUpdates = (body: Record<string, unknown>): Record<string, unknown> => {
+  const sanitized: Record<string, unknown> = {};
+  for (const field of PAYMENT_UPDATABLE_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(body, field)) {
+      sanitized[field] = body[field];
+    }
+  }
+  return sanitized;
+};
+
 export const updatePayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const paymentId = String(req.params.id);
     const tenantScope = await resolveTenantScopeForPayment(req, paymentId);
-    const payment = await paymentsService.updatePaymentInTenant(paymentId, tenantScope, req.body);
+    const sanitizedBody = pickPaymentUpdates(req.body || {});
+    const payment = await paymentsService.updatePaymentInTenant(paymentId, tenantScope, sanitizedBody);
     if (!payment) {
       throw new AppError('Pago no encontrado', 404);
     }
