@@ -47,7 +47,14 @@ export const deleteUserInTenant = async (userId: string, tenantId?: string) => {
       return null;
     }
 
-    const scopedFilter = tenantId ? { tenantId } : {};
+    // Always scope the cascade cleanup to the user's own tenant. When a
+    // superadmin calls DELETE /users/:id without ?tenantId=... we would
+    // otherwise fall back to an unscoped filter and touch every tenant
+    // with matching email/userId references — a cross-tenant data-loss
+    // hazard. The user row itself was already looked up above and is
+    // what tells us which tenant to confine the cleanup to.
+    const scopedTenantId = tenantId || String(user.tenantId || '');
+    const scopedFilter = scopedTenantId ? { tenantId: scopedTenantId } : {};
 
     // Anonymize, don't hard-delete: preserving Payments, Charges,
     // Reservations, and Maintenance rows when a user is removed keeps
@@ -72,10 +79,14 @@ export const deleteUserInTenant = async (userId: string, tenantId?: string) => {
         { $unset: { assignedTo: 1 } },
         { session }
       ),
+      // Anonymize the maintenance status-change timeline rather than
+      // $pull-ing the entries — the history is audit data and losing
+      // the entries when a staff user is removed would silently erase
+      // who did what. Clearing changedBy keeps the event + timestamp.
       Maintenance.updateMany(
         { ...scopedFilter, 'history.changedBy': userId },
-        { $pull: { history: { changedBy: userId } } },
-        { session }
+        { $set: { 'history.$[entry].changedBy': null } },
+        { session, arrayFilters: [{ 'entry.changedBy': userId }] }
       ),
     ]);
 

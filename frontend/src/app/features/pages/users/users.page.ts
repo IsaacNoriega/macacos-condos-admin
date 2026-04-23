@@ -254,6 +254,19 @@ export class UsersPage {
     };
 
     const rawPassword = String(payload.password ?? '').trim();
+    const isEditing = !!selectedUser;
+
+    // Never silently provision new accounts with a well-known default
+    // password. If the admin forgot to fill the field on create, fail
+    // closed and surface the requirement. On edit we still allow the
+    // password to be omitted (means "keep existing").
+    if (!isEditing && !rawPassword) {
+      this.form.get('password')?.setErrors({ required: true });
+      this.form.markAllAsTouched();
+      this.formMessage.set('La contraseña es obligatoria al crear un usuario.');
+      return;
+    }
+
     if (rawPassword) {
       requestBody['password'] = rawPassword;
     }
@@ -262,17 +275,13 @@ export class UsersPage {
       requestBody['tenantId'] = targetTenantId;
     }
 
-    const isEditing = !!selectedUser;
     const endpoint = isEditing
       ? `/users/${selectedUser.id}${this.isSuperadmin() ? `?tenantId=${encodeURIComponent(selectedUser.tenantId)}` : ''}`
       : '/users';
 
     const request$ = isEditing
       ? this.api.put<{ success: boolean }>(endpoint, requestBody)
-      : this.api.post<{ success: boolean }>(endpoint, {
-          ...requestBody,
-          password: rawPassword || '123456',
-        });
+      : this.api.post<{ success: boolean }>(endpoint, requestBody);
 
     this.loading.set(true);
     this.formMessage.set(null);
