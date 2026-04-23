@@ -357,7 +357,7 @@ export class TenantsPage {
         this.tenants.set(
           tenants.map((t) => ({
             ...t,
-            isActive: (t as Record<string, unknown>)['isActive'] !== false,
+            isActive: (t as unknown as Record<string, unknown>)['isActive'] !== false,
           }))
         );
       },

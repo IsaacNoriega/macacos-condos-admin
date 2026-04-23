@@ -163,7 +163,7 @@
   <mac-drawer
     [open]="editorOpen()"
     [title]="editorMode() === 'create' ? 'Nuevo residente' : 'Editar residente'"
-    [subtitle]="editorMode() === 'create' ? 'Registre un nuevo habitante del condominio' : editingResident()?.name"
+    [subtitle]="editorMode() === 'create' ? 'Registre un nuevo habitante del condominio' : (editingResident()?.name ?? null)"
     [width]="520"
     (closed)="closeEditor()">
 

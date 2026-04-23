@@ -190,7 +190,7 @@
   <mac-drawer
     [open]="editorOpen()"
     [title]="editorMode() === 'create' ? 'Nueva unidad' : 'Editar unidad'"
-    [subtitle]="editorMode() === 'create' ? 'Registre un nuevo inmueble del condominio' : editingUnit()?.code"
+    [subtitle]="editorMode() === 'create' ? 'Registre un nuevo inmueble del condominio' : (editingUnit()?.code ?? null)"
     [width]="520"
     (closed)="closeEditor()">
 
