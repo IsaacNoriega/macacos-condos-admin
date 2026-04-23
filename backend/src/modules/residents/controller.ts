@@ -102,20 +102,33 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+// Superadmins can manage residents across tenants; when they pass
+// ?tenantId=... we use that as the scope, otherwise fall back to the
+// token's tenant. All other roles always use req.tenantId.
+const resolveResidentTenantScope = (req: Request): string | undefined => {
+  const queryTenantId = req.query?.tenantId;
+  if (req.user?.role === 'superadmin' && queryTenantId) {
+    return String(queryTenantId);
+  }
+  return req.tenantId;
+};
+
 export const updateResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const currentResident = await residentsService.findResidentByIdInTenant(String(req.params.id), req.tenantId);
+    const tenantScope = resolveResidentTenantScope(req);
+
+    const currentResident = await residentsService.findResidentByIdInTenant(String(req.params.id), tenantScope);
     if (!currentResident) {
       throw new AppError('Residente no encontrado', 404);
     }
 
     if (req.body.unitId && req.body.unitId !== currentResident.unitId.toString()) {
-      const validUnit = await residentsService.validateUnitInTenant(req.body.unitId, req.tenantId);
+      const validUnit = await residentsService.validateUnitInTenant(req.body.unitId, tenantScope);
       if (!validUnit) {
         throw new AppError('La unidad no pertenece al tenant actual', 400);
       }
 
-      const residentsInTargetUnit = await residentsService.countResidentsInUnit(req.tenantId, req.body.unitId);
+      const residentsInTargetUnit = await residentsService.countResidentsInUnit(tenantScope, req.body.unitId);
 
       if (residentsInTargetUnit >= MAX_RESIDENTS_PER_UNIT) {
         throw new AppError(`La unidad destino ya tiene ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
@@ -125,16 +138,16 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
     const targetEmail = req.body.email ? String(req.body.email) : String(currentResident.email);
     const targetRelationship = req.body.relationship ? String(req.body.relationship) : String(currentResident.relationship);
 
-    if (!req.tenantId) {
+    if (!tenantScope) {
       throw new AppError('No se pudo determinar el tenant actual', 400);
     }
 
-    const linkedUser = await ensureLinkedResidentUser(targetEmail, req.tenantId);
+    const linkedUser = await ensureLinkedResidentUser(targetEmail, tenantScope);
     ensureRelationshipMatchesRole(String(linkedUser.role), targetRelationship);
 
-    const resident = await residentsService.updateResidentInTenant(String(req.params.id), req.tenantId, req.body);
+    const resident = await residentsService.updateResidentInTenant(String(req.params.id), tenantScope, req.body);
 
-    logger.log('residents.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: req.params.id });
+    logger.log('residents.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { residentId: req.params.id });
     res.json({ success: true, resident });
   } catch (err: unknown) {
     logger.error('residents.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -144,12 +157,13 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
 
 export const deleteResident = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const resident = await residentsService.deleteResidentInTenant(String(req.params.id), req.tenantId);
+    const tenantScope = resolveResidentTenantScope(req);
+    const resident = await residentsService.deleteResidentInTenant(String(req.params.id), tenantScope);
     if (!resident) {
       throw new AppError('Residente no encontrado', 404);
     }
 
-    logger.log('residents.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { residentId: req.params.id });
+    logger.log('residents.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { residentId: req.params.id });
     res.json({ success: true, message: 'Residente eliminado' });
   } catch (err: unknown) {
     logger.error('residents.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

@@ -40,7 +40,7 @@ export class ShellPage implements OnInit {
       items: [
         { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
         { label: 'Residentes', icon: 'users',    route: '/residents', roles: ['superadmin', 'admin'] },
-        { label: 'Unidades',   icon: 'building', route: '/units',     roles: ['superadmin', 'admin'] },
+        { label: 'Unidades',   icon: 'building', route: '/units',     roles: ['superadmin', 'admin', 'residente'] },
       ],
     },
     {
