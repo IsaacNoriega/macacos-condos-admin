@@ -145,7 +145,7 @@ export class UsersPage {
           email: selectedUser.email,
           password: '',
           role: selectedUser.role,
-          tenant: selectedUser.tenant,
+          tenant: selectedUser.tenantId,
         },
         { emitEvent: false }
       );
