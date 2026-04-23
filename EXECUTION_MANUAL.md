@@ -169,11 +169,13 @@ STRIPE_CANCEL_URL=http://localhost:4200/payments?status=cancel
 
 El siguiente script crea todos los datos necesarios para pruebas: un tenant, usuarios con todos los roles, unidades, residentes, cargos y amenidades.
 
-Crea el archivo `/tmp/seed.js` y ejecútalo una sola vez:
+Crea el archivo `seed.js` en la carpeta `backend` y ejecútalo una sola vez:
+
+> **Windows:** En lugar del comando `cat > ... << 'SEED_EOF'`, crea el archivo `backend/seed.js` manualmente con tu editor de texto y copia el contenido del bloque de código a continuación.
 
 ```bash
-# Desde la raíz del repositorio, crear el script temporal
-cat > /tmp/seed.js << 'SEED_EOF'
+# Desde la raíz del repositorio, crear el script en la carpeta backend
+cat > backend/seed.js << 'SEED_EOF'
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 require('dotenv').config({ path: './backend/.env' });
@@ -315,10 +317,9 @@ async function seed() {
   console.log('Residentes creados');
 
   // 6. Crear Cargos
-  const futureDate = new Date();
-  futureDate.setMonth(futureDate.getMonth() + 1);
-  const pastDate = new Date();
-  pastDate.setDate(pastDate.getDate() - 10);
+  const now = new Date();
+  const futureDate = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const pastDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 10);
 
   await mongoose.connection.db.collection('charges').insertMany([
     {
@@ -367,7 +368,7 @@ seed().catch((err) => {
 SEED_EOF
 
 # Ejecutar el seeder desde la carpeta backend (usa las dependencias instaladas)
-cd backend && node /tmp/seed.js
+cd backend && node seed.js
 ```
 
 **Colecciones creadas:**
@@ -755,7 +756,7 @@ export const API_BASE_URL = 'http://localhost:5000/api';
 ```bash
 cd backend
 npm install
-node /tmp/seed.js
+node seed.js
 ```
 
 ---
