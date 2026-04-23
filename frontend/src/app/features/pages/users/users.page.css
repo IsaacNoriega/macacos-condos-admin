@@ -568,6 +568,26 @@
 	letter-spacing: 0.03em;
 }
 
+.role-pill.role-superadmin {
+	background: rgba(139, 92, 246, 0.1);
+	color: #6d28d9;
+}
+
+.role-pill.role-admin {
+	background: rgba(14, 165, 233, 0.08);
+	color: var(--color-primary);
+}
+
+.role-pill.role-residente {
+	background: rgba(16, 185, 129, 0.1);
+	color: #059669;
+}
+
+.role-pill.role-familiar {
+	background: rgba(245, 158, 11, 0.1);
+	color: #d97706;
+}
+
 .tenant-label {
 	color: var(--text-muted);
 	font-size: 0.78rem;

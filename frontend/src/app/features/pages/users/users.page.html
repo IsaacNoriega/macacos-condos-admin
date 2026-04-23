@@ -121,7 +121,7 @@
           </div>
 
           <div class="card-meta">
-            <span class="role-pill">{{ roleLabel(user.role) }}</span>
+            <span [class]="'role-pill role-' + user.role">{{ roleLabel(user.role) }}</span>
             <span class="tenant-label">{{ user.tenant }}</span>
           </div>
 
