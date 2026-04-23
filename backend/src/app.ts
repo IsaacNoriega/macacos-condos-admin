@@ -24,8 +24,35 @@ const app = express();
 
 // Middleware de seguridad
 app.use(helmet({ crossOriginResourcePolicy: false }));
+
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost:4200',
+  'https://delightful-bay-02eed360f.2.azurestaticapps.net',
+];
+
+const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedCorsOrigins = new Set<string>([...DEFAULT_CORS_ORIGINS, ...configuredCorsOrigins]);
+
+// Azure Static Web Apps issues preview deployments on *.azurestaticapps.net;
+// we allow those by default so PR preview environments can reach the API.
+const AZURE_SWA_ORIGIN_REGEX = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.azurestaticapps\.net$/i;
+
 app.use(cors({
-  origin: ['http://localhost:4200', 'https://delightful-bay-02eed360f.2.azurestaticapps.net'],
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedCorsOrigins.has(origin) || AZURE_SWA_ORIGIN_REGEX.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id']
