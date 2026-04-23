@@ -300,8 +300,8 @@ const config: CrudConfig = {
       }
 
       .toggle-btn.toggle-active .toggle-track {
-        background: #0ea5e9;
-        border-color: #0284c7;
+        background: var(--color-primary);
+        border-color: var(--color-primary-dark);
       }
 
       .toggle-btn.toggle-active .toggle-thumb {

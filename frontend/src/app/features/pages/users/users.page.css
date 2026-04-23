@@ -122,9 +122,9 @@
 
 .editor-panel .pill-button.secondary,
 .form-actions .pill-button.secondary {
-	background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-	border: 1px solid rgba(14, 165, 233, 0.35);
-	color: #0c4a6e;
+	background: var(--surface-muted);
+	border: 1px solid var(--color-primary);
+	color: var(--text-primary);
 }
 
 .editor-panel .pill-button.secondary:hover,
@@ -218,11 +218,11 @@
 }
 
 .filter-chip {
-	border: 1px solid rgba(14, 165, 233, 0.3);
+	border: 1px solid var(--color-primary);
 	border-radius: var(--radius-pill);
 	padding: 0.48rem 0.82rem;
-	background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-	color: #0c4a6e;
+	background: var(--surface-muted);
+	color: var(--text-primary);
 	font: inherit;
 	font-weight: 600;
 	cursor: pointer;
@@ -330,17 +330,18 @@
 	min-height: 2.45rem;
 	padding: 0.62rem 0.78rem;
 	border-radius: 0.72rem;
-	border: 1px solid rgba(14, 165, 233, 0.22);
-	background: rgba(255, 255, 255, 0.92);
+	border: 1px solid var(--color-primary);
+	background: var(--surface);
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	color: var(--text-primary);
 }
 
 .editor-form input:focus,
 .editor-form select:focus,
 .editor-form textarea:focus {
-	border-color: rgba(14, 165, 233, 0.45);
-	box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
-	background: #ffffff;
+	border-color: var(--color-primary);
+	box-shadow: 0 0 0 3px var(--color-primary-glow);
+	background: var(--surface);
 }
 
 .editor-form textarea {
@@ -380,8 +381,8 @@
 	padding: 0;
 	min-height: 0;
 	border-radius: 999px;
-	border: 1px solid rgba(148, 163, 184, 0.65);
-	background: #dbe4ef;
+	border: 1px solid var(--text-muted);
+	background: var(--surface-muted);
 	box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.08);
 	position: relative;
 	transition: background-color 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
@@ -403,9 +404,9 @@
 }
 
 .checkbox-row input:checked {
-	background: #0ea5e9;
-	border-color: #0284c7;
-	box-shadow: inset 0 1px 1px rgba(2, 132, 199, 0.2);
+	background: var(--color-primary);
+	border-color: var(--color-primary-dark);
+	box-shadow: inset 0 1px 1px var(--color-primary-glow);
 }
 
 .checkbox-row input:checked::before {
