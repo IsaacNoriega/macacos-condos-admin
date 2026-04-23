@@ -4,7 +4,12 @@ import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as paymentsService from './service';
 import Charge from '../charges/model';
-import { extractBlobNameFromProofUrl, getPaymentProofSasUrl, uploadPaymentProofToAzure } from '../../config/azureBlob';
+import {
+  extractBlobNameFromProofUrl,
+  getPaymentProofSasUrl,
+  resolveOwnedProofBlobName,
+  uploadPaymentProofToAzure,
+} from '../../config/azureBlob';
 
 const DEFAULT_LATE_FEE_PER_DAY = Number(process.env.LATE_FEE_PER_DAY || '10');
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -156,11 +161,26 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
     const charge = await getChargeForPayment(String(chargeId), targetTenantId);
     const pricing = resolveChargeTotal(charge.toObject());
 
+    // Validar el comprobante contra nuestro Storage antes de persistir el
+    // blob name; rechazar URLs que no correspondan al proof que subió el
+    // caller (impide que un usuario apunte a blobs de otro usuario/tenant
+    // y reciba un SAS firmado para ellos más tarde).
+    let resolvedBlobName: string | undefined;
+    const rawProofUrl = String(proofOfPaymentUrl || '').trim();
+    if (rawProofUrl) {
+      const uploaderId = req.user?.id ? String(req.user.id) : undefined;
+      const owned = resolveOwnedProofBlobName(rawProofUrl, targetTenantId, uploaderId);
+      if (!owned) {
+        throw new AppError('El comprobante no corresponde a una carga válida', 400);
+      }
+      resolvedBlobName = owned;
+    }
+
     // Determinar status según el tipo de pago
     let paymentStatus = 'pending';
     if (provider === 'stripe') {
       paymentStatus = 'paid'; // Pago de Stripe completo inmediatamente
-    } else if (provider === 'manual' && proofOfPaymentUrl) {
+    } else if (provider === 'manual' && rawProofUrl) {
       paymentStatus = 'in_review'; // Comprobante requiere revisión
     }
 
@@ -176,11 +196,8 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
       currency: currency || 'mxn',
       provider: provider || 'manual',
       status: paymentStatus,
-      proofOfPaymentUrl: proofOfPaymentUrl || undefined,
-      // Always derive the blob name server-side from the uploaded URL so a
-      // client can't point us at a blob they didn't upload through the
-      // /payments/proofs flow and then receive a signed read URL for it.
-      proofOfPaymentBlobName: extractBlobNameFromProofUrl(String(proofOfPaymentUrl || '')) || undefined,
+      proofOfPaymentUrl: rawProofUrl || undefined,
+      proofOfPaymentBlobName: resolvedBlobName,
       paymentDate: new Date(),
     };
 
@@ -322,21 +339,13 @@ export const createStripeCheckoutSession = async (req: Request, res: Response, n
       },
     });
 
-    await paymentsService.upsertPaymentByStripeSessionId(session.id, {
-      tenantId: targetTenantId,
-      userId,
-      chargeId,
-      baseAmount: pricing.baseAmount,
-      lateFeeAmount: pricing.lateFeeAmount,
-      daysOverdue: pricing.daysOverdue,
-      amount: pricing.totalAmount,
-      currency: (currency || 'mxn').toLowerCase(),
-      provider: 'stripe',
-      status: 'pending',
-      stripeSessionId: session.id,
-      stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
-      paymentDate: new Date(),
-    });
+    // Intentionally do NOT insert a pending Payment row here. The Stripe
+    // webhook (checkout.session.completed / async_payment_succeeded) and
+    // confirmStripeCheckoutSession both upsert the final 'paid' record
+    // when the checkout actually settles; writing an eager 'pending' row
+    // would become the latest payment for this charge and mask an
+    // existing 'in_review' manual proof in /charges' paymentStatus
+    // enrichment if the user abandons the Stripe flow.
 
     logger.log('payments.checkoutSession.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { sessionId: session.id, userId, chargeId });
     res.status(201).json({ success: true, sessionId: session.id, checkoutUrl: session.url });

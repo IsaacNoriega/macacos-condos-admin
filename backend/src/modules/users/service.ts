@@ -1,8 +1,6 @@
 import User, { IUser } from './model';
 import mongoose from 'mongoose';
-import Charge from '../charges/model';
 import Payment from '../payments/model';
-import Reservation from '../reservations/model';
 import Maintenance from '../maintenance/model';
 
 export const findAllUsers = () => {
@@ -50,11 +48,11 @@ export const deleteUserInTenant = async (userId: string, tenantId?: string) => {
 
     const scopedFilter = tenantId ? { tenantId } : {};
 
+    // Anonymize, don't hard-delete: preserving Payments, Charges,
+    // Reservations, and Maintenance rows when a user is removed keeps
+    // tenant financial history and audit trails intact. We only unset
+    // relational references so the historical rows stay queryable.
     await Promise.all([
-      Payment.deleteMany({ ...scopedFilter, userId }, { session }),
-      Charge.deleteMany({ ...scopedFilter, userId }, { session }),
-      Reservation.deleteMany({ ...scopedFilter, userId }, { session }),
-      Maintenance.deleteMany({ ...scopedFilter, userId }, { session }),
       Payment.updateMany(
         { ...scopedFilter, reviewedBy: userId },
         { $unset: { reviewedBy: 1, reviewedAt: 1 } },

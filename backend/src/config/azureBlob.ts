@@ -157,3 +157,69 @@ export const extractBlobNameFromProofUrl = (proofUrl: string): string | null => 
     return null;
   }
 };
+
+const sanitizeIdSegment = (value: string) => String(value || '').replace(/[^a-zA-Z0-9-_]/g, '-');
+
+// Validate that a proofOfPaymentUrl actually targets a blob this server
+// created for the given tenant/uploader and return the resolved blob name.
+// Returns null on any mismatch so callers can reject untrusted URLs
+// before persisting a blob name that would later mint a SAS URL.
+export const resolveOwnedProofBlobName = (
+  proofUrl: string,
+  tenantId: string,
+  uploaderUserId?: string
+): string | null => {
+  if (!proofUrl) {
+    return null;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(proofUrl);
+  } catch {
+    return null;
+  }
+
+  const accountName = getAccountName();
+  if (!accountName) {
+    return null;
+  }
+
+  const expectedHost = `${accountName.toLowerCase()}.blob.core.windows.net`;
+  if (parsed.hostname.toLowerCase() !== expectedHost) {
+    return null;
+  }
+
+  const pathParts = parsed.pathname.split('/').filter(Boolean);
+  if (pathParts.length < 4) {
+    return null;
+  }
+
+  const [container, prefix, tenantSegment, ...rest] = pathParts;
+  if (container !== getContainerName()) {
+    return null;
+  }
+
+  if (prefix !== 'proofs') {
+    return null;
+  }
+
+  const safeTenantId = sanitizeIdSegment(tenantId || 'global');
+  if (tenantSegment !== safeTenantId) {
+    return null;
+  }
+
+  if (!rest.length) {
+    return null;
+  }
+
+  if (uploaderUserId) {
+    const safeUploaderId = sanitizeIdSegment(uploaderUserId);
+    const filename = rest[rest.length - 1];
+    if (!filename.startsWith(`${safeUploaderId}-`)) {
+      return null;
+    }
+  }
+
+  return [prefix, tenantSegment, ...rest].join('/');
+};
