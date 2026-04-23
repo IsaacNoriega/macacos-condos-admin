@@ -5,6 +5,7 @@ import { AppError, toError } from '../../utils/httpError';
 import * as paymentsService from './service';
 import Charge from '../charges/model';
 import {
+  deletePaymentProofBlob,
   getPaymentProofSasUrl,
   resolveOwnedProofBlobName,
   uploadPaymentProofToAzure,
@@ -131,6 +132,11 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
 };
 
 export const createPayment = async (req: Request, res: Response, next: NextFunction) => {
+  // If we validated the uploaded proof and then the persist step fails,
+  // we remove the blob so a retry doesn't pile up orphaned files in
+  // Azure. Tracked outside the try so the catch block can reach it.
+  let blobToCleanupOnFailure: string | undefined;
+
   try {
     const {
       tenantId: requestedTenantId,
@@ -182,6 +188,7 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
         throw new AppError('El comprobante no corresponde a una carga válida', 400);
       }
       resolvedBlobName = owned;
+      blobToCleanupOnFailure = owned;
     }
 
     // Determinar status según el tipo de pago
@@ -210,6 +217,9 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
     };
 
     const payment = await paymentsService.createPaymentInTenant(paymentData, targetTenantId);
+    // Payment persisted — the uploaded blob now has a DB owner and
+    // must not be cleaned up, even if downstream work fails.
+    blobToCleanupOnFailure = undefined;
 
     if (payment.status === 'paid' || payment.status === 'completed') {
       await markChargeAsPaid(String(chargeId), targetTenantId);
@@ -222,6 +232,16 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
     });
     res.status(201).json({ success: true, payment });
   } catch (err: unknown) {
+    if (blobToCleanupOnFailure) {
+      // Best-effort — the payment row was never persisted, so remove the
+      // orphaned blob instead of leaving it in Azure where retries would
+      // keep accumulating copies.
+      const removed = await deletePaymentProofBlob(blobToCleanupOnFailure);
+      logger.log('payments.create.proofCleanup', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', {
+        blobName: blobToCleanupOnFailure,
+        removed,
+      });
+    }
     logger.error('payments.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al registrar pago', 400, { cause: toError(err).message }));
   }

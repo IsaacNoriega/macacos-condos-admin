@@ -118,6 +118,24 @@ export const uploadPaymentProofToAzure = async (
   };
 };
 
+// Best-effort removal of a proof blob. Used to clean up an uploaded
+// file when the subsequent createPayment call fails, so we don't leave
+// orphaned blobs in Azure when the client retries.
+export const deletePaymentProofBlob = async (blobName: string): Promise<boolean> => {
+  if (!blobName) {
+    return false;
+  }
+
+  try {
+    const containerClient = getBlobServiceClient().getContainerClient(getContainerName());
+    const blobClient = containerClient.getBlockBlobClient(blobName);
+    const response = await blobClient.deleteIfExists();
+    return response.succeeded;
+  } catch {
+    return false;
+  }
+};
+
 export const getPaymentProofSasUrl = async (blobName: string): Promise<string> => {
   if (!blobName) {
     throw new AppError('blobName es obligatorio', 400);
