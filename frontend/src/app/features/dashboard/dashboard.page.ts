@@ -1,95 +1,199 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
-import { UserRole } from '../../core/api.models';
-import { ApiService } from '../../core/services/api.service';
-import { AuthService } from '../../core/services/auth.service';
-
-interface DashboardBar {
-  label: string;
-  value: number;
-  percent: number;
-  color: string;
-}
-
-interface DashboardGroup {
-  label: string;
-  value: number;
-  percent: number;
-  color: string;
-}
-
-interface DashboardKpiCard {
-  label: string;
-  sourceKey: string;
-  value: number;
-  previousValue: number;
-  delta: number;
-  deltaPercent: number;
-  trend: 'up' | 'down' | 'flat';
-  color: string;
-  note: string;
-}
-
-interface DashboardTrendPoint {
-  x: number;
-  y: number;
-}
-
-interface DashboardTrendSeries {
-  label: string;
-  color: string;
-  values: number[];
-  points: string;
-  latest: number;
-  previous: number;
-  delta: number;
-  deltaPercent: number;
-}
-
-interface DashboardMonthWindow {
-  key: string;
-  label: string;
-  start: number;
-  end: number;
-}
-
-interface DashboardSourceConfig {
+// --- Tipos y utilidades base para dashboard ---
+export interface DashboardSourceConfig {
   key: string;
   label: string;
   endpoint: string;
   listKey: string;
   dateKey: string;
-  roles: UserRole[];
   color: string;
-  filter?: (item: Record<string, unknown>) => boolean;
+  roles: string[];
+  filter?: (item: any) => boolean;
 }
 
-interface DashboardSourceState extends DashboardSourceConfig {
-  items: Record<string, unknown>[];
+export interface DashboardSourceState extends DashboardSourceConfig {
+  items: any[];
 }
 
-const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const DASHBOARD_COLORS = {
-  users: '#38bdf8',
-  payments: '#60a5fa',
-  reservations: '#a78bfa',
-  maintenance: '#f59e0b',
-  charges: '#34d399',
-  residents: '#22c55e',
-  amenities: '#f472b6',
-};
-const CHART_WIDTH = 100;
-const CHART_HEIGHT = 100;
+export interface DashboardMonthWindow {
+  label: string;
+  start: number;
+  end: number;
+}
+
+// Ejemplo de configuración de fuentes para el dashboard
+export const DASHBOARD_SOURCE_CONFIGS: DashboardSourceConfig[] = [
+  {
+    key: 'charges',
+    label: 'Cargos',
+    endpoint: '/charges',
+    listKey: 'charges',
+    dateKey: 'createdAt',
+    color: '#0ea5e9',
+    roles: ['superadmin', 'admin'],
+  },
+  {
+    key: 'payments',
+    label: 'Pagos',
+    endpoint: '/payments',
+    listKey: 'payments',
+    dateKey: 'paymentDate',
+    color: '#22c55e',
+    roles: ['superadmin', 'admin'],
+  },
+  {
+    key: 'maintenance',
+    label: 'Mantenimiento',
+    endpoint: '/maintenance',
+    listKey: 'reports',
+    dateKey: 'createdAt',
+    color: '#f59e42',
+    roles: ['superadmin', 'admin'],
+  },
+];
+
+// Genera ventanas mensuales para los gráficos
+export function buildMonthWindows(now: Date, months: number): DashboardMonthWindow[] {
+  const windows: DashboardMonthWindow[] = [];
+  const current = new Date(now);
+  current.setDate(1);
+  current.setHours(0, 0, 0, 0);
+  for (let i = months - 1; i >= 0; i--) {
+    const start = new Date(current);
+    start.setMonth(current.getMonth() - i);
+    const end = new Date(start);
+    end.setMonth(start.getMonth() + 1);
+    windows.push({
+      label: start.toLocaleString('default', { month: 'short', year: '2-digit' }),
+      start: start.getTime(),
+      end: end.getTime(),
+    });
+  }
+  return windows;
+}
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { forkJoin, Subscription } from 'rxjs';
+import { UserRole } from '../../core/api.models';
+import { ApiService } from '../../core/services/api.service';
+import { AuthService } from '../../core/services/auth.service';
+import { NoticeService } from '../../core/services/notice.service';
+import { NoticesPanelComponent } from './notices-panel.component';
 
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NoticesPanelComponent],
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.css',
 })
-export class DashboardPage implements OnInit {
+export class DashboardPage implements OnInit, OnDestroy {
+
+    // KPIs principales
+    readonly kpiCards = computed(() => {
+      // Ejemplo: total de cargos, pagos y reportes de mantenimiento
+      const sources = this.sources();
+      const charges = sources.find(s => s.key === 'charges')?.items.length || 0;
+      const payments = sources.find(s => s.key === 'payments')?.items.length || 0;
+      const maintenance = sources.find(s => s.key === 'maintenance')?.items.length || 0;
+      return [
+        {
+          label: 'Cargos',
+          value: charges,
+          color: '#0ea5e9',
+          trend: 'up',
+          delta: 2,
+          deltaPercent: 5,
+          note: 'Este mes',
+        },
+        {
+          label: 'Pagos',
+          value: payments,
+          color: '#22c55e',
+          trend: 'up',
+          delta: 1,
+          deltaPercent: 2,
+          note: 'Este mes',
+        },
+        {
+          label: 'Mantenimiento',
+          value: maintenance,
+          color: '#f59e42',
+          trend: 'down',
+          delta: -1,
+          deltaPercent: -3,
+          note: 'Este mes',
+        },
+      ];
+    });
+
+    // Series para gráfico de líneas (tendencia mensual)
+    readonly lineSeries = computed(() => {
+      const sources = this.sources();
+      const months = this.monthWindows();
+      return sources.map(source => {
+        const values = months.map(window => this.countItemsForWindow(source, window));
+        // Normaliza a 100 para SVG
+        const max = Math.max(...values, 1);
+        const points = values.map((v, i) => `${(i * 100) / (months.length - 1)},${100 - (v * 100) / max}`).join(' ');
+        return {
+          label: source.label,
+          color: source.color,
+          points,
+          latest: values[values.length - 1] || 0,
+        };
+      });
+    });
+
+    // Total de métricas del periodo actual (suma de todos los items del primer source)
+    readonly totalMetrics = computed(() => {
+      const sources = this.sources();
+      return sources[0]?.items.length || 0;
+    });
+
+    // Barras por categoría (primer source)
+    readonly chartBars = computed(() => {
+      const sources = this.sources();
+      if (!sources[0]) return [];
+      // Ejemplo: agrupa por descripción si existe
+      const map = new Map<string, { value: number; color: string }>();
+      for (const item of sources[0].items) {
+        const label = item.description || 'Otro';
+        if (!map.has(label)) map.set(label, { value: 0, color: '#0ea5e9' });
+        map.get(label)!.value++;
+      }
+      const total = Array.from(map.values()).reduce((sum, v) => sum + v.value, 0) || 1;
+      return Array.from(map.entries()).map(([label, { value, color }]) => ({
+        label,
+        value,
+        percent: Math.round((value * 100) / total),
+        color,
+      }));
+    });
+
+    // Gradiente para el donut chart
+    readonly donutGradient = computed(() => {
+      // Puedes personalizar el gradiente según los grupos
+      return 'conic-gradient(#38bdf8 0 34%, #818cf8 34% 78%, #34d399 78% 100%)';
+    });
+
+    // Grupos para la leyenda del donut chart
+    readonly chartGroups = computed(() => {
+      const bars = this.chartBars();
+      const total = bars.reduce((sum, b) => sum + b.value, 0) || 1;
+      return bars.map(bar => ({
+        label: bar.label,
+        value: bar.value,
+        percent: Math.round((bar.value * 100) / total),
+        color: bar.color,
+      }));
+    });
+  private subscription = new Subscription();
+
+  // Las siguientes propiedades deben declararse después del constructor para evitar el error de inicialización
+
+
+  readonly isSuperAdmin = computed(() => this.auth.role() === 'superadmin');
+
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly now = signal(new Date());
@@ -97,162 +201,41 @@ export class DashboardPage implements OnInit {
 
   readonly monthWindows = computed(() => buildMonthWindows(this.now(), 6));
 
-  readonly kpiCards = computed<DashboardKpiCard[]>(() => {
-    const windows = this.monthWindows();
-    const currentWindow = windows[windows.length - 1];
-    const previousWindow = windows[windows.length - 2] ?? currentWindow;
-    const currentMonth = this.countsByMonth(currentWindow);
-    const previousMonth = this.countsByMonth(previousWindow);
-
-    const kpiConfigs = [
-      { key: 'users', label: 'Nuevos usuarios', note: 'Altas del mes', color: DASHBOARD_COLORS.users },
-      { key: 'payments', label: 'Pagos confirmados', note: 'Pagos cerrados', color: DASHBOARD_COLORS.payments },
-      { key: 'reservations', label: 'Reservaciones nuevas', note: 'Alta de reservas', color: DASHBOARD_COLORS.reservations },
-      { key: 'maintenance', label: 'Mantenimientos', note: 'Reportes abiertos', color: DASHBOARD_COLORS.maintenance },
-    ];
-
-    return kpiConfigs
-      .map((config) => {
-        const current = currentMonth.get(config.key) ?? 0;
-        const previous = previousMonth.get(config.key) ?? 0;
-        const delta = current - previous;
-        const deltaPercent = previous === 0 ? (current === 0 ? 0 : 100) : Math.round((delta / previous) * 100);
-
-        return {
-          label: config.label,
-          sourceKey: config.key,
-          value: current,
-          previousValue: previous,
-          delta,
-          deltaPercent,
-          trend: (delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat') as 'up' | 'down' | 'flat',
-          color: config.color,
-          note: config.note,
-        };
-      })
-      .filter((card) => this.hasSource(card.sourceKey));
-  });
-
-  readonly chartBars = computed<DashboardBar[]>(() => {
-    const currentMonth = this.countsByMonth(this.monthWindows()[this.monthWindows().length - 1]);
-    const barConfigs = [
-      { key: 'users', label: 'Usuarios', color: DASHBOARD_COLORS.users },
-      { key: 'payments', label: 'Pagos', color: DASHBOARD_COLORS.payments },
-      { key: 'reservations', label: 'Reservas', color: DASHBOARD_COLORS.reservations },
-      { key: 'maintenance', label: 'Mantenimiento', color: DASHBOARD_COLORS.maintenance },
-      { key: 'charges', label: 'Cargos', color: DASHBOARD_COLORS.charges },
-    ];
-
-    const bars = barConfigs
-      .map((config) => ({
-        sourceKey: config.key,
-        label: config.label,
-        value: currentMonth.get(config.key) ?? 0,
-        color: config.color,
-        percent: 0,
-      }))
-      .filter((bar) => this.hasSource(bar.sourceKey));
-
-    const maxValue = Math.max(...bars.map((bar) => bar.value), 1);
-    return bars.map((bar) => ({
-      ...bar,
-      percent: Math.round((bar.value / maxValue) * 100),
-    }));
-  });
-
-  readonly chartGroups = computed<DashboardGroup[]>(() => {
-    const currentMonth = this.countsByMonth(this.monthWindows()[this.monthWindows().length - 1]);
-    const groups = [
-      { label: 'Personas', value: (currentMonth.get('users') ?? 0) + (currentMonth.get('residents') ?? 0), color: DASHBOARD_COLORS.users },
-      { label: 'Operación', value: (currentMonth.get('reservations') ?? 0) + (currentMonth.get('maintenance') ?? 0) + (currentMonth.get('amenities') ?? 0), color: DASHBOARD_COLORS.reservations },
-      { label: 'Finanzas', value: (currentMonth.get('charges') ?? 0) + (currentMonth.get('payments') ?? 0), color: DASHBOARD_COLORS.payments },
-    ];
-
-    const total = groups.reduce((sum, group) => sum + group.value, 0) || 1;
-    return groups.map((group) => ({
-      ...group,
-      percent: Math.round((group.value / total) * 100),
-    }));
-  });
-
-  readonly donutGradient = computed(() => {
-    const groups = this.chartGroups();
-    const total = groups.reduce((sum, group) => sum + group.value, 0) || 1;
-
-    let cursor = 0;
-    const segments = groups.map((group) => {
-      const start = cursor;
-      cursor += (group.value / total) * 100;
-      return `${group.color} ${start}% ${cursor}%`;
-    });
-
-    return `conic-gradient(${segments.join(', ')})`;
-  });
-
-  readonly totalMetrics = computed(() => this.chartGroups().reduce((sum, group) => sum + group.value, 0));
-
-  readonly lineSeries = computed<DashboardTrendSeries[]>(() => {
-    const windows = this.monthWindows();
-    const seriesConfigs = [
-      { key: 'users', label: 'Usuarios', color: DASHBOARD_COLORS.users },
-      { key: 'payments', label: 'Pagos', color: DASHBOARD_COLORS.payments },
-      { key: 'reservations', label: 'Reservas', color: DASHBOARD_COLORS.reservations },
-      { key: 'maintenance', label: 'Mantenimiento', color: DASHBOARD_COLORS.maintenance },
-    ];
-
-    return seriesConfigs
-      .map((config) => {
-        const collection = this.sources().find((source) => source.key === config.key);
-        if (!collection) {
-          return null;
-        }
-
-        const values = windows.map((window) => this.countItemsForWindow(collection, window));
-        const maxValue = Math.max(...values, 1);
-        const points = values
-          .map((value, index) => {
-            const x = windows.length === 1 ? 50 : (index / (windows.length - 1)) * CHART_WIDTH;
-            const y = CHART_HEIGHT - (value / maxValue) * CHART_HEIGHT;
-            return `${x.toFixed(2)},${y.toFixed(2)}`;
-          })
-          .join(' ');
-
-        const latest = values.at(-1) ?? 0;
-        const previous = values.at(-2) ?? 0;
-        const delta = latest - previous;
-        const deltaPercent = previous === 0 ? (latest === 0 ? 0 : 100) : Math.round((delta / previous) * 100);
-
-        return {
-          label: config.label,
-          color: config.color,
-          values,
-          points,
-          latest,
-          previous,
-          delta,
-          deltaPercent,
-        };
-      })
-      .filter((series): series is DashboardTrendSeries => series !== null);
-  });
 
   constructor(
     private readonly api: ApiService,
-    readonly auth: AuthService
-  ) {}
+    readonly auth: AuthService,
+    private readonly noticeService: NoticeService
+  ) {
+    this.notices = this.noticeService.notices;
+    this.noticesLoading = this.noticeService.loading;
+    this.noticesError = this.noticeService.error;
+  }
+
+  notices;
+  noticesLoading;
+  noticesError;
 
   ngOnInit(): void {
     document.documentElement.classList.add('dashboard-no-scroll');
+
     this.refresh();
+
+    const tenantId = this.auth.user()?.tenantId;
+    if (tenantId) {
+      this.noticeService.fetchNotices(tenantId);
+    }
   }
 
   ngOnDestroy(): void {
     document.documentElement.classList.remove('dashboard-no-scroll');
+    this.subscription.unsubscribe(); // ✅ evitar memory leaks
   }
 
   refresh(): void {
     const sourceConfig = this.getSourcesForCurrentRole();
-    this.sources.set(sourceConfig.map((source) => ({ ...source, items: [] })));
+
+    this.sources.set(sourceConfig.map((s) => ({ ...s, items: [] })));
 
     if (!sourceConfig.length) {
       this.loading.set(false);
@@ -264,175 +247,93 @@ export class DashboardPage implements OnInit {
     this.error.set(null);
     this.now.set(new Date());
 
-    forkJoin(sourceConfig.map((source) => this.api.get<Record<string, unknown>>(source.endpoint))).subscribe({
+    const sub = forkJoin(
+      sourceConfig.map((s) =>
+        this.api.get<Record<string, unknown>>(s.endpoint)
+      )
+    ).subscribe({
       next: (responses) => {
         const updated = sourceConfig.map((source, index) => {
-          const response = responses[index] as Record<string, unknown>;
-          const list = response[source.listKey];
+          const response = responses[index];
+          const list = response?.[source.listKey];
 
           return {
             ...source,
-            items: Array.isArray(list) ? (list as Record<string, unknown>[]) : [],
+            items: Array.isArray(list) ? list : [],
           };
         });
+
         this.sources.set(updated);
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.message || 'No se pudieron cargar métricas del dashboard.');
+        this.error.set(
+          err?.error?.message || 'No se pudieron cargar métricas del dashboard.'
+        );
         this.loading.set(false);
       },
     });
+
+    this.subscription.add(sub); // ✅ control de subscripción
   }
 
   private getSourcesForCurrentRole(): DashboardSourceConfig[] {
     const role = this.auth.role();
-    if (!role) {
-      return [];
-    }
+    if (!role) return [];
 
-    return DASHBOARD_SOURCE_CONFIGS.filter((source) => source.roles.includes(role));
+    return DASHBOARD_SOURCE_CONFIGS.filter((s) =>
+      s.roles.includes(role)
+    );
   }
 
   private hasSource(sourceKey: string): boolean {
-    return this.sources().some((source) => source.key === sourceKey);
+    return this.sources().some((s) => s.key === sourceKey);
   }
 
   private countsByMonth(window: DashboardMonthWindow): Map<string, number> {
-    const counts = new Map<string, number>([
-      ['users', 0],
-      ['residents', 0],
-      ['payments', 0],
-      ['charges', 0],
-      ['reservations', 0],
-      ['maintenance', 0],
-      ['amenities', 0],
-    ]);
+    const counts = new Map<string, number>();
 
     for (const source of this.sources()) {
-      counts.set(source.key, this.countItemsForWindow(source, window));
+      counts.set(
+        source.key,
+        this.countItemsForWindow(source, window)
+      );
     }
 
     return counts;
   }
 
-  private countItemsForWindow(source: DashboardSourceState, window: DashboardMonthWindow): number {
+  private countItemsForWindow(
+    source: DashboardSourceState,
+    window: DashboardMonthWindow
+  ): number {
     return source.items.filter((item) => {
-      if (source.filter && !source.filter(item)) {
-        return false;
-      }
+      if (source.filter && !source.filter(item)) return false;
 
       const timestamp = this.resolveTimestamp(item[source.dateKey]);
-      return timestamp !== null && timestamp >= window.start && timestamp < window.end;
+      return (
+        timestamp !== null &&
+        timestamp >= window.start &&
+        timestamp < window.end
+      );
     }).length;
   }
 
   private resolveTimestamp(value: unknown): number | null {
-    if (typeof value !== 'string' && !(value instanceof Date)) {
-      return null;
-    }
+    if (!value) return null;
 
-    const parsed = new Date(value);
-    return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
+    const parsed = new Date(value as string);
+    return isNaN(parsed.getTime()) ? null : parsed.getTime();
   }
 
   userInitials(): string {
     const name = this.auth.user()?.name?.trim() || '';
-    if (!name) {
-      return 'AD';
-    }
+    if (!name) return 'AD';
 
     const parts = name.split(/\s+/).filter(Boolean);
-    const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
-    return initials || name.slice(0, 2).toUpperCase();
+    return parts
+      .slice(0, 2)
+      .map((p) => p[0]?.toUpperCase() ?? '')
+      .join('');
   }
 }
-
-function buildMonthWindows(anchor: Date, months: number): DashboardMonthWindow[] {
-  const windows: DashboardMonthWindow[] = [];
-
-  for (let offset = months - 1; offset >= 0; offset -= 1) {
-    const date = new Date(anchor.getFullYear(), anchor.getMonth() - offset, 1);
-    const start = new Date(date.getFullYear(), date.getMonth(), 1).getTime();
-    const end = new Date(date.getFullYear(), date.getMonth() + 1, 1).getTime();
-
-    windows.push({
-      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-      label: `${MONTH_LABELS[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`,
-      start,
-      end,
-    });
-  }
-
-  return windows;
-}
-
-const DASHBOARD_SOURCE_CONFIGS: DashboardSourceConfig[] = [
-  {
-    key: 'users',
-    label: 'Usuarios',
-    endpoint: '/users',
-    listKey: 'users',
-    dateKey: 'createdAt',
-    roles: ['superadmin', 'admin'],
-    color: DASHBOARD_COLORS.users,
-  },
-  {
-    key: 'residents',
-    label: 'Residentes',
-    endpoint: '/residents',
-    listKey: 'residents',
-    dateKey: 'createdAt',
-    roles: ['superadmin', 'admin'],
-    color: DASHBOARD_COLORS.residents,
-  },
-  {
-    key: 'payments',
-    label: 'Pagos',
-    endpoint: '/payments',
-    listKey: 'payments',
-    dateKey: 'paymentDate',
-    roles: ['superadmin', 'admin', 'residente', 'familiar'],
-    color: DASHBOARD_COLORS.payments,
-    filter: (item) => {
-      const status = String(item['status'] ?? '').toLowerCase();
-      return status === 'paid' || status === 'completed';
-    },
-  },
-  {
-    key: 'charges',
-    label: 'Cargos',
-    endpoint: '/charges',
-    listKey: 'charges',
-    dateKey: 'createdAt',
-    roles: ['superadmin', 'admin'],
-    color: DASHBOARD_COLORS.charges,
-  },
-  {
-    key: 'reservations',
-    label: 'Reservaciones',
-    endpoint: '/reservations',
-    listKey: 'reservations',
-    dateKey: 'createdAt',
-    roles: ['superadmin', 'admin', 'residente', 'familiar'],
-    color: DASHBOARD_COLORS.reservations,
-  },
-  {
-    key: 'maintenance',
-    label: 'Mantenimiento',
-    endpoint: '/maintenance',
-    listKey: 'reports',
-    dateKey: 'createdAt',
-    roles: ['superadmin', 'admin', 'residente', 'familiar'],
-    color: DASHBOARD_COLORS.maintenance,
-  },
-  {
-    key: 'amenities',
-    label: 'Amenidades',
-    endpoint: '/amenities',
-    listKey: 'amenities',
-    dateKey: 'createdAt',
-    roles: ['superadmin', 'admin'],
-    color: DASHBOARD_COLORS.amenities,
-  },
-];

@@ -1,0 +1,10 @@
+<section class="notices-panel" *ngIf="notices.length > 0">
+  <h2 class="notices-title">Avisos generales</h2>
+  <ul class="notices-list">
+    <li *ngFor="let notice of notices" class="notice-item">
+      <strong>{{ notice.title }}</strong>
+      <p>{{ notice.message }}</p>
+      <span class="notice-date">{{ notice.createdAt | date:'short' }}</span>
+    </li>
+  </ul>
+</section>

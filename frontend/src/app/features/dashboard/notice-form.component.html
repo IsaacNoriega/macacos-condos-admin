@@ -1,0 +1,15 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="notice-form">
+  <label for="tenantId">Condominio</label>
+  <select id="tenantId" formControlName="tenantId" required>
+    <option value="" disabled selected>Selecciona un condominio</option>
+    <option *ngFor="let tenant of tenants" [value]="tenant._id">{{ tenant.name }}</option>
+  </select>
+
+  <label for="title">Título</label>
+  <input id="title" formControlName="title" type="text" required />
+
+  <label for="message">Mensaje</label>
+  <textarea id="message" formControlName="message" rows="3" required></textarea>
+
+  <button type="submit" [disabled]="form.invalid">Enviar aviso</button>
+</form>
