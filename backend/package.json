@@ -9,7 +9,9 @@
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "clean": "rimraf dist",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "coverage:open": "vitest run --coverage && start coverage/index.html"
   },
   "keywords": [],
   "author": "",

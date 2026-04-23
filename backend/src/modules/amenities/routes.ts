@@ -11,6 +11,7 @@ router.post(
   '/',
   roleMiddleware(['superadmin', 'admin']),
   body('name').notEmpty().withMessage('Nombre de amenidad obligatorio'),
+  body('maxDailyHours').isInt({ min: 1 }).withMessage('El límite máximo de horas diarias es obligatorio y debe ser mayor a 0'),
   validateRequest,
   createAmenity
 );

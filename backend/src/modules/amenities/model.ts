@@ -6,6 +6,7 @@ export interface IAmenity extends Document {
   description?: string;
   isActive: boolean;
   createdAt: Date;
+  maxDailyHours: number;
 }
 
 const amenitySchema = new Schema<IAmenity>({
@@ -14,6 +15,7 @@ const amenitySchema = new Schema<IAmenity>({
   description: { type: String, trim: true },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
+  maxDailyHours: { type: Number, required: true, min: 1 },
 });
 
 amenitySchema.index({ tenantId: 1, name: 1 }, { unique: true });

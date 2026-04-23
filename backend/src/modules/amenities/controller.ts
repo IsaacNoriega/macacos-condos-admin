@@ -20,14 +20,17 @@ export const getAllAmenities = async (req: Request, res: Response, next: NextFun
 
 export const createAmenity = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { tenantId: requestedTenantId, ...payload } = req.body;
+    const { tenantId: requestedTenantId, maxDailyHours, ...payload } = req.body;
     const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
 
     if (!targetTenantId) {
       throw new AppError('No se pudo determinar el tenant destino', 400);
     }
+    if (typeof maxDailyHours !== 'number' || maxDailyHours < 1) {
+      throw new AppError('El límite máximo de horas diarias es obligatorio y debe ser mayor a 0', 400);
+    }
 
-    const amenity = await amenitiesService.createAmenityInTenant(payload, targetTenantId);
+    const amenity = await amenitiesService.createAmenityInTenant({ ...payload, maxDailyHours }, targetTenantId);
     logger.log('amenities.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { amenityId: String(amenity._id) });
     res.status(201).json({ success: true, amenity });
   } catch (err: unknown) {
