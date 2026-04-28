@@ -3,8 +3,9 @@
    ============================================ */
 
 .app-root {
-	min-height: 100vh;
-	min-height: 100dvh;
+	height: 100vh;
+	height: 100dvh;
+	overflow: hidden;
 	display: flex;
 	background: var(--bg);
 	color: var(--text);
@@ -25,6 +26,7 @@
 	height: 100vh;
 	height: 100dvh;
 	z-index: 20;
+	align-self: flex-start;
 }
 .sidebar.collapsed {
 	width: 68px;
@@ -40,20 +42,12 @@
 	border-bottom: 1px solid var(--border-subtle);
 	position: relative;
 }
-.sidebar-brand .logo-mark {
+.sidebar-brand .logo-img {
 	width: 32px;
 	height: 32px;
-	border-radius: 9px;
-	background: linear-gradient(135deg, var(--brand-navy-800), var(--brand-navy-600));
-	color: #fff;
-	display: grid;
-	place-items: center;
-	font-family: var(--font-display);
-	font-weight: 500;
-	font-size: 18px;
+	object-fit: contain;
 	flex: 0 0 32px;
-	box-shadow: inset 0 -6px 10px oklch(0 0 0 / 0.18), 0 1px 2px oklch(0 0 0 / 0.15);
-	letter-spacing: -0.02em;
+	transition: all var(--dur) var(--ease);
 }
 .sidebar-brand .wordmark-wrap {
 	flex: 1;
@@ -366,8 +360,9 @@ html[data-theme="dark"] .dd-item.danger { color: oklch(0.78 0.13 27); }
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
-	min-height: 100vh;
-	min-height: 100dvh;
+	height: 100vh;
+	height: 100dvh;
+	overflow-y: auto;
 	background: var(--bg);
 }
 

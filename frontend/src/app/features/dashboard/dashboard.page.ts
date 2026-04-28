@@ -7,12 +7,6 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MacIconComponent, MacIconName } from '../shared/mac-icon/mac-icon.component';
 
-interface DashboardBar {
-  label: string;
-  value: number;
-  percent: number;
-  color: string;
-}
 
 interface DashboardGroup {
   label: string;
@@ -160,32 +154,6 @@ export class DashboardPage implements OnInit, OnDestroy {
       .filter((card) => this.hasSource(card.sourceKey));
   });
 
-  readonly chartBars = computed<DashboardBar[]>(() => {
-    const currentMonth = this.countsByMonth(this.monthWindows()[this.monthWindows().length - 1]);
-    const barConfigs = [
-      { key: 'users', label: 'Usuarios', color: DASHBOARD_COLORS.users },
-      { key: 'payments', label: 'Pagos', color: DASHBOARD_COLORS.payments },
-      { key: 'reservations', label: 'Reservas', color: DASHBOARD_COLORS.reservations },
-      { key: 'maintenance', label: 'Mantenimiento', color: DASHBOARD_COLORS.maintenance },
-      { key: 'charges', label: 'Cargos', color: DASHBOARD_COLORS.charges },
-    ];
-
-    const bars = barConfigs
-      .map((config) => ({
-        sourceKey: config.key,
-        label: config.label,
-        value: currentMonth.get(config.key) ?? 0,
-        color: config.color,
-        percent: 0,
-      }))
-      .filter((bar) => this.hasSource(bar.sourceKey));
-
-    const maxValue = Math.max(...bars.map((bar) => bar.value), 1);
-    return bars.map((bar) => ({
-      ...bar,
-      percent: Math.round((bar.value / maxValue) * 100),
-    }));
-  });
 
   readonly chartGroups = computed<DashboardGroup[]>(() => {
     const currentMonth = this.countsByMonth(this.monthWindows()[this.monthWindows().length - 1]);
@@ -324,12 +292,11 @@ export class DashboardPage implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    document.documentElement.classList.add('dashboard-no-scroll');
     this.refresh();
   }
 
   ngOnDestroy(): void {
-    document.documentElement.classList.remove('dashboard-no-scroll');
+    // Empty
   }
 
   refresh(): void {

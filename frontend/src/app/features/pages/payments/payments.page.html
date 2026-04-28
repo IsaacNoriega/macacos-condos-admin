@@ -1,203 +1,233 @@
-<section class="payments-page">
-  <header>
-    <h1>Pagos</h1>
-    <button class="btn" type="button" (click)="loadPayments()" [disabled]="loading()">Refrescar</button>
+<section class="mcs mcs-page payments-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">Pagos</h1>
+      <p class="mcs-page-sub">
+        {{ visiblePayments().length }} transacciones encontradas
+      </p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      <button class="mcs-btn secondary-soft" type="button" (click)="loadPayments()" [disabled]="loading()">
+        <mac-icon name="refresh" [size]="14"/>
+        <span>Actualizar</span>
+      </button>
+      @if (isStaff()) {
+        <button class="mcs-btn primary" type="button" (click)="openRegister()">
+          <mac-icon name="plus" [size]="15"/>
+          <span>Registrar pago</span>
+        </button>
+      }
+    </div>
   </header>
 
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="mcs-input-wrap" style="max-width: 320px; flex: 1;">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+      <input
+        class="mcs-input with-icon"
+        type="search"
+        placeholder="Buscar por usuario o unidad..."
+        [value]="searchTerm()"
+        (input)="setSearch($any($event.target).value)"/>
+    </div>
+    <div class="filter-chips">
+      @for (f of filters; track f.value) {
+        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </div>
+
   @if (error()) {
-  <p class="msg error">{{ error() }}</p>
+    <div class="mcs-alert danger mcs-mb">
+      <mac-icon name="alert" [size]="16"/>
+      <span>{{ error() }}</span>
+    </div>
   }
 
   @if (message()) {
-  <p class="msg ok">{{ message() }}</p>
+    <div class="mcs-alert success mcs-mb">
+      <mac-icon name="checkCircle" [size]="16"/>
+      <span>{{ message() }}</span>
+    </div>
   }
 
-  <div class="layout">
-    <!-- VISTA ADMIN/SUPERADMIN -->
-    @if (isStaff()) {
-    <article class="card">
-      <h2>Registrar pago</h2>
-      <form [formGroup]="paymentForm" class="form-grid staff-form-grid">
-        <!-- SuperAdmin: Selector de Tenant -->
+  <!-- Pending Charges (Residents) -->
+  @if (!isStaff() && residentCharges().length > 0) {
+    <div class="mcs-section-title" style="margin-bottom: 12px;">Cargos por pagar</div>
+    <div class="mcs-grid cols-3 mcs-mb-lg">
+      @for (charge of residentCharges(); track charge._id) {
+        <article class="mcs-card hoverable charge-card-pattern">
+          <div class="mcs-row mcs-between mcs-mb-sm">
+            <div class="mcs-i-round info">
+              <mac-icon name="receipt" [size]="16"/>
+            </div>
+            <span class="mcs-badge warn">Pendiente</span>
+          </div>
+          <div class="charge-title">{{ charge.description }}</div>
+          <div class="charge-amount">{{ getChargeTotalAmount(charge) | currency:'USD' }}</div>
+          <div class="charge-info-row">
+            <mac-icon name="building" [size]="12"/>
+            <span>Unidad: {{ getUnitLabel(charge.unitId) }}</span>
+          </div>
+          <div class="charge-info-row">
+            <mac-icon name="calendar" [size]="12"/>
+            <span>Vence: {{ charge.dueDate | date:'shortDate' }}</span>
+          </div>
+          <div class="charge-actions-row">
+            <button class="mcs-btn sm primary mcs-grow" (click)="payChargeWithStripe(charge)">Pagar Stripe</button>
+            <button class="mcs-btn sm secondary-soft" (click)="openProofDrawer(charge._id)">Comprobante</button>
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <!-- Payments Grid -->
+  @if (loading()) {
+    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+      <span class="mcs-loader"></span>
+      <p>Cargando transacciones...</p>
+    </div>
+  } @else if (visiblePayments().length === 0) {
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
+      <mac-icon name="card" [size]="36"/>
+      <h3>Sin registros</h3>
+      <p>No se encontraron pagos con los filtros actuales.</p>
+    </div>
+  } @else {
+    <div class="mcs-section-title" style="margin-bottom: 12px;">Historial de transacciones</div>
+    <div class="mcs-grid cols-3">
+      @for (p of visiblePayments(); track p._id) {
+        <article class="mcs-card hoverable payment-card-pattern">
+          <div class="mcs-row mcs-between mcs-mb-sm">
+            <div class="mcs-row mcs-gap-sm">
+              <div class="mcs-i-round" [class.ok]="p.status === 'completed'" [class.info]="p.status === 'in_review'" [class.error]="p.status === 'failed'">
+                <mac-icon [name]="p.provider === 'stripe' ? 'card' : 'receipt'" [size]="16"/>
+              </div>
+              <div>
+                <div class="p-user">{{ getUserLabel(p.userId) }}</div>
+                <div class="p-unit mono">{{ getUnitLabel(p.unitId) }}</div>
+              </div>
+            </div>
+            <span class="mcs-badge" [class]="'status-' + getStatusColor(p.status)">
+              {{ getStatusLabel(p.status) }}
+            </span>
+          </div>
+          
+          <div class="mcs-row mcs-between mcs-mb-sm" style="align-items: flex-end;">
+            <div class="p-amount">{{ p.amount | currency : (p.currency || 'MXN').toUpperCase() }}</div>
+            <div class="p-date">{{ p.paymentDate | date:'shortDate' }}</div>
+          </div>
+
+          <div class="p-footer">
+            @if (p.proofOfPaymentUrl) {
+              <button class="mcs-btn sm secondary-soft mcs-grow" (click)="openPaymentProof(p)">
+                <mac-icon name="externalLink" [size]="13"/>
+                <span>Ver comprobante</span>
+              </button>
+            } @else {
+              <div class="p-provider">Proveedor: {{ p.provider | uppercase }}</div>
+            }
+
+            @if (isStaff() && p.status === 'in_review') {
+              <div class="mcs-row mcs-gap-xs" style="margin-top: 8px;">
+                <button class="mcs-btn sm success-soft mcs-grow" (click)="approvePayment(p._id)">Aprobar</button>
+                <button class="mcs-btn sm danger-soft" (click)="rejectPayment(p._id)">✕</button>
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+
+  <!-- Drawers -->
+  <mac-drawer
+    [open]="editorOpen()"
+    title="Registrar pago manual"
+    subtitle="Ingrese los detalles del pago recibido"
+    [width]="500"
+    (closed)="closeEditor()">
+    
+    <ng-container body>
+      <form [formGroup]="paymentForm" class="mcs-stack">
         @if (isSuperadmin()) {
-        <label>
-          <span class="field-title">Tenant *</span>
-          <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona...'" [options]="tenants()" (selectionChange)="onTenantChange()" />
-        </label>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant *</label>
+            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona...'" [options]="tenantOptions()" (selectionChange)="onTenantChange()" />
+          </div>
         }
-
-        <!-- Admin/SuperAdmin: Selector de Unidad -->
-        @if (isSuperadmin() || isAdmin()) {
-        <label>
-          <span class="field-title">Unidad *</span>
-          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona...'" [options]="units()" (selectionChange)="onUserOrUnitChange()" />
-        </label>
-        }
-
-        <!-- Admin/SuperAdmin: Selector de Usuario -->
-        @if (isSuperadmin() || isAdmin()) {
-        <label>
-          <span class="field-title">Usuario *</span>
-          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona...'" [options]="users()" (selectionChange)="onUserOrUnitChange()" />
-        </label>
-        }
-
-        <label>
-          <span class="field-title">Cargo *</span>
-          <app-fancy-select formControlName="chargeId" [placeholder]="'Selecciona...'" [options]="chargeOptions()" (selectionChange)="onChargeSelected()" />
-        </label>
-
-        <label>
-          <span class="field-title">Monto *</span>
-          <input type="number" formControlName="amount" readonly />
-        </label>
-
-        <label class="full-width">
-          <span class="field-title">Moneda</span>
-          <input type="text" formControlName="currency" value="mxn" />
-        </label>
-
-        <div class="file-upload-section full-width">
-          <label>
-            <span class="field-title">Comprobante (opcional si usarás Stripe)</span>
-            <input type="file" accept="image/*" (change)="onFileSelected($event)" />
-          </label>
-          @if (selectedFile()) {
-          <p class="file-selected">{{ selectedFile()!.name }}</p>
-          }
+        <div class="mcs-field">
+          <label class="mcs-field-label">Unidad *</label>
+          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona...'" [options]="unitOptions()" (selectionChange)="onUserOrUnitChange()" />
         </div>
-
-        <div class="actions full-width">
-          <button class="btn primary" type="button" (click)="registerPaymentWithProof()">
-            Registrar pago con comprobante
-          </button>
-          <button class="btn secondary" type="button" (click)="goToStripeCheckout()">
-            Registrar pago Stripe
-          </button>
+        <div class="mcs-field">
+          <label class="mcs-field-label">Usuario *</label>
+          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona...'" [options]="userOptions()" (selectionChange)="onUserOrUnitChange()" />
+        </div>
+        <div class="mcs-field">
+          <label class="mcs-field-label">Cargo *</label>
+          <app-fancy-select formControlName="chargeId" [placeholder]="'Selecciona...'" [options]="chargeOptions()" (selectionChange)="onChargeSelected()" />
+        </div>
+        <div class="mcs-field">
+          <label class="mcs-field-label">Monto *</label>
+          <div class="mcs-input-wrap">
+            <span class="mcs-input-icon">$</span>
+            <input class="mcs-input with-icon" type="number" formControlName="amount" readonly />
+          </div>
+        </div>
+        <div class="mcs-field">
+          <label class="mcs-field-label">Comprobante (opcional)</label>
+          <div class="file-upload-wrap">
+            <input type="file" id="staffFile" class="mcs-hidden" (change)="onFileSelected($event)" />
+            <label for="staffFile" class="mcs-file-drop">
+              <mac-icon name="upload" [size]="20"/>
+              <span>{{ selectedFile() ? selectedFile()!.name : 'Arrastra o haz click aquí' }}</span>
+            </label>
+          </div>
         </div>
       </form>
-    </article>
-    } @else {
-    <!-- VISTA USUARIO -->
-    <article class="card">
-      <h2>Mis cargos pendientes</h2>
+    </ng-container>
 
-      @if (!residentCharges().length) {
-      <p>No tienes cargos pendientes por pagar.</p>
-      } @else {
-      <div class="resident-charges">
-        @for (charge of residentCharges(); track charge._id) {
-        <div class="resident-charge-item">
-          <div class="charge-summary">
-            <h3>{{ charge.description }}</h3>
-            <div class="charge-meta">
-              <p>Unidad: {{ getUnitLabel(charge.unitId) }}</p>
-              <p>Monto base: {{ charge.amount | currency : 'MXN' }}</p>
-              @if (getChargeLateFeeAmount(charge) > 0) {
-              <p>Recargo por atraso: {{ getChargeLateFeeAmount(charge) | currency : 'MXN' }}</p>
-              }
-              @if (charge.dueDate) {
-              <p>Vence: {{ charge.dueDate | date : 'mediumDate' }}</p>
-              }
-            </div>
-            @if (getChargeLateFeeAmount(charge) > 0) {
-            <p class="charge-total">Total a pagar: {{ getChargeTotalAmount(charge) | currency : 'MXN' }}</p>
-            }
-          </div>
-          <div class="charge-actions">
-            <button class="btn primary" type="button" (click)="payChargeWithStripe(charge)">
-              Pagar con Stripe
-            </button>
-            <button class="btn secondary" type="button" (click)="selectChargeForProof(charge._id)">
-              Subir comprobante
-            </button>
+    <ng-container footer>
+      <button class="mcs-btn" (click)="closeEditor()">Cancelar</button>
+      <button class="mcs-btn primary" (click)="registerPaymentWithProof()" [disabled]="loading()">
+        @if (loading()) { <span class="mcs-btn-spin"></span> }
+        <span>Registrar pago</span>
+      </button>
+    </ng-container>
+  </mac-drawer>
+
+  <mac-drawer
+    [open]="proofDrawerOpen()"
+    title="Subir comprobante"
+    subtitle="Envíe una imagen de su ticket para validación"
+    [width]="400"
+    (closed)="closeProofDrawer()">
+    
+    <ng-container body>
+      <div class="mcs-stack">
+        <div class="mcs-field">
+          <div class="file-upload-wrap">
+            <input type="file" id="proofFile" class="mcs-hidden" (change)="onFileSelected($event)" />
+            <label for="proofFile" class="mcs-file-drop">
+              <mac-icon name="upload" [size]="32"/>
+              <p>{{ selectedFile() ? selectedFile()!.name : 'Seleccionar comprobante' }}</p>
+            </label>
           </div>
         </div>
-        }
       </div>
+    </ng-container>
 
-      @if (selectedChargeForProof()) {
-      <div class="file-upload-section">
-        <h3>Subir comprobante</h3>
-        <label>
-          Archivo del comprobante
-          <input type="file" accept="image/*" (change)="onFileSelected($event)" />
-        </label>
-        @if (selectedFile()) {
-        <p class="file-selected">{{ selectedFile()!.name }}</p>
-        }
-        <div class="actions">
-          <button class="btn primary" type="button" (click)="submitProofForSelectedCharge()">Enviar comprobante</button>
-          <button class="btn" type="button" (click)="selectedChargeForProof.set(null)">Cancelar</button>
-        </div>
-      </div>
-      }
-      }
-    </article>
-    }
-
-    <!-- HISTORIAL DE PAGOS -->
-    <article class="card">
-      <h2>{{ isStaff() ? 'Pagos por usuario' : 'Mi historial de pagos' }}</h2>
-      @if (loading()) {
-      <p>Cargando pagos...</p>
-      } @else if (loadingOptions()) {
-      <p>Cargando catálogos...</p>
-      } @else if (!visiblePayments().length) {
-      <p>No hay pagos registrados.</p>
-      } @else {
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Unidad</th>
-              <th>Cargo</th>
-              <th>Monto</th>
-              <th>Proveedor</th>
-              <th>Estatus</th>
-              <th>Fecha</th>
-              <th>Comprobante</th>
-              @if (isStaff()) {
-              <th>Acciones</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (payment of visiblePayments(); track payment._id) {
-            <tr>
-              <td>{{ getUserLabel(payment.userId) }}</td>
-              <td>{{ getUnitLabel(payment.unitId) }}</td>
-              <td>{{ getChargeLabel(payment.chargeId) }}</td>
-              <td>{{ payment.amount | currency : (payment.currency || 'MXN').toUpperCase() }}</td>
-              <td>{{ payment.provider }}</td>
-              <td>
-                <span class="status-badge" [ngClass]="'status-' + getStatusColor(payment.status)">
-                  {{ getStatusLabel(payment.status) }}
-                </span>
-              </td>
-              <td>{{ payment.paymentDate | date : 'short' }}</td>
-              <td>
-                @if (payment.proofOfPaymentUrl || payment.proofOfPaymentBlobName) {
-                <button type="button" class="btn-small view" (click)="openPaymentProof(payment)">Ver archivo</button>
-                } @else {
-                -
-                }
-              </td>
-              @if (isStaff() && payment.status === 'in_review') {
-              <td class="actions-cell">
-                <button class="btn-small approve" (click)="approvePayment(payment._id)" title="Aprobar pago">✓</button>
-                <button class="btn-small reject" (click)="rejectPayment(payment._id)" title="Rechazar pago">✕</button>
-              </td>
-              } @else if (isStaff()) {
-              <td>-</td>
-              }
-            </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-      }
-    </article>
-  </div>
+    <ng-container footer>
+      <button class="mcs-btn" (click)="closeProofDrawer()">Cerrar</button>
+      <button class="mcs-btn primary" (click)="submitProofForSelectedCharge()" [disabled]="!selectedFile() || loading()">
+        <span>Enviar a revisión</span>
+      </button>
+    </ng-container>
+  </mac-drawer>
 </section>

@@ -149,26 +149,4 @@
     </article>
   </div>
 
-  <!-- Volume by category -->
-  <article class="mcs-card" style="margin-top: 16px;">
-    <div class="mcs-card-head between">
-      <div>
-        <div class="mcs-card-title">Volumen por categoría</div>
-        <div class="mcs-card-sub">Mes actual · {{ totalMetrics() }} registros</div>
-      </div>
-    </div>
-    <div class="mcs-card-body bars-body">
-      @for (bar of chartBars(); track bar.label) {
-        <div class="bar-row">
-          <div class="bar-row-head">
-            <span>{{ bar.label }}</span>
-            <strong class="mono tabular">{{ bar.value }}</strong>
-          </div>
-          <div class="bar-track">
-            <span class="bar-fill" [style.width.%]="bar.percent" [style.background]="bar.color"></span>
-          </div>
-        </div>
-      }
-    </div>
-  </article>
 </section>
