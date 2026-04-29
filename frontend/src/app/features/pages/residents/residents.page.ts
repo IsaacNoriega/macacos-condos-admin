@@ -69,6 +69,7 @@ export class ResidentsPage {
   readonly activeFilter = signal<ResidentFilter>('all');
   readonly page = signal(1);
   readonly pageSize = 9;
+  readonly view = signal<'grid' | 'list'>('grid');
 
   readonly loading = signal(false);
   readonly lastSyncedAt = signal(new Date());
@@ -272,6 +273,12 @@ export class ResidentsPage {
   // ─── Toolbar ────────────────────────────────────────────────────────────
   setSearch(value: string): void { this.searchTerm.set(value); this.page.set(1); }
   setFilter(value: ResidentFilter): void { this.activeFilter.set(value); this.page.set(1); }
+  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  onTenantFilterChange(ev: any): void {
+    this.viewTenantId.set(ev.target.value);
+    this.page.set(1);
+    this.loadResidents();
+  }
 
   // ─── User options sync (same behaviour as before) ───────────────────────
   onEmailChange(email: string): void {
@@ -419,12 +426,18 @@ export class ResidentsPage {
   // ─── Data loading ───────────────────────────────────────────────────────
   private loadInitialData(): void {
     this.loading.set(true);
-    const req = this.isSuperadmin()
-      ? this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants')
-      : this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants?limit=0');
+    if (!this.isSuperadmin()) {
+      this.tenants.set([]);
+      this.loadUnitsAndUsersAndResidents();
+      return;
+    }
 
-    req.pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (r) => { this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []); this.loadUnitsAndUsersAndResidents(); },
+    this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants').pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: (r) => { 
+        console.log('[DEBUG] loadInitialData (tenants) response:', r);
+        this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []); 
+        this.loadUnitsAndUsersAndResidents(); 
+      },
       error: () => { this.tenants.set([]); this.loadUnitsAndUsersAndResidents(); },
     });
   }
@@ -459,6 +472,7 @@ export class ResidentsPage {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (r) => {
+          console.log('[DEBUG] loadResidents response:', r);
           const residents = Array.isArray(r.residents) ? r.residents : [];
           this.residents.set(residents.map((resident) => this.toResidentCard(resident)));
           this.lastSyncedAt.set(new Date());

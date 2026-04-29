@@ -4,13 +4,33 @@
     <div>
       <h1 class="mcs-page-title">Residentes</h1>
       <p class="mcs-page-sub">
-        {{ filteredResidents().length }} de {{ residents().length }} · {{ activeCount() }} activos
+        {{ activeCount() }} residentes activos · {{ residents().length }} totales
       </p>
     </div>
-    <button class="mcs-btn primary" type="button" (click)="openCreate()">
-      <mac-icon name="plus" [size]="15"/>
-      <span>Añadir residente</span>
-    </button>
+    <div class="mcs-row mcs-gap-sm">
+      @if (isSuperadmin()) {
+        <div class="mcs-field" style="margin: 0; min-width: 240px;">
+          <select class="mcs-input" [value]="viewTenantId()" (change)="onTenantFilterChange($event)">
+            <option value="">Todos los condominios</option>
+            @for (t of tenants(); track t._id) {
+              <option [value]="t._id">{{ t.name }}</option>
+            }
+          </select>
+        </div>
+      }
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
+          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nuevo residente</span>
+      </button>
+    </div>
   </header>
 
   <!-- Toolbar -->
@@ -33,18 +53,23 @@
     </div>
   </div>
 
-  <!-- Empty / Grid -->
-  @if (pagedResidents().length === 0) {
-    <div class="mcs-empty mcs-card" style="padding:60px 20px;">
-      <mac-icon name="users" [size]="36"/>
+  <!-- Content -->
+  @if (loading() && residents().length === 0) {
+    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+      <span class="mcs-loader"></span>
+      <p>Cargando residentes...</p>
+    </div>
+  } @else if (pagedResidents().length === 0) {
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
+      <mac-icon name="user" [size]="48" style="opacity: 0.3;"/>
       <h3>Sin residentes</h3>
-      <p>Ajuste los filtros o registre un nuevo residente para comenzar.</p>
+      <p>No se encontraron residentes que coincidan con los filtros.</p>
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
         <mac-icon name="plus" [size]="14"/>
-        <span>Nuevo residente</span>
+        <span>Crear residente</span>
       </button>
     </div>
-  } @else {
+  } @else if (view() === 'grid') {
     <div class="mcs-grid cols-3">
       @for (r of pagedResidents(); track trackById($index, r)) {
         <article class="mcs-card hoverable resident-card" (click)="openDetail(r)">
@@ -91,6 +116,52 @@
             </button>
           </div>
         </article>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        @for (n of pageNumbers(); track n) {
+          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n }}</button>
+        }
+        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </footer>
+    }
+  } @else {
+    <div class="mcs-card">
+      @for (r of pagedResidents(); track trackById($index, r); let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(r)">
+          <div class="mcs-avatar" [class]="r.isActive ? 'ok' : 'surface-muted'">
+            {{ initials(r.name) }}
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600;">{{ r.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new);">{{ r.email }}</div>
+          </div>
+          <div style="width: 120px;">
+            <div class="mcs-badge navy">{{ r.unitCode }}</div>
+          </div>
+          <div style="width: 120px;">
+            <span class="mcs-badge" [class]="r.isActive ? 'ok' : 'bad'">{{ r.status }}</span>
+          </div>
+          <div style="width: 120px; font-size: 13px; color: var(--text-soft);">
+            {{ relationshipLabel(r.relationship) }}
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(r)">
+              <mac-icon name="edit" [size]="13"/>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(r, $event)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </div>
       }
     </div>
 

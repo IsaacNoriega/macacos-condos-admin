@@ -53,7 +53,8 @@ export class ChargesPage implements OnInit {
   readonly searchTerm = signal('');
   readonly activeFilter = signal<ChargeFilter>('all');
   readonly page = signal(1);
-  readonly pageSize = 9;
+  readonly pageSize = 6;
+  readonly view = signal<'grid' | 'list'>('grid');
 
   readonly loading = signal(false);
   private readonly rawCharges = signal<ApiCharge[]>([]);
@@ -207,15 +208,20 @@ export class ChargesPage implements OnInit {
 
   loadData(): void {
     this.loading.set(true);
-    const requests = {
-      tenants: this.api.get<{ tenants: Tenant[] }>('/tenants'),
+    const requests: any = {
       units: this.api.get<{ units: Unit[] }>('/units'),
       users: this.api.get<{ users: ApiUser[] }>('/users'),
     };
 
+    if (this.isSuperadmin()) {
+      requests.tenants = this.api.get<{ tenants: Tenant[] }>('/tenants');
+    }
+
     forkJoin(requests).subscribe({
-      next: (res) => {
-        this.tenants.set(res.tenants.tenants || []);
+      next: (res: any) => {
+        if (this.isSuperadmin()) {
+          this.tenants.set(res.tenants.tenants || []);
+        }
         this.units.set(res.units.units || []);
         this.users.set(res.users.users || []);
         this.loadCharges();
@@ -260,8 +266,9 @@ export class ChargesPage implements OnInit {
   closeEditor(): void { this.editorOpen.set(false); }
   closeDetail(): void { this.detail.set(null); }
 
-  setSearch(v: string): void { this.searchTerm.set(v); this.page.set(1); }
-  setFilter(v: ChargeFilter): void { this.activeFilter.set(v); this.page.set(1); }
+  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
+  setFilter(val: ChargeFilter): void { this.activeFilter.set(val); this.page.set(1); }
+  setView(view: 'grid' | 'list'): void { this.view.set(view); }
 
   saveCharge(): void {
     if (this.form.invalid) {

@@ -1,6 +1,6 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
@@ -12,6 +12,10 @@ import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { CrudPageComponent } from '../../shared/crud/crud-page.component';
 import { FancySelectComponent } from '../../shared/form/fancy-select.component';
+import { MacIconComponent } from '../../shared/mac-icon/mac-icon.component';
+import { DrawerComponent } from '../../shared/drawer/drawer.component';
+import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface TenantOption {
   _id: string;
@@ -41,24 +45,36 @@ interface SummaryCard {
 @Component({
   selector: 'app-reservations-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CrudPageComponent, FancySelectComponent, FullCalendarModule],
+  imports: [CommonModule, ReactiveFormsModule, FancySelectComponent, FullCalendarModule, MacIconComponent, DrawerComponent, ConfirmModalComponent],
   templateUrl: './reservations.page.html',
   styleUrl: './reservations.page.css',
 })
 export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly document = inject(DOCUMENT);
+  private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
 
   @ViewChild(FullCalendarComponent) private calendarComponent?: FullCalendarComponent;
 
   readonly config: CrudConfig;
   readonly reservations = signal<Reservation[]>([]);
   readonly tenants = signal<TenantOption[]>([]);
+  readonly users = signal<any[]>([]);
+  readonly allAmenities = signal<any[]>([]);
   readonly loadingCalendar = signal(false);
   readonly calendarError = signal<string | null>(null);
   readonly calendarRangeLabel = signal('');
+  readonly loading = signal(false);
+  readonly toDelete = signal<Reservation | null>(null);
+  readonly editorOpen = signal(false);
+  readonly editingReservationId = signal<string | null>(null);
+  readonly view = signal<'calendar' | 'list'>('calendar');
+
   readonly selectedAmenityFilter = signal('');
   readonly isSuperadmin = computed(() => this.auth.role() === 'superadmin');
+  readonly userRole = computed(() => this.auth.role());
   readonly nowTick = signal(Date.now());
   private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -68,6 +84,17 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     weekStart: [this.toDateInputValue(this.startOfWeek(new Date()))],
   });
 
+  readonly form = this.fb.group({
+    tenantId: [''],
+    userId: [''],
+    amenity: ['', Validators.required],
+    start: ['', Validators.required],
+    end: ['', Validators.required],
+    status: ['activa'],
+  });
+
+  readonly editingReservation = computed(() => this.reservations().find(r => r._id === this.editingReservationId()) || null);
+
   readonly amenities = computed(() => {
     const unique = new Set(this.reservations().map((item) => item.amenity).filter(Boolean));
     return Array.from(unique).sort((a, b) => a.localeCompare(b));
@@ -75,6 +102,9 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
 
   readonly tenantFilterOptions = computed(() => this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })));
   readonly amenityFilterOptions = computed(() => this.amenities().map((amenity) => ({ label: amenity, value: amenity })));
+  readonly formAmenityOptions = computed(() => this.allAmenities().map((a) => ({ label: a.name, value: a.name })));
+  readonly userOptions = computed(() => this.users().map(u => ({ label: `${u.name} (${u.email})`, value: u._id })));
+  readonly tenantOptions = computed(() => this.tenants().map(t => ({ label: t.name, value: t._id })));
 
   readonly calendarEvents = computed<EventInput[]>(() => {
     const amenityFilter = this.selectedAmenityFilter().trim();
@@ -120,6 +150,12 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     stickyHeaderDates: true,
     events: this.calendarEvents(),
+    eventClick: (info) => {
+      const reservation = this.reservations().find(r => r._id === info.event.id);
+      if (reservation) {
+        this.openEdit(reservation);
+      }
+    }
   }));
 
   readonly summaryCards = computed<SummaryCard[]>(() => {
@@ -179,16 +215,36 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     return days;
   });
 
-  constructor(
-    public readonly auth: AuthService,
-    private readonly api: ApiService
-  ) {
-
+  constructor() {
     const role = this.auth.role();
     const currentUserId = this.auth.user()?._id || '';
     const isSuperadmin = role === 'superadmin';
     const isAdmin = role === 'admin';
     const isSelfServiceRole = role === 'residente' || role === 'familiar';
+
+    effect(() => {
+      const editing = this.editingReservation();
+      if (!editing) {
+        this.form.reset({
+          tenantId: '',
+          userId: '',
+          amenity: '',
+          start: '',
+          end: '',
+          status: 'activa',
+        }, { emitEvent: false });
+        return;
+      }
+
+      this.form.patchValue({
+        tenantId: editing.tenantId,
+        userId: editing.userId,
+        amenity: editing.amenity,
+        start: editing.start ? this.toDateTimeLocalValue(new Date(editing.start)) : '',
+        end: editing.end ? this.toDateTimeLocalValue(new Date(editing.end)) : '',
+        status: editing.status || 'activa',
+      }, { emitEvent: false });
+    });
 
     this.config = {
       title: 'Reservaciones',
@@ -267,6 +323,91 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  openCreate(): void {
+    this.editingReservationId.set(null);
+    this.editorOpen.set(true);
+  }
+
+  openEdit(reservation: Reservation): void {
+    this.editingReservationId.set(reservation._id);
+    this.editorOpen.set(true);
+  }
+
+  closeEditor(): void {
+    this.editorOpen.set(false);
+  }
+
+  saveReservation(): void {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const payload = this.form.getRawValue();
+    
+    // Validar duración máxima en frontend
+    const amenityData = this.allAmenities().find(a => a.name === payload.amenity);
+    if (amenityData && amenityData.maxDurationHours) {
+      const start = new Date(payload.start as string).getTime();
+      const end = new Date(payload.end as string).getTime();
+      const duration = (end - start) / (1000 * 60 * 60);
+      if (duration > amenityData.maxDurationHours) {
+        this.toast.bad(`La duración máxima para ${payload.amenity} es de ${amenityData.maxDurationHours} horas.`);
+        return;
+      }
+    }
+
+    const isEditing = !!this.editingReservationId();
+    const endpoint = isEditing ? `/reservations/${this.editingReservationId()}` : '/reservations';
+    
+    this.loading.set(true);
+    const request$ = isEditing 
+      ? this.api.put<{success: boolean}>(endpoint, payload)
+      : this.api.post<{success: boolean}>(endpoint, payload);
+
+    request$.pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: () => {
+        this.toast.ok(isEditing ? 'Reservación actualizada' : 'Reservación creada');
+        this.closeEditor();
+        this.loadCalendarReservations();
+      },
+      error: (err) => {
+        this.toast.bad(err?.error?.message || 'Error al guardar reservación');
+      }
+    });
+  }
+
+  askDelete(reservation: Reservation): void {
+    this.toDelete.set(reservation);
+  }
+
+  cancelDelete(): void {
+    this.toDelete.set(null);
+  }
+
+  confirmDelete(): void {
+    const r = this.toDelete();
+    if (!r) return;
+
+    this.loading.set(true);
+    this.api.delete<{success: boolean}>(`/reservations/${r._id}`).pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: () => {
+        this.toast.ok('Reservación eliminada');
+        this.toDelete.set(null);
+        this.loadCalendarReservations();
+      },
+      error: (err) => {
+        this.toast.bad(err?.error?.message || 'Error al eliminar');
+      }
+    });
+  }
+
+  private toDateTimeLocalValue(date: Date): string {
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
+    return localISOTime;
+  }
+
   ngOnInit(): void {
     this.toggleNoScroll(true);
     this.selectedAmenityFilter.set(this.calendarForm.get('amenity')?.value || '');
@@ -275,8 +416,12 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     if (this.auth.role() === 'superadmin') {
       this.loadTenants();
     }
+    if (this.auth.role() === 'superadmin' || this.auth.role() === 'admin') {
+      this.loadUsers();
+    }
 
     this.loadCalendarReservations();
+    this.loadAmenities();
 
     this.refreshIntervalId = setInterval(() => {
       this.nowTick.set(Date.now());
@@ -325,11 +470,30 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     this.selectedAmenityFilter.set(this.calendarForm.get('amenity')?.value || '');
     this.syncCalendarView();
     this.loadCalendarReservations();
+    this.loadAmenities();
   }
+
+  setView(view: 'calendar' | 'list'): void { this.view.set(view); }
 
   private loadTenants(): void {
     this.api.get<{ success: boolean; tenants: TenantOption[] }>('/tenants').subscribe({
       next: (response) => this.tenants.set(response.tenants || []),
+    });
+  }
+
+  private loadUsers(): void {
+    this.api.get<{ success: boolean; users: any[] }>('/users').subscribe({
+      next: (response) => this.users.set(response.users || []),
+    });
+  }
+
+  private loadAmenities(): void {
+    const role = this.auth.role();
+    const selectedTenant = this.calendarForm.get('tenantId')?.value || '';
+    const tenantQuery = role === 'superadmin' && selectedTenant ? `?tenantId=${selectedTenant}` : '';
+
+    this.api.get<{ success: boolean; amenities: any[] }>(`/amenities${tenantQuery}`).subscribe({
+      next: (response) => this.allAmenities.set(response.amenities || []),
     });
   }
 
@@ -380,7 +544,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 
-  private toTimeLabel(raw: string): string {
+  protected toTimeLabel(raw: string): string {
     const date = new Date(raw);
     if (Number.isNaN(date.getTime())) {
       return '--:--';
@@ -393,7 +557,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     }).format(date);
   }
 
-  private getReservationDisplayStatus(reservation: Reservation, now = Date.now()): 'activa' | 'cancelada' | 'finalizada' {
+  protected getReservationDisplayStatus(reservation: Reservation, now = Date.now()): 'activa' | 'cancelada' | 'finalizada' {
     if (reservation.status === 'cancelada') {
       return 'cancelada';
     }
@@ -410,7 +574,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     return 'activa';
   }
 
-  private getReservationStatusColor(status: 'activa' | 'cancelada' | 'finalizada'): string {
+  protected getReservationStatusColor(status: 'activa' | 'cancelada' | 'finalizada'): string {
     switch (status) {
       case 'cancelada':
         return '#f59e0b';

@@ -4,13 +4,23 @@
     <div>
       <h1 class="mcs-page-title">Cargos</h1>
       <p class="mcs-page-sub">
-        {{ filteredCharges().length }} de {{ charges().length }} · {{ pendingCount() }} pendientes
+        {{ charges().length }} cargos registrados · {{ pendingCount() }} pendientes
       </p>
     </div>
-    <button class="mcs-btn primary" type="button" (click)="openCreate()">
-      <mac-icon name="plus" [size]="15"/>
-      <span>Nuevo cargo</span>
-    </button>
+    <div class="mcs-row mcs-gap-sm">
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
+          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nuevo cargo</span>
+      </button>
+    </div>
   </header>
 
   <!-- Tenant Carousel (Superadmin only) -->
@@ -64,20 +74,25 @@
     </div>
   </div>
 
-  <!-- Empty / Grid -->
-  @if (pagedCharges().length === 0) {
+  <!-- Content Section -->
+  @if (loading() && charges().length === 0) {
+    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+      <span class="mcs-loader"></span>
+      <p>Cargando cargos...</p>
+    </div>
+  } @else if (pagedCharges().length === 0) {
     <div class="mcs-empty mcs-card" style="padding:60px 20px;">
       <mac-icon name="receipt" [size]="36"/>
       <h3>Sin cargos</h3>
       <p>No se encontraron cargos con los filtros actuales.</p>
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
         <mac-icon name="plus" [size]="14"/>
-        <span>Nuevo cargo</span>
+        <span>Crear cargo</span>
       </button>
     </div>
-  } @else {
+  } @else if (view() === 'grid') {
     <div class="mcs-grid cols-3">
-      @for (c of pagedCharges(); track trackById($index, c)) {
+      @for (c of pagedCharges(); track c.id) {
         <article class="mcs-card hoverable charge-card" (click)="openDetail(c)">
           <div class="mcs-row mcs-gap">
             <div class="mcs-avatar" [class.ok]="c.paymentStatus === 'paid'" [class.warn]="c.paymentStatus === 'pending'">
@@ -109,7 +124,7 @@
             </div>
             <div class="mcs-row mcs-gap-sm">
               <mac-icon name="calendar" [size]="13"/>
-              <span>Vence {{ c.dueDate | date:'mediumDate':'':'es-MX' }}</span>
+              <span>Vence {{ c.dueDate | date:'mediumDate' }}</span>
             </div>
           </div>
 
@@ -125,17 +140,47 @@
         </article>
       }
     </div>
+  } @else {
+    <div class="mcs-card">
+      @for (c of pagedCharges(); track c.id; let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(c)">
+          <div class="mcs-avatar" [class]="c.paymentStatus === 'paid' ? 'ok' : 'warn'">
+            <mac-icon name="card" [size]="14"/>
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600;">{{ c.description }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new);">{{ c.unitCode }} · {{ c.userName }}</div>
+          </div>
+          <div style="width: 140px; font-weight: 700; font-family: var(--font-mono);">
+            {{ c.amount | currency: 'USD' }}
+          </div>
+          <div style="width: 130px;">
+            <span class="mcs-badge" [class]="c.paymentStatus === 'paid' ? 'ok' : 'warn'">{{ c.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente' }}</span>
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(c)">
+              <mac-icon name="edit" [size]="13"/>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(c, $event)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
 
-    <!-- ─── Paginación ─── -->
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
     <footer class="pagination mcs-row mcs-between mcs-mt-lg">
-      <div class="mcs-text-muted">
+      <div class="mcs-text-muted text-sm">
         Página {{ page() }} de {{ totalPages() }}
       </div>
       <div class="mcs-row mcs-gap">
         <button class="mcs-btn sm secondary-soft" [disabled]="page() === 1" (click)="page.set(page() - 1)">
           <mac-icon name="chevronLeft" [size]="14"/>
         </button>
-        <button class="mcs-btn sm secondary-soft" [disabled]="page() * pageSize >= filteredCharges().length" (click)="page.set(page() + 1)">
+        <button class="mcs-btn sm secondary-soft" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
           <mac-icon name="chevronRight" [size]="14"/>
         </button>
       </div>

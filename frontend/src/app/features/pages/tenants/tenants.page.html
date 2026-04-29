@@ -1,0 +1,209 @@
+<section class="mcs mcs-page tenants-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">Condominios</h1>
+      <p class="mcs-page-sub">
+        {{ pagedTenants().length }} de {{ tenants().length }} condominios registrados
+      </p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
+          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nuevo tenant</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+      <input
+        class="mcs-input with-icon"
+        type="search"
+        placeholder="Buscar por nombre, dirección o email..."
+        [value]="searchTerm()"
+        (input)="setSearch($any($event.target).value)"/>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  @if (loading() && tenants().length === 0) {
+    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+      <span class="mcs-loader"></span>
+      <p>Cargando condominios...</p>
+    </div>
+  } @else if (filteredTenants().length === 0) {
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
+      <mac-icon name="building" [size]="48" style="opacity: 0.3;"/>
+      <h3>Sin condominios</h3>
+      <p>No se encontraron condominios registrados con los filtros actuales.</p>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="14"/>
+        <span>Registrar condominio</span>
+      </button>
+    </div>
+  } @else if (view() === 'grid') {
+    <div class="mcs-grid cols-3">
+      @for (t of pagedTenants(); track t._id) {
+        <article class="mcs-card hoverable tenant-card" (click)="openEdit(t)">
+          <header class="card-head">
+            <div class="mcs-avatar" [class.ok]="t.isActive" [class.warn]="!t.isActive">
+              <mac-icon name="building" [size]="16"/>
+            </div>
+            <div class="mcs-grow">
+              <div class="tenant-status">
+                <span class="mcs-badge" [class.ok]="t.isActive" [class.warn]="!t.isActive">
+                  {{ t.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </div>
+              <h3 class="tenant-name">{{ t.name }}</h3>
+            </div>
+          </header>
+
+          <div class="tenant-body">
+            <div class="tenant-info-row">
+              <mac-icon name="building" [size]="13"/>
+              <span>{{ t.address }}</span>
+            </div>
+            <div class="tenant-info-row">
+              <mac-icon name="mail" [size]="13"/>
+              <span>{{ t.contactEmail }}</span>
+            </div>
+          </div>
+
+          <footer class="card-foot">
+            <button class="mcs-btn sm secondary-soft mcs-grow" type="button">
+              <mac-icon name="edit" [size]="13"/>
+              <span>Gestionar</span>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(t, $event)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </footer>
+        </article>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button class="mcs-btn sm icon-only" type="button" (click)="page.set(page() - 1)" [disabled]="page() === 1" aria-label="Anterior">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        <span class="page-num">Página {{ page() }} de {{ totalPages() }}</span>
+        <button class="mcs-btn sm icon-only" type="button" (click)="page.set(page() + 1)" [disabled]="page() === totalPages()" aria-label="Siguiente">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </footer>
+    }
+  } @else {
+    <div class="mcs-card">
+      @for (t of pagedTenants(); track t._id; let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openEdit(t)">
+          <div class="mcs-avatar" style="background: var(--primary-soft); color: var(--primary-900);">
+            {{ initials(t.name) }}
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600;">{{ t.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new);">{{ t.contactEmail }}</div>
+          </div>
+          <div style="width: 130px;">
+            <span class="mcs-badge" [class.ok]="t.isActive">{{ t.isActive ? 'Activo' : 'Suspendido' }}</span>
+          </div>
+          <div style="width: 120px; font-size: 13px; color: var(--text-soft);">
+             {{ t.address | slice:0:30 }}{{ t.address.length > 30 ? '...' : '' }}
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(t)">
+              <mac-icon name="edit" [size]="13"/>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(t, $event)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button class="mcs-btn sm icon-only" type="button" (click)="page.set(page() - 1)" [disabled]="page() === 1" aria-label="Anterior">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        <span class="page-num">Página {{ page() }} de {{ totalPages() }}</span>
+        <button class="mcs-btn sm icon-only" type="button" (click)="page.set(page() + 1)" [disabled]="page() === totalPages()" aria-label="Siguiente">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </footer>
+    }
+  }
+
+  <!-- Drawer: Editor -->
+  <mac-drawer
+    [open]="editorOpen()"
+    [title]="selectedTenantId() ? 'Gestionar condominio' : 'Nuevo condominio'"
+    [subtitle]="selectedTenantId() ? 'Actualice la información general del condominio' : 'Registre un nuevo condominio en la plataforma'"
+    [width]="520"
+    (closed)="closeEditor()">
+    
+    <ng-container body>
+      <form [formGroup]="form" (ngSubmit)="saveTenant()" class="mcs-stack">
+        <div class="mcs-field">
+          <label class="mcs-field-label">Nombre del condominio *</label>
+          <input class="mcs-input" type="text" formControlName="name" placeholder="Ej: Residencial Las Flores"/>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Dirección física *</label>
+          <textarea class="mcs-textarea" formControlName="address" rows="3" placeholder="Calle, número, colonia, ciudad..."></textarea>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Email de contacto *</label>
+          <input class="mcs-input" type="email" formControlName="contactEmail" placeholder="admin@condominio.com"/>
+        </div>
+
+        <div class="mcs-field">
+          <div class="mcs-row mcs-between">
+            <label class="mcs-field-label">Estado de la cuenta</label>
+            <div class="mcs-row mcs-gap-sm">
+              <span class="text-xs" [style.color]="form.get('isActive')?.value ? 'var(--ok-600)' : 'var(--text-muted)'">
+                {{ form.get('isActive')?.value ? 'Activo' : 'Inactivo' }}
+              </span>
+              <input type="checkbox" formControlName="isActive" class="mcs-toggle"/>
+            </div>
+          </div>
+        </div>
+      </form>
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
+      <button class="mcs-btn primary" type="button" (click)="saveTenant()" [disabled]="loading()">
+        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
+        @else { <mac-icon name="check" [size]="13"/><span>{{ selectedTenantId() ? 'Guardar cambios' : 'Crear condominio' }}</span> }
+      </button>
+    </ng-container>
+  </mac-drawer>
+
+  <!-- Confirm Delete -->
+  <mac-confirm-modal
+    [open]="toDelete() !== null"
+    title="¿Eliminar condominio?"
+    [message]="toDelete() ? 'Se eliminará el condominio \'' + toDelete()!.name + '\' y toda su información relacionada. Esta acción no se puede deshacer.' : ''"
+    confirmLabel="Eliminar"
+    (cancelled)="toDelete.set(null)"
+    (confirmed)="confirmDelete()">
+  </mac-confirm-modal>
+</section>

@@ -1,72 +1,206 @@
-<section class="reservations-page">
-  <section class="reservations-workspace">
-    <aside class="insight-rail">
-      <section class="summary-grid" aria-label="Resumen de reservaciones">
+<section class="mcs mcs-page reservations-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">Reservaciones</h1>
+      <p class="mcs-page-sub">
+        {{ reservations().length }} registros encontrados · {{ calendarRangeLabel() }}
+      </p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      <div class="mcs-row mcs-gap-sm summary-badges mcs-mr">
         @for (card of summaryCards(); track card.label) {
-        <article class="summary-card">
-          <div class="summary-topline">
-            <span class="summary-dot" [style.background]="card.color"></span>
-            <span>{{ card.note }}</span>
+          <div class="mcs-badge" [style.border-left]="'3px solid ' + card.color" style="padding-left: 10px; background: var(--surface-muted);">
+            <strong style="margin-right: 4px; color: var(--text);">{{ card.value }}</strong> 
+            <span style="color: var(--text-soft); font-size: 11px;">{{ card.label }}</span>
           </div>
-          <strong>{{ card.value }}</strong>
-          <h3>{{ card.label }}</h3>
-        </article>
         }
-      </section>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nueva reservación</span>
+      </button>
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'calendar'" (click)="setView('calendar')">
+          <mac-icon name="calendar" [size]="13"/><span>Calendario</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+    </div>
+  </header>
 
-      <form class="calendar-filters" [formGroup]="calendarForm" (ngSubmit)="applyCalendarFilters()">
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <form class="mcs-row mcs-gap-sm mcs-grow" [formGroup]="calendarForm" (ngSubmit)="applyCalendarFilters()">
+      @if (isSuperadmin()) {
+        <div class="mcs-input-wrap" style="width: 200px;">
+          <app-fancy-select formControlName="tenantId" [placeholder]="'Tenant: Todos'" [options]="tenantFilterOptions()" (selectionChange)="applyCalendarFilters()" />
+        </div>
+      }
+      <div class="mcs-input-wrap" style="width: 220px;">
+        <app-fancy-select formControlName="amenity" [placeholder]="'Amenidad: Todas'" [options]="amenityFilterOptions()" (selectionChange)="applyCalendarFilters()" />
+      </div>
+      <div class="mcs-input-wrap" style="width: 160px;">
+        <input class="mcs-input" type="date" formControlName="weekStart" (change)="applyCalendarFilters()" />
+      </div>
+      <button class="mcs-btn secondary-soft" type="submit">
+        <mac-icon name="refresh" [size]="14"/>
+        <span>Actualizar</span>
+      </button>
+    </form>
+    
+    <div class="mcs-row mcs-gap-sm">
+      <button class="mcs-btn secondary-soft" type="button" (click)="goToCurrentWeek()">
+        <span>Hoy</span>
+      </button>
+      <div class="mcs-row mcs-gap-xs">
+        <button class="mcs-btn secondary-soft icon-only" type="button" (click)="previousWeek()" aria-label="Semana anterior">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        <button class="mcs-btn secondary-soft icon-only" type="button" (click)="nextWeek()" aria-label="Semana siguiente">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  @if (view() === 'calendar') {
+    <!-- Calendar Section (Full Width) -->
+    <article class="mcs-card calendar-card">
+      <div class="card-header mcs-row mcs-between">
+        <div class="mcs-row mcs-gap-sm">
+          <mac-icon name="calendar" [size]="18" style="color: var(--primary-new);"/>
+          <h2 class="card-title">Calendario Semanal</h2>
+        </div>
+        <span class="week-range-label">{{ calendarRangeLabel() }}</span>
+      </div>
+      
+      <div class="calendar-content">
+        @if (calendarError()) {
+          <div class="mcs-alert danger mcs-mb">
+            <mac-icon name="alert" [size]="16"/>
+            <span>{{ calendarError() }}</span>
+          </div>
+        }
+
+        @if (loadingCalendar()) {
+          <div class="mcs-loader-wrap" style="padding: 100px 0;">
+            <span class="mcs-loader"></span>
+            <p>Cargando calendario...</p>
+          </div>
+        } @else {
+          <div class="calendar-frame">
+            <full-calendar [options]="calendarOptions()"></full-calendar>
+          </div>
+        }
+      </div>
+    </article>
+  } @else {
+    <div class="mcs-card">
+      @for (r of reservations(); track r._id; let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openEdit(r)">
+          <div class="mcs-i-round" style="background: var(--surface-muted);" [style.color]="getReservationStatusColor(getReservationDisplayStatus(r))">
+            <mac-icon name="calendar" [size]="14"/>
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600;">{{ r.amenity }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new);">{{ toTimeLabel(r.start) }} - {{ toTimeLabel(r.end) }} · {{ r.start | date:'mediumDate' }}</div>
+          </div>
+          <div style="width: 130px;">
+            <span class="mcs-badge" [style.background]="getReservationStatusColor(getReservationDisplayStatus(r))" style="color: white;">
+              {{ getReservationDisplayStatus(r) | titlecase }}
+            </span>
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(r)">
+              <mac-icon name="edit" [size]="13"/>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(r)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </div>
+      }
+      @if (reservations().length === 0) {
+        <div class="mcs-empty" style="padding: 40px;">
+          <p>No hay reservaciones para esta semana.</p>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Drawer: Create / Edit -->
+  <mac-drawer
+    [open]="editorOpen()"
+    [title]="editingReservationId() ? 'Editar reservación' : 'Nueva reservación'"
+    [subtitle]="editingReservationId() ? 'Modifique los detalles de la reserva' : 'Complete el formulario para reservar una amenidad'"
+    [width]="520"
+    (closed)="closeEditor()">
+    
+    <ng-container body>
+      <form [formGroup]="form" (ngSubmit)="saveReservation()" class="mcs-stack">
         @if (isSuperadmin()) {
-        <label>
-          Tenant
-          <app-fancy-select formControlName="tenantId" [placeholder]="'Todos'" [options]="tenantFilterOptions()" />
-        </label>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant *</label>
+            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un condominio'" [options]="tenantOptions()" />
+          </div>
         }
 
-        <label>
-          Semana
-          <input type="date" formControlName="weekStart" />
-        </label>
+        @if (isSuperadmin() || userRole() === 'admin') {
+          <div class="mcs-field">
+            <label class="mcs-field-label">Usuario *</label>
+            <app-fancy-select formControlName="userId" [placeholder]="'Selecciona un usuario'" [options]="userOptions()" />
+          </div>
+        }
 
-        <label>
-          Amenidad
-          <app-fancy-select formControlName="amenity" [placeholder]="'Todas'" [options]="amenityFilterOptions()" />
-        </label>
+        <div class="mcs-field">
+          <label class="mcs-field-label">Amenidad *</label>
+          <app-fancy-select formControlName="amenity" [placeholder]="'Selecciona una amenidad'" [options]="formAmenityOptions()" />
+        </div>
 
-        <button type="submit">Actualizar</button>
+        <div class="mcs-row mcs-gap">
+          <div class="mcs-field mcs-grow">
+            <label class="mcs-field-label">Inicio *</label>
+            <input class="mcs-input" type="datetime-local" formControlName="start" />
+          </div>
+          <div class="mcs-field mcs-grow">
+            <label class="mcs-field-label">Fin *</label>
+            <input class="mcs-input" type="datetime-local" formControlName="end" />
+          </div>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Estado</label>
+          <app-fancy-select formControlName="status" [options]="[
+            { label: 'Activa', value: 'activa' },
+            { label: 'Cancelada', value: 'cancelada' }
+          ]" />
+        </div>
       </form>
-    </aside>
+    </ng-container>
 
-    <article class="calendar-shell">
-      <header class="calendar-header">
-        <div>
-          <p class="section-kicker">Vista semanal</p>
-          <h3>Calendario de reservaciones</h3>
-        </div>
-
-        <span class="week-range">{{ calendarRangeLabel() }}</span>
-      </header>
-
-      @if (calendarError()) {
-      <p class="error">{{ calendarError() }}</p>
+    <ng-container footer>
+      @if (editingReservationId()) {
+        <button class="mcs-btn danger-soft" type="button" (click)="askDelete(editingReservation()!)">Eliminar</button>
       }
+      <div class="mcs-grow"></div>
+      <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
+      <button class="mcs-btn primary" type="button" (click)="saveReservation()" [disabled]="loading()">
+        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
+        @else { <mac-icon name="check" [size]="13"/><span>{{ editingReservationId() ? 'Guardar cambios' : 'Crear reservación' }}</span> }
+      </button>
+    </ng-container>
+  </mac-drawer>
 
-      @if (loadingCalendar()) {
-      <p class="loading">Cargando calendario...</p>
-      } @else {
-      <div class="calendar-frame">
-        <full-calendar [options]="calendarOptions()"></full-calendar>
-      </div>
-      }
-    </article>
-
-    <article class="crud-shell">
-      <div class="crud-shell-head">
-        <div>
-          <p class="section-kicker">Gestión</p>
-          <h3>Crear, editar y eliminar</h3>
-        </div>
-      </div>
-      <app-crud-page [config]="config" />
-    </article>
-  </section>
+  <!-- Confirm Delete -->
+  <mac-confirm-modal
+    [open]="toDelete() !== null"
+    title="¿Eliminar reservación?"
+    [message]="toDelete() ? '¿Está seguro de que desea eliminar esta reservación? Esta acción no se puede deshacer.' : ''"
+    confirmLabel="Eliminar"
+    (cancelled)="cancelDelete()"
+    (confirmed)="confirmDelete()">
+  </mac-confirm-modal>
 </section>

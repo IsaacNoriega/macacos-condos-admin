@@ -1,504 +1,126 @@
+/* ============================================
+   RESERVATIONS PAGE (Simplified Calendar View)
+   ============================================ */
+
 :host {
   display: block;
   height: 100%;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .reservations-page {
-  position: relative;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
-  max-width: 1320px;
-  margin: 0 auto;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.reservations-page::before,
-.reservations-page::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(34px);
-  opacity: 0.4;
-  z-index: 0;
-}
-
-.reservations-page::before {
-  width: 15rem;
-  height: 15rem;
-  top: -5.5rem;
-  right: -4.5rem;
-  background: radial-gradient(circle at center, rgba(96, 165, 250, 0.16) 0%, rgba(96, 165, 250, 0) 70%);
-}
-
-.reservations-page::after {
-  width: 11rem;
-  height: 11rem;
-  left: -3.5rem;
-  bottom: 1rem;
-  background: radial-gradient(circle at center, rgba(167, 139, 250, 0.12) 0%, rgba(167, 139, 250, 0) 72%);
-}
-
-.section-kicker {
-  margin: 0;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.reservations-workspace {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: minmax(250px, 300px) minmax(0, 1fr);
-  grid-template-areas:
-    'rail calendar'
-    'crud crud';
-  gap: 0.5rem;
-  align-items: stretch;
-  min-height: 0;
-}
-
-.insight-rail {
-  grid-area: rail;
-  display: grid;
-  grid-template-rows: auto auto;
-  gap: 0.42rem;
-  min-height: 0;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.42rem;
-}
-
-.summary-card {
-  position: relative;
-  display: grid;
-  gap: 0.18rem;
-  padding: 0.62rem 0.72rem 0.58rem;
-  border: 1px solid var(--glass-border);
-  border-radius: 1.2rem;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow);
-  overflow: hidden;
-}
-
-.summary-card::after {
-  content: '';
-  position: absolute;
-  inset: auto -0.35rem -0.5rem auto;
-  width: 4rem;
-  height: 4rem;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.48) 0%, rgba(255, 255, 255, 0) 72%);
-  opacity: 0.75;
-  pointer-events: none;
-}
-
-.summary-topline {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  color: var(--text-muted);
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  flex-direction: column;
+  gap: 0;
 }
 
-.summary-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
-}
-
-.summary-card strong {
-  font-size: clamp(1.08rem, 1.7vw, 1.55rem);
-  line-height: 1;
-  color: var(--text-heading);
-}
-
-.summary-card h3 {
-  margin: 0;
-  font-size: 0.82rem;
-}
-
-.calendar-filters {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.42rem;
-  align-items: end;
-}
-
-.calendar-filters button {
-  width: 100%;
-}
-
-.calendar-filters label {
-  display: grid;
-  gap: 0.3rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  font-size: 0.74rem;
-}
-
-.calendar-filters input,
-.calendar-filters select {
-  width: 100%;
-  min-height: 2.05rem;
-  padding: 0.48rem 0.65rem;
-  border-radius: 0.72rem;
-  border: 1px solid rgba(14, 165, 233, 0.22);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.calendar-filters input:focus,
-.calendar-filters select:focus {
-  border-color: rgba(14, 165, 233, 0.45);
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
-  background: #ffffff;
-}
-
-.calendar-shell,
-.crud-shell {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 0.56rem;
-  padding: 0.68rem;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow);
-  min-height: 0;
-  overflow: hidden;
-}
-
-.calendar-shell::before,
-.crud-shell::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-.calendar-shell {
-  grid-area: calendar;
-  grid-template-rows: auto minmax(0, 1fr);
-  min-height: 460px;
-  background:
-    radial-gradient(900px circle at 0% 0%, rgba(96, 165, 250, 0.1) 0%, transparent 42%),
-    radial-gradient(700px circle at 100% 0%, rgba(167, 139, 250, 0.08) 0%, transparent 38%),
-    var(--glass-bg);
-}
-
-.calendar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.6rem;
+/* Summary Badges in Header */
+.summary-badges {
   flex-wrap: wrap;
 }
 
-.calendar-header > div {
-  display: grid;
-  gap: 0.08rem;
+/* Toolbar Adjustments */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
 }
 
-.calendar-header h3,
-.crud-shell-head h3 {
-  margin: 0.12rem 0 0;
-  color: var(--text-heading);
-  font-size: 0.98rem;
+/* Calendar Card (Full Width) */
+.calendar-card {
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: 24px;
 }
 
-.week-range {
-  font-size: 0.66rem;
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-low);
+}
+
+.card-title {
+  margin: 0;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-heading);
 }
 
-button {
-  background: var(--color-primary-gradient);
-  color: var(--text-on-primary);
-  border: none;
-  border-radius: var(--radius-pill);
-  padding: 0.4rem 0.78rem;
-  cursor: pointer;
-  font: inherit;
+.week-range-label {
+  font-size: 12px;
   font-weight: 600;
-  box-shadow: 0 4px 12px var(--color-primary-glow);
-  transition: var(--transition-smooth);
+  color: var(--text-muted-new);
+  letter-spacing: 0.02em;
 }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px var(--color-primary-glow-hover);
-}
-
-button:not(.secondary):active {
-  transform: translateY(0);
-}
-
-button.secondary {
-  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
-  border: 1px solid rgba(14, 165, 233, 0.35);
-  color: #0c4a6e;
-  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.08);
-}
-
-button.secondary:hover {
-  background: linear-gradient(135deg, #bae6fd, #bfdbfe);
-  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.2);
-  transform: translateY(-1px);
+.calendar-content {
+  padding: 20px;
 }
 
 .calendar-frame {
-  min-height: 0;
-  height: 100%;
+  min-height: 500px;
+  height: 700px;
+  background: var(--bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
   overflow: hidden;
 }
 
-:host ::ng-deep full-calendar {
-  display: block;
-  height: 100%;
-  min-height: 380px;
-}
-
+/* FullCalendar Customization */
 :host ::ng-deep .fc {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 380px;
-  font-family: var(--font-primary);
-  color: var(--text-primary);
+  font-family: var(--font-sans);
+  --fc-border-color: var(--border-subtle);
+  --fc-today-bg-color: var(--primary-50);
+  --fc-event-bg-color: var(--primary-new);
+  --fc-event-border-color: var(--primary-new);
 }
 
-:host ::ng-deep .fc .fc-view-harness,
-:host ::ng-deep .fc .fc-timegrid,
-:host ::ng-deep .fc .fc-timegrid-body,
-:host ::ng-deep .fc .fc-timegrid-cols,
-:host ::ng-deep .fc .fc-timegrid-slots,
-:host ::ng-deep .fc .fc-scrollgrid {
-  min-height: 0;
+:host ::ng-deep .fc .fc-col-header-cell {
+  background: var(--surface-muted);
+  padding: 8px 0;
 }
 
-:host ::ng-deep .fc .fc-timegrid {
-  flex: 1 1 auto;
-}
-
-:host ::ng-deep .fc .fc-scrollgrid {
-  border-radius: 1rem;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.62)),
-    var(--glass-bg);
-  box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.32);
-}
-
-:host ::ng-deep .fc .fc-scrollgrid table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-:host ::ng-deep .fc .fc-col-header-cell,
-:host ::ng-deep .fc .fc-timegrid-axis {
-  background: rgba(255, 255, 255, 0.78);
-}
-
-:host ::ng-deep .fc .fc-col-header-cell-cushion,
-:host ::ng-deep .fc .fc-timegrid-slot-label-cushion,
-:host ::ng-deep .fc .fc-timegrid-axis-cushion {
-  color: var(--text-secondary);
-  font-size: 0.68rem;
+:host ::ng-deep .fc .fc-col-header-cell-cushion {
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding: 0.2rem 0.15rem;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+  text-decoration: none;
 }
 
-:host ::ng-deep .fc .fc-timegrid-slot,
-:host ::ng-deep .fc .fc-timegrid-axis,
-:host ::ng-deep .fc .fc-timegrid-col {
-  border-color: rgba(148, 163, 184, 0.16);
-  background: transparent;
-}
-
-:host ::ng-deep .fc .fc-timegrid-slot {
-  height: 1.6rem;
+:host ::ng-deep .fc .fc-timegrid-slot-label-cushion {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted-new);
 }
 
 :host ::ng-deep .fc .fc-timegrid-event {
-  border: none;
-  border-radius: 0.85rem;
-  box-shadow: 0 14px 22px -18px rgba(15, 23, 42, 0.45);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: none !important;
+  cursor: pointer;
 }
 
 :host ::ng-deep .fc .fc-event-main {
-  padding: 0.22rem 0.38rem;
+  padding: 4px 6px;
 }
 
-:host ::ng-deep .fc .fc-event-title,
-:host ::ng-deep .fc .fc-event-time {
-  font-size: 0.72rem;
+:host ::ng-deep .fc .fc-event-title {
   font-weight: 700;
+  font-size: 11px;
 }
 
-:host ::ng-deep .fc .fc-now-indicator-line {
-  border-color: #ef4444;
+:host ::ng-deep .fc .fc-timegrid-now-indicator-line {
+  border-color: var(--bad-500);
 }
 
-:host ::ng-deep .fc .fc-timegrid-now-indicator-arrow {
-  border-top-color: #ef4444;
-  border-bottom-color: #ef4444;
-}
-
-.crud-shell {
-  grid-area: crud;
-  grid-template-rows: auto minmax(0, 1fr);
-  margin-top: 0.02rem;
-}
-
-.crud-shell-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: start;
-}
-
-.crud-shell-head h3 {
-  font-size: 0.92rem;
-}
-
-app-crud-page {
-  display: block;
-  min-height: 0;
-  overflow: hidden;
-}
-
-@media (max-width: 1100px) {
-  .reservations-workspace {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'rail'
-      'calendar'
-      'crud';
+/* Responsive */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
   }
-
-  .insight-rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: auto;
-  }
-
-  .calendar-shell {
-    min-height: 420px;
-  }
-}
-
-@media (max-width: 600px) {
-  .insight-rail {
-    grid-template-columns: 1fr;
-  }
-}
-
-:host ::ng-deep .crud-page.residents-form-skin {
-  margin: 0;
-  gap: 0.54rem;
-  max-width: none;
-  height: 100%;
-  position: relative;
-  z-index: 1;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .page-head {
-  padding-bottom: 0.06rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .page-head h1 {
-  font-size: 1rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .grid-layout {
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
-  gap: 0.55rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .card {
-  padding: 0.68rem;
-  border-radius: 1rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .form-card,
-:host ::ng-deep .crud-page.residents-form-skin .table-card {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 18px 34px -26px rgba(15, 23, 42, 0.28);
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .table-card h2,
-:host ::ng-deep .crud-page.residents-form-skin .form-card h2 {
-  font-size: 0.9rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .form-grid {
-  gap: 0.45rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .field {
-  gap: 0.18rem;
-  font-size: 0.76rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .field input,
-:host ::ng-deep .crud-page.residents-form-skin .field select,
-:host ::ng-deep .crud-page.residents-form-skin .field textarea {
-  min-height: 2rem;
-  padding: 0.44rem 0.58rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .btn-primary {
-  box-shadow: 0 10px 18px -16px var(--color-primary-glow);
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .btn-ghost {
-  background: rgba(255, 255, 255, 0.62);
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .table-wrap {
-  max-height: 38vh;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin table {
-  font-size: 0.76rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin th,
-:host ::ng-deep .crud-page.residents-form-skin td {
-  padding: 0.36rem 0.4rem;
-}
-
-:host ::ng-deep .crud-page.residents-form-skin th {
-  background: rgba(248, 250, 252, 0.9);
-  color: var(--text-secondary);
-}
-
-:host ::ng-deep .crud-page.residents-form-skin .btn-mini {
-  box-shadow: 0 8px 16px -18px rgba(15, 23, 42, 0.3);
 }

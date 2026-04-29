@@ -9,6 +9,7 @@ import { FancySelectComponent } from '../../shared/form/fancy-select.component';
 import { MacIconComponent } from '../../shared/mac-icon/mac-icon.component';
 import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface SelectOption {
   label: string;
@@ -45,7 +46,11 @@ export class PaymentsPage implements OnInit {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private fb = inject(FormBuilder);
-  private toast = inject(ToastService);
+  private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+
+  private refreshIntervalId: any;
 
   // Data signals
   payments = signal<Payment[]>([]);
@@ -57,12 +62,16 @@ export class PaymentsPage implements OnInit {
 
   // UI State signals
   loading = signal(false);
+  stripeConfirming = signal(false);
   loadingOptions = signal(false);
   error = signal<string | null>(null);
   message = signal<string | null>(null);
   selectedFile = signal<File | null>(null);
 
   // Pattern Signals
+  readonly page = signal(1);
+  readonly pageSize = 6;
+  readonly view = signal<'grid' | 'list'>('grid');
   searchTerm = signal('');
   activeFilter = signal('all');
   editorOpen = signal(false);
@@ -97,7 +106,7 @@ export class PaymentsPage implements OnInit {
       .map((u) => ({ label: u.name || u.email, value: u._id }));
   });
 
-  visiblePayments = computed(() => {
+  filteredPayments = computed(() => {
     let list = this.payments();
     const search = this.searchTerm().toLowerCase();
     const filter = this.activeFilter();
@@ -116,6 +125,13 @@ export class PaymentsPage implements OnInit {
     return list;
   });
 
+  pagedPayments = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.filteredPayments().slice(start, start + this.pageSize);
+  });
+
+  totalPages = computed(() => Math.ceil(this.filteredPayments().length / this.pageSize));
+
   // Filter options
   filters = [
     { label: 'Todo', value: 'all' },
@@ -126,15 +142,47 @@ export class PaymentsPage implements OnInit {
 
   ngOnInit() {
     this.loadData();
+    this.checkStripeResponse();
+    this.refreshIntervalId = setInterval(() => this.loadPayments(), 30000);
   }
 
-  setSearch(val: string) {
-    this.searchTerm.set(val);
+  ngOnDestroy() {
+    if (this.refreshIntervalId) clearInterval(this.refreshIntervalId);
   }
 
-  setFilter(val: string) {
-    this.activeFilter.set(val);
+  private checkStripeResponse() {
+    const sessionId = this.route.snapshot.queryParamMap.get('session_id');
+    const stripeStatus = this.route.snapshot.queryParamMap.get('stripe');
+
+    if (sessionId && stripeStatus === 'success') {
+      this.confirmStripePayment(sessionId);
+    } else if (stripeStatus === 'cancel') {
+      this.toast.bad('Pago cancelado');
+    }
   }
+
+  private async confirmStripePayment(sessionId: string) {
+    this.stripeConfirming.set(true);
+    try {
+      await firstValueFrom(this.api.post(`/payments/checkout-session/${sessionId}/confirm`, {}));
+      this.toast.ok('¡Pago confirmado con éxito!');
+      this.loadPayments();
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { session_id: null, stripe: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    } catch (err: any) {
+      this.toast.bad('Error al confirmar pago', err?.error?.message || 'Error desconocido');
+    } finally {
+      this.stripeConfirming.set(false);
+    }
+  }
+
+  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
+  setFilter(val: any): void { this.activeFilter.set(val); this.page.set(1); }
+  setView(view: 'grid' | 'list'): void { this.view.set(view); }
 
   openRegister() {
     this.paymentForm.reset({ currency: 'mxn', amount: 0 });
@@ -157,31 +205,40 @@ export class PaymentsPage implements OnInit {
     this.selectedChargeId.set(null);
   }
 
+
   loadData(): void {
     this.loading.set(true);
-    const requests = {
-      tenants: this.api.get<{ tenants: Tenant[] }>('/tenants'),
-      units: this.api.get<{ units: Unit[] }>('/units'),
-      users: this.api.get<{ users: ApiUser[] }>('/users'),
-    };
+    
+    if (this.isStaff()) {
+      const requests: any = {
+        units: this.api.get<{ units: Unit[] }>('/units'),
+        users: this.api.get<{ users: ApiUser[] }>('/users'),
+      };
 
-    forkJoin(requests).subscribe({
-      next: (res) => {
-        this.tenants.set(res.tenants.tenants || []);
-        this.units.set(res.units.units || []);
-        this.users.set(res.users.users || []);
-        this.loadPayments();
-      },
-      error: () => {
-        this.loading.set(false);
-        this.toast.bad('Error cargando catálogos');
-      },
-    });
+      if (this.isSuperadmin()) {
+        requests.tenants = this.api.get<{ tenants: Tenant[] }>('/tenants');
+      }
+
+      forkJoin(requests).subscribe({
+        next: (res: any) => {
+          if (this.isSuperadmin()) {
+            this.tenants.set(res.tenants.tenants || []);
+          }
+          this.units.set(res.units.units || []);
+          this.users.set(res.users.users || []);
+          this.loadPayments();
+        },
+        error: () => {
+          this.loading.set(false);
+          this.toast.bad('Error cargando catálogos');
+        },
+      });
+    } else {
+      this.loadPayments();
+    }
   }
 
   async loadPayments() {
-    this.loading.set(true);
-    this.error.set(null);
     try {
       const res = await firstValueFrom(this.api.get<{ payments: Payment[] }>('/payments'));
       this.payments.set(res.payments || []);
@@ -199,7 +256,6 @@ export class PaymentsPage implements OnInit {
   }
 
   async loadOptions() {
-    // This is now integrated in loadData
   }
 
   async onTenantChange() {
@@ -255,12 +311,13 @@ export class PaymentsPage implements OnInit {
     try {
       let proofUrl = '';
       if (this.selectedFile()) {
-        const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/upload-proof', this.createFormData(this.selectedFile()!)));
-        proofUrl = upload.url;
+        const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(this.selectedFile()!)));
+        proofUrl = upload.proofOfPaymentUrl || upload.url;
       }
 
       await firstValueFrom(
         this.api.post('/payments', {
+          userId: val.userId!,
           chargeId: val.chargeId!,
           amount: val.amount!,
           currency: val.currency!,
@@ -285,6 +342,7 @@ export class PaymentsPage implements OnInit {
     return formData;
   }
 
+
   async submitProofForSelectedCharge() {
     const cid = this.selectedChargeId();
     const file = this.selectedFile();
@@ -292,32 +350,40 @@ export class PaymentsPage implements OnInit {
 
     this.loading.set(true);
     try {
-      const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/upload-proof', this.createFormData(file)));
+      const formData = new FormData();
+      formData.append('file', file);
+      const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', formData));
       await firstValueFrom(
         this.api.post('/payments', {
+          userId: this.currentUserId(),
           chargeId: cid,
           amount: 0,
           currency: 'mxn',
           provider: 'manual',
-          proofOfPaymentUrl: upload.url,
+          proofOfPaymentUrl: upload.proofOfPaymentUrl || upload.url,
         })
       );
-      this.message.set('Comprobante enviado a revisión');
+      this.toast.ok('Comprobante enviado a revisión');
       this.closeProofDrawer();
       this.loadPayments();
     } catch (err) {
-      this.error.set('Error al subir comprobante');
+      this.toast.bad('Error al subir comprobante');
     } finally {
       this.loading.set(false);
     }
   }
-
   async goToStripeCheckout() {
     const cid = this.paymentForm.get('chargeId')?.value;
     if (!cid) return;
     try {
-      const res: any = await firstValueFrom(this.api.post<any>(`/payments/stripe/checkout/${cid}`, {}));
-      window.location.href = res.url;
+      const payload = {
+        userId: this.auth.user()?._id,
+        chargeId: cid,
+        amount: this.paymentForm.get('amount')?.value || 0,
+        currency: 'mxn'
+      };
+      const res: any = await firstValueFrom(this.api.post<any>('/payments/checkout-session', payload));
+      window.location.href = res.checkoutUrl || res.url;
     } catch (err) {
       this.error.set('Error al iniciar pago con Stripe');
     }
@@ -325,8 +391,14 @@ export class PaymentsPage implements OnInit {
 
   async payChargeWithStripe(charge: PaymentCharge) {
     try {
-      const res: any = await firstValueFrom(this.api.post<any>(`/payments/stripe/checkout/${charge._id}`, {}));
-      window.location.href = res.url;
+      const payload = {
+        userId: this.auth.user()?._id,
+        chargeId: charge._id,
+        amount: this.getChargeTotalAmount(charge),
+        currency: 'mxn'
+      };
+      const res: any = await firstValueFrom(this.api.post<any>('/payments/checkout-session', payload));
+      window.location.href = res.checkoutUrl || res.url;
     } catch (err) {
       this.error.set('Error al iniciar pago con Stripe');
     }
@@ -334,8 +406,9 @@ export class PaymentsPage implements OnInit {
 
   async approvePayment(id: string) {
     try {
-      await firstValueFrom(this.api.put(`/payments/${id}/status`, { status: 'completed' }));
+      await firstValueFrom(this.api.post(`/payments/${id}/approve`, {}));
       this.loadPayments();
+      this.toast.ok('Pago aprobado');
     } catch (e) {
       this.error.set('Error al aprobar');
     }
@@ -343,8 +416,9 @@ export class PaymentsPage implements OnInit {
 
   async rejectPayment(id: string) {
     try {
-      await firstValueFrom(this.api.put(`/payments/${id}/status`, { status: 'failed' }));
+      await firstValueFrom(this.api.post(`/payments/${id}/reject`, {}));
       this.loadPayments();
+      this.toast.ok('Pago rechazado');
     } catch (e) {
       this.error.set('Error al rechazar');
     }

@@ -101,6 +101,10 @@
 .mcs-badge.status-warn { background: var(--warning-50); color: var(--warning-700); border: 1px solid var(--warning-100); }
 .mcs-badge.status-error { background: var(--danger-50); color: var(--danger-700); border: 1px solid var(--danger-100); }
 
+.mcs-hidden {
+  display: none !important;
+}
+
 /* File Drop Enhancement */
 .file-upload-wrap { position: relative; }
 .mcs-file-drop {
@@ -122,6 +126,58 @@
   background: var(--primary-50);
   border-color: var(--primary-200);
   color: var(--primary-600);
+}
+
+/* Modern Separator */
+.mcs-separator-modern {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mcs-separator-modern::before,
+.mcs-separator-modern::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mcs-separator-modern span {
+  margin: 0 12px;
+}
+
+/* Info Card */
+.mcs-info-card {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-muted);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  align-items: flex-start;
+}
+
+.mcs-info-card mac-icon {
+  color: var(--primary-new);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.mcs-info-content p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.mcs-info-content strong {
+  color: var(--text-heading);
 }
 
 /* Responsive */
