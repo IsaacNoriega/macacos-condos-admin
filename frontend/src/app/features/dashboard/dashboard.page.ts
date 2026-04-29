@@ -291,12 +291,15 @@ export class DashboardPage implements OnInit, OnDestroy {
     private readonly router: Router
   ) {}
 
+  private refreshIntervalId: any;
+
   ngOnInit(): void {
     this.refresh();
+    this.refreshIntervalId = setInterval(() => this.refresh(), 60000);
   }
 
   ngOnDestroy(): void {
-    // Empty
+    if (this.refreshIntervalId) clearInterval(this.refreshIntervalId);
   }
 
   refresh(): void {

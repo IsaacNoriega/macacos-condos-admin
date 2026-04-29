@@ -96,11 +96,12 @@ export interface Payment {
 
 export interface MaintenanceReport {
   _id: string;
-  tenantId: string;
-  userId: string;
+  tenantId: string | { _id: string; name: string };
+  userId: string | { _id: string; name: string; email: string };
   description: string;
   status: 'pendiente' | 'en progreso' | 'resuelto';
   assignedTo?: string;
+  createdAt: string;
 }
 
 export interface Reservation {
@@ -112,6 +113,16 @@ export interface Reservation {
   end: string;
   status: 'activa' | 'cancelada';
   currentStatus?: 'activa' | 'cancelada' | 'finalizada';
+}
+
+export interface Notice {
+  _id: string;
+  tenantId: string;
+  title: string;
+  content: string;
+  category: 'info' | 'urgente' | 'evento';
+  createdAt: string;
+  authorName?: string;
 }
 
 export interface StripeCheckoutResponse {
