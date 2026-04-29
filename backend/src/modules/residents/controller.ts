@@ -43,10 +43,13 @@ export const getAllResidents = async (req: Request, res: Response, next: NextFun
     const { tenantId: queryTenantId, unitId: unitIdFilter } = req.query;
     let queryTenantId_final = req.tenantId;
 
-    if (req.user?.role === 'superadmin' && queryTenantId) {
-      queryTenantId_final = String(queryTenantId);
+    if (req.user?.role === 'superadmin') {
+      // If superadmin provides a tenantId in query, use it.
+      // If they provide an empty string or nothing, use undefined (All).
+      queryTenantId_final = req.query.tenantId ? String(req.query.tenantId) : undefined;
     }
 
+    console.log(`[DEBUG] getAllResidents - req.tenantId: ${req.tenantId}, queryTenantId: ${queryTenantId}, final: ${queryTenantId_final}`);
     let residents = await residentsService.findResidentsByTenant(queryTenantId_final);
     if (unitIdFilter) {
       residents = residents.filter((r) => String(r.unitId) === String(unitIdFilter));

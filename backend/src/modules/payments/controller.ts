@@ -58,7 +58,8 @@ const getChargeForPayment = async (chargeId: string, tenantId: string) => {
 };
 
 const markChargeAsPaid = async (chargeId: string, tenantId: string) => {
-  await Charge.updateOne({ _id: chargeId, tenantId }, { isPaid: true });
+  const result = await Charge.updateOne({ _id: chargeId, tenantId }, { isPaid: true });
+  logger.log('payments.markChargeAsPaid', 'system', tenantId, { chargeId, modifiedCount: result.modifiedCount });
 };
 
 const normalizeStripeCheckoutUrl = (baseUrl: string, mode: 'success' | 'cancel') => {
@@ -66,30 +67,30 @@ const normalizeStripeCheckoutUrl = (baseUrl: string, mode: 'success' | 'cancel')
 
   try {
     const parsed = new URL(baseUrl);
+    // Normalizar rutas antiguas si vienen del .env
     if (parsed.pathname === '/pagos/exito' || parsed.pathname === '/pagos/cancelado') {
       parsed.pathname = '/payments';
     }
 
-    if (mode === 'success' && !parsed.searchParams.has('session_id')) {
-      parsed.searchParams.set('session_id', sessionPlaceholder);
-    }
-
+    // Agregar parámetros si faltan
     if (!parsed.searchParams.has('stripe')) {
       parsed.searchParams.set('stripe', mode);
     }
 
+    if (mode === 'success' && !parsed.searchParams.has('session_id')) {
+      // Usamos un marcador temporal para evitar que URL() codifique las llaves {}
+      parsed.searchParams.set('session_id', 'STRIPE_ID_HINT');
+      return parsed.toString().replace('STRIPE_ID_HINT', sessionPlaceholder);
+    }
+
     return parsed.toString();
   } catch {
+    const separator = baseUrl.includes('?') ? '&' : '?';
     if (mode === 'cancel') {
-      const separator = baseUrl.includes('?') ? '&' : '?';
       return `${baseUrl}${separator}stripe=cancel`;
     }
-
-    if (baseUrl.includes(sessionPlaceholder)) {
-      return baseUrl;
-    }
-
-    const separator = baseUrl.includes('?') ? '&' : '?';
+    // Si falla el parseo, lo hacemos manualmente para asegurar que el placeholder no se codifique
+    if (baseUrl.includes(sessionPlaceholder)) return baseUrl;
     return `${baseUrl}${separator}session_id=${sessionPlaceholder}&stripe=success`;
   }
 };
@@ -436,7 +437,7 @@ export const stripeWebhook = async (req: Request, res: Response) => {
           amount: Number(metadata.amount),
           currency: session.currency || 'mxn',
           provider: 'stripe',
-          status: 'paid',
+          status: 'completed',
           stripeSessionId: session.id,
           stripePaymentIntentId:
             typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
@@ -505,7 +506,7 @@ export const confirmStripeCheckoutSession = async (req: Request, res: Response, 
       amount: Number(metadata.amount),
       currency: session.currency || 'mxn',
       provider: 'stripe',
-      status: 'paid',
+      status: 'completed',
       stripeSessionId: session.id,
       stripePaymentIntentId: typeof session.payment_intent === 'string' ? session.payment_intent : undefined,
       paymentDate: new Date(),

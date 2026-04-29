@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import Reservation from './model';
 
 export type ReservationDisplayStatus = 'activa' | 'cancelada' | 'finalizada';
@@ -32,7 +33,8 @@ export const findAllReservations = () => {
 };
 
 export const findReservationsByTenant = (tenantId?: string) => {
-  return Reservation.find({ tenantId });
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  return Reservation.find(filter);
 };
 
 export const findReservationByIdInTenant = (reservationId: string, tenantId?: string) => {
@@ -54,8 +56,8 @@ export const findReservationConflict = (
     end: { $gt: Date };
     _id?: { $ne: string };
   } = {
-    tenantId,
-    amenity,
+    tenantId: new Types.ObjectId(tenantId) as any,
+    amenity: new Types.ObjectId(amenity) as any,
     status: 'activa',
     start: { $lt: end },
     end: { $gt: start },

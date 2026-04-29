@@ -9,7 +9,8 @@
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "clean": "rimraf dist",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:reset": "ts-node src/scripts/reset-db.ts"
   },
   "keywords": [],
   "author": "",

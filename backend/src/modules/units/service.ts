@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import Unit from './model';
 
 export const findAllUnits = () => {
@@ -5,7 +6,7 @@ export const findAllUnits = () => {
 };
 
 export const findUnitsByTenant = (tenantId?: string) => {
-  const filter = tenantId ? { tenantId } : {};
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
   return Unit.find(filter);
 };
 

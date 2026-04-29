@@ -11,6 +11,7 @@ import {
   serializeReservation,
   updateReservationInTenant,
 } from './service';
+import Amenity from '../amenities/model';
 
 export const getAllReservations = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -49,6 +50,15 @@ export const createReservation = async (req: Request, res: Response, next: NextF
 
     if (await findReservationConflict(targetTenantId, amenity, startDate, endDate)) {
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
+    }
+
+    // Validar duración máxima si está configurada en la amenidad
+    const amenityDoc = await Amenity.findOne({ name: amenity, tenantId: targetTenantId });
+    if (amenityDoc && amenityDoc.maxDurationHours) {
+      const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+      if (durationHours > amenityDoc.maxDurationHours) {
+        throw new AppError(`La duración máxima permitida para ${amenity} es de ${amenityDoc.maxDurationHours} horas. Tu reserva es de ${durationHours.toFixed(1)} horas.`, 400);
+      }
     }
 
     const targetUserId = req.user?.role === 'residente' || req.user?.role === 'familiar'
@@ -99,6 +109,15 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
 
     if (await findReservationConflict(req.tenantId as string, nextAmenity, nextStart, nextEnd, String(req.params.id))) {
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
+    }
+
+    // Validar duración máxima si está configurada en la amenidad
+    const amenityDoc = await Amenity.findOne({ name: nextAmenity, tenantId: req.tenantId });
+    if (amenityDoc && amenityDoc.maxDurationHours) {
+      const durationHours = (nextEnd.getTime() - nextStart.getTime()) / (1000 * 60 * 60);
+      if (durationHours > amenityDoc.maxDurationHours) {
+        throw new AppError(`La duración máxima permitida para ${nextAmenity} es de ${amenityDoc.maxDurationHours} horas. Tu reserva es de ${durationHours.toFixed(1)} horas.`, 400);
+      }
     }
 
     const payload: Record<string, unknown> = {

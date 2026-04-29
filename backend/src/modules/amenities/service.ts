@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import Amenity from './model';
 
 export const findAllAmenities = () => {
@@ -5,7 +6,8 @@ export const findAllAmenities = () => {
 };
 
 export const findAmenitiesByTenant = (tenantId?: string) => {
-  return Amenity.find({ tenantId }).lean();
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  return Amenity.find(filter).lean();
 };
 
 export const createAmenityInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {

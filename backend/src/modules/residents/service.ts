@@ -1,8 +1,10 @@
+import mongoose, { Types } from 'mongoose';
 import Resident from './model';
 import Unit from '../units/model';
 
 export const findResidentsByTenant = (tenantId?: string) => {
-  return Resident.find({ tenantId });
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  return Resident.find(filter);
 };
 
 export const findResidentByIdInTenant = (residentId: string, tenantId?: string) => {

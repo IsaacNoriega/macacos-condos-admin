@@ -17,6 +17,7 @@ import { stripeWebhook } from './modules/payments/controller';
 import maintenanceRoutes from './modules/maintenance/routes';
 import reservationsRoutes from './modules/reservations/routes';
 import amenitiesRoutes from './modules/amenities/routes';
+import noticesRoutes from './modules/notices/routes';
 import { AppError } from './utils/httpError';
 import logger from './utils/logger';
 
@@ -84,6 +85,7 @@ app.use('/api/payments', authMiddleware, tenantMiddleware, paymentsRoutes);
 app.use('/api/maintenance', authMiddleware, tenantMiddleware, maintenanceRoutes);
 app.use('/api/reservations', authMiddleware, tenantMiddleware, reservationsRoutes);
 app.use('/api/amenities', authMiddleware, tenantMiddleware, amenitiesRoutes);
+app.use('/api/notices', authMiddleware, tenantMiddleware, noticesRoutes);
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

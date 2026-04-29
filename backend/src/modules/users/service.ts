@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import User, { IUser } from './model';
 import Payment from '../payments/model';
 import Maintenance from '../maintenance/model';
@@ -8,7 +9,7 @@ export const findAllUsers = () => {
 };
 
 export const findUsersByTenant = (tenantId?: string) => {
-  const filter = tenantId ? { tenantId } : {};
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
   return User.find(filter).select('-password');
 };
 
