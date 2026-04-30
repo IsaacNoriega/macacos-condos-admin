@@ -44,7 +44,7 @@ describe('UsersPage form submission', () => {
     component.form.patchValue({
       name: 'Nuevo Usuario',
       email: 'nuevo@correo.com',
-      password: 'abc123',
+      password: 'mock-password-123',
       role: 'residente',
       tenant: '',
     });
@@ -55,7 +55,7 @@ describe('UsersPage form submission', () => {
       name: 'Nuevo Usuario',
       email: 'nuevo@correo.com',
       role: 'residente',
-      password: 'abc123',
+      password: 'mock-password-123',
     });
   });
 
@@ -75,7 +75,7 @@ describe('UsersPage form submission', () => {
     component.form.patchValue({
       name: 'Admin Tenant',
       email: 'admin@tenant.com',
-      password: 'secure123',
+      password: 'mock-secure-pass',
       role: 'admin',
       tenant: 'tenant-2',
     });
@@ -86,7 +86,7 @@ describe('UsersPage form submission', () => {
       name: 'Admin Tenant',
       email: 'admin@tenant.com',
       role: 'admin',
-      password: 'secure123',
+      password: 'mock-secure-pass',
       tenantId: 'tenant-2',
     });
   });
@@ -113,7 +113,7 @@ describe('UsersPage form submission', () => {
     component.form.patchValue({
       name: 'Usuario Editado',
       email: 'editado@correo.com',
-      password: 'newpass123',
+      password: 'mock-new-password',
       role: 'admin',
       tenant: '',
     });
@@ -124,7 +124,7 @@ describe('UsersPage form submission', () => {
       name: 'Usuario Editado',
       email: 'editado@correo.com',
       role: 'admin',
-      password: 'newpass123',
+      password: 'mock-new-password',
     });
   });
 
