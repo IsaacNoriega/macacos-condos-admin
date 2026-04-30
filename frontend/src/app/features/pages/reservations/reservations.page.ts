@@ -29,12 +29,6 @@ interface CalendarEventView {
   timeRange: string;
 }
 
-interface CalendarDay {
-  isoDate: string;
-  label: string;
-  events: CalendarEventView[];
-}
-
 interface SummaryCard {
   label: string;
   value: string;
@@ -150,6 +144,12 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
     stickyHeaderDates: true,
     events: this.calendarEvents(),
+    selectable: true,
+    selectMirror: true,
+    unselectAuto: true,
+    select: (info) => {
+      this.openCreateFromSelection(info.start, info.end);
+    },
     eventClick: (info) => {
       const reservation = this.reservations().find(r => r._id === info.event.id);
       if (reservation) {
@@ -171,48 +171,6 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
       { label: 'Finalizadas', value: String(finished), note: 'ya cerradas', color: '#34d399' },
       { label: 'Canceladas', value: String(cancelled), note: 'sin ocupar', color: '#f59e0b' },
     ];
-  });
-
-  readonly calendarDays = computed<CalendarDay[]>(() => {
-    const weekStartRaw = this.calendarForm.get('weekStart')?.value || this.toDateInputValue(this.startOfWeek(new Date()));
-    const base = this.startOfWeek(new Date(`${weekStartRaw}T00:00:00`));
-    const amenityFilter = (this.calendarForm.get('amenity')?.value || '').trim();
-    const now = this.nowTick();
-    const events = this.reservations().filter((item) => {
-      if (amenityFilter && item.amenity !== amenityFilter) {
-        return false;
-      }
-      return true;
-    });
-
-    const days: CalendarDay[] = [];
-    for (let offset = 0; offset < 7; offset += 1) {
-      const date = new Date(base);
-      date.setDate(base.getDate() + offset);
-      const dayKey = this.toDateInputValue(date);
-
-      const dayEvents = events
-        .filter((event) => this.toDateInputValue(new Date(event.start)) === dayKey)
-        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-        .map((event) => ({
-          id: event._id,
-          amenity: event.amenity,
-          status: this.getReservationDisplayStatus(event, now),
-          timeRange: `${this.toTimeLabel(event.start)} - ${this.toTimeLabel(event.end)}`,
-        }));
-
-      days.push({
-        isoDate: dayKey,
-        label: new Intl.DateTimeFormat('es-MX', {
-          weekday: 'short',
-          day: '2-digit',
-          month: 'short',
-        }).format(date),
-        events: dayEvents,
-      });
-    }
-
-    return days;
   });
 
   constructor() {
@@ -325,6 +283,26 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
 
   openCreate(): void {
     this.editingReservationId.set(null);
+    const filterAmenity = (this.calendarForm.get('amenity')?.value || '').trim();
+    if (filterAmenity) {
+      this.form.patchValue({ amenity: filterAmenity });
+    }
+    this.editorOpen.set(true);
+  }
+
+  openCreateFromSelection(start: Date, end: Date): void {
+    this.editingReservationId.set(null);
+    const filterAmenity = (this.calendarForm.get('amenity')?.value || '').trim();
+    
+    this.form.reset({
+      tenantId: this.isSuperadmin() ? '' : (this.auth.user()?.tenantId || ''),
+      userId: this.isSuperadmin() || this.auth.role() === 'admin' ? '' : (this.auth.user()?._id || ''),
+      amenity: filterAmenity,
+      start: this.toDateTimeLocalValue(start),
+      end: this.toDateTimeLocalValue(end),
+      status: 'activa',
+    }, { emitEvent: false });
+
     this.editorOpen.set(true);
   }
 
