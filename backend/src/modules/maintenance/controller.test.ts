@@ -10,6 +10,7 @@ vi.mock('../../utils/logger', () => ({
 vi.mock('./service', () => ({
   findAllMaintenance: vi.fn(),
   findMaintenanceByTenant: vi.fn(),
+  findMaintenanceByUser: vi.fn(),
   createMaintenanceInTenant: vi.fn(),
   updateMaintenanceInTenant: vi.fn(),
   deleteMaintenanceInTenant: vi.fn(),
@@ -21,6 +22,7 @@ import {
   deleteMaintenanceInTenant,
   findAllMaintenance,
   findMaintenanceByTenant,
+  findMaintenanceByUser,
   updateMaintenanceInTenant,
 } from './service';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
@@ -55,9 +57,8 @@ describe('maintenance controller', () => {
     });
 
     it('filters to own reports for residente role', async () => {
-      vi.mocked(findMaintenanceByTenant).mockResolvedValue([
+      vi.mocked(findMaintenanceByUser).mockResolvedValue([
         { _id: 'm1', userId: 'user-1', title: 'My issue' },
-        { _id: 'm2', userId: 'user-2', title: 'Other issue' },
       ] as any);
 
       const req = mockRequest({
@@ -70,9 +71,11 @@ describe('maintenance controller', () => {
 
       await getAllReports(req, res, next);
 
-      const callArg = vi.mocked(res.json).mock.calls[0][0];
-      expect(callArg.reports).toHaveLength(1);
-      expect(callArg.reports[0]._id).toBe('m1');
+      expect(findMaintenanceByUser).toHaveBeenCalledWith('tenant-1', 'user-1');
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        success: true,
+        reports: expect.arrayContaining([expect.objectContaining({ _id: 'm1' })]),
+      }));
     });
 
     it('returns all reports for superadmin', async () => {

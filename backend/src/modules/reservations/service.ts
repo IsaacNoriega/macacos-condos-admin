@@ -33,7 +33,7 @@ export const findAllReservations = () => {
 };
 
 export const findReservationsByTenant = (tenantId?: string) => {
-  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  const filter = tenantId ? { tenantId } : {};
   return Reservation.find(filter);
 };
 
@@ -56,8 +56,8 @@ export const findReservationConflict = (
     end: { $gt: Date };
     _id?: { $ne: string };
   } = {
-    tenantId: new Types.ObjectId(tenantId) as any,
-    amenity: new Types.ObjectId(amenity) as any,
+    tenantId: tenantId as any,
+    amenity,
     status: 'activa',
     start: { $lt: end },
     end: { $gt: start },

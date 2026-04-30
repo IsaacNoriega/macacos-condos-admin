@@ -9,7 +9,7 @@ export const findAllUsers = () => {
 };
 
 export const findUsersByTenant = (tenantId?: string) => {
-  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  const filter = tenantId ? { tenantId } : {};
   return User.find(filter).select('-password');
 };
 
