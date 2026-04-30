@@ -603,6 +603,19 @@ html[data-theme="dark"] {
 	display: inline-flex;
 }
 .mcs-input.with-icon { padding-left: 34px; }
+.mcs-input.ng-invalid.ng-touched { border-color: var(--color-danger); }
+.mcs-input.ng-invalid.ng-touched:focus { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+
+.mcs-field-error {
+	font-size: 11.5px;
+	color: var(--color-danger);
+	font-weight: 500;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 2px;
+	animation: mcs-fade-in 200ms ease;
+}
 
 /* check */
 .mcs-check {
