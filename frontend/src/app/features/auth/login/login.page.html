@@ -59,7 +59,7 @@
             </div>
             @if (loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)) {
               <div class="mcs-field-error">
-                <mac-icon name="alertCircle" [size]="12"/>
+                <mac-icon name="alert" [size]="12"/>
                 <span>Ingrese un correo electrónico válido.</span>
               </div>
             }
@@ -126,7 +126,7 @@
             </div>
             @if (forgotForm.get('email')?.invalid && (forgotForm.get('email')?.dirty || forgotForm.get('email')?.touched)) {
               <div class="mcs-field-error">
-                <mac-icon name="alertCircle" [size]="12"/>
+                <mac-icon name="alert" [size]="12"/>
                 <span>Ingrese un correo electrónico válido.</span>
               </div>
             }
@@ -181,7 +181,7 @@
             </div>
             @if (resetForm.get('newPassword')?.invalid && (resetForm.get('newPassword')?.dirty || resetForm.get('newPassword')?.touched)) {
               <div class="mcs-field-error">
-                <mac-icon name="alertCircle" [size]="12"/>
+                <mac-icon name="alert" [size]="12"/>
                 <span>Mínimo 6 caracteres.</span>
               </div>
             } @else {
