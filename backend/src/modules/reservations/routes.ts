@@ -24,7 +24,7 @@ router.post('/',
   createReservation
 );
 router.put('/:id',
-  roleMiddleware(['superadmin', 'admin']),
+  roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']),
   param('id').isMongoId().withMessage('ID inválido'),
   body('amenity').optional().notEmpty().withMessage('Amenidad inválida'),
   body('start').optional().isISO8601().withMessage('Fecha de inicio inválida'),
@@ -42,7 +42,7 @@ router.put('/:id',
   updateReservation
 );
 router.delete('/:id',
-  roleMiddleware(['superadmin', 'admin']),
+  roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']),
   param('id').isMongoId().withMessage('ID inválido'),
   validateRequest,
   deleteReservation

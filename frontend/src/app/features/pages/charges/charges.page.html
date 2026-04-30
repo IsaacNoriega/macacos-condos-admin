@@ -1,0 +1,314 @@
+<section class="mcs mcs-page charges-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">Cargos</h1>
+      <p class="mcs-page-sub">
+        {{ charges().length }} cargos registrados · {{ pendingCount() }} pendientes
+      </p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
+          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nuevo cargo</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Tenant Carousel (Superadmin only) -->
+  @if (isSuperadmin()) {
+    <div class="tenant-carousel-wrap">
+      <div class="tenant-carousel mcs-scroll-soft">
+        <button type="button"
+          class="tenant-card"
+          [class.active]="selectedTenantId() === 'all'"
+          (click)="selectedTenantId.set('all')">
+          <div class="tc-icon all"><mac-icon name="grid" [size]="18"/></div>
+          <div class="tc-info">
+            <div class="tc-name">Todos los condominios</div>
+            <div class="tc-stat">{{ charges().length }} cargos totales</div>
+          </div>
+        </button>
+
+        @for (t of tenantSummaries(); track t.id) {
+          <button type="button"
+            class="tenant-card"
+            [class.active]="selectedTenantId() === t.id"
+            (click)="selectedTenantId.set(t.id)">
+            <div class="tc-icon"><mac-icon name="building" [size]="18"/></div>
+            <div class="tc-info">
+              <div class="tc-name">{{ t.name }}</div>
+              <div class="tc-stat">{{ t.pendingCount }} pendientes · {{ t.totalCount }} total</div>
+            </div>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+      <input
+        class="mcs-input with-icon"
+        type="search"
+        placeholder="Buscar descripción, unidad o usuario..."
+        [value]="searchTerm()"
+        (input)="setSearch($any($event.target).value)"/>
+    </div>
+    <div class="filter-chips">
+      @for (f of filters; track f.value) {
+        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Content Section -->
+  @if (loading() && charges().length === 0) {
+    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+      <span class="mcs-loader"></span>
+      <p>Cargando cargos...</p>
+    </div>
+  } @else if (pagedCharges().length === 0) {
+    <div class="mcs-empty mcs-card" style="padding:60px 20px;">
+      <mac-icon name="receipt" [size]="36"/>
+      <h3>Sin cargos</h3>
+      <p>No se encontraron cargos con los filtros actuales.</p>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="14"/>
+        <span>Crear cargo</span>
+      </button>
+    </div>
+  } @else if (view() === 'grid') {
+    <div class="mcs-grid cols-3">
+      @for (c of pagedCharges(); track c.id) {
+        <article class="mcs-card hoverable charge-card" (click)="openDetail(c)">
+          <div class="mcs-row mcs-gap">
+            <div class="mcs-avatar" [class.ok]="c.paymentStatus === 'paid'" [class.warn]="c.paymentStatus === 'pending'">
+              <mac-icon [name]="c.paymentStatus === 'paid' ? 'check' : 'receipt'" [size]="16"/>
+            </div>
+            <div class="mcs-grow" style="min-width:0;">
+              <div class="charge-amount mono tabular">{{ c.amount | currency:'USD':'symbol':'1.0-0' }}</div>
+              <div class="mcs-row mcs-gap-sm" style="margin-top:3px; flex-wrap:wrap;">
+                <span class="mcs-badge" [class.ok]="c.paymentStatus === 'paid'" [class.warn]="c.paymentStatus === 'pending'">
+                  {{ c.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="charge-desc">
+            {{ c.description }}
+          </div>
+
+          <div class="charge-info">
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="building" [size]="13"/>
+              <span>Unidad</span>
+              <strong class="mono" style="margin-left:auto;">{{ c.unitCode }}</strong>
+            </div>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="user" [size]="13"/>
+              <span class="charge-user">{{ c.userName }}</span>
+            </div>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="calendar" [size]="13"/>
+              <span>Vence {{ c.dueDate | date:'mediumDate' }}</span>
+            </div>
+          </div>
+
+          <div class="charge-actions">
+            <button type="button" class="mcs-btn sm mcs-grow" (click)="openEdit(c); $event.stopPropagation()">
+              <mac-icon name="edit" [size]="13"/>
+              <span>Editar</span>
+            </button>
+            <button type="button" class="mcs-btn sm danger-soft icon-only" (click)="askDelete(c, $event)" aria-label="Eliminar">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <div class="mcs-card">
+      @for (c of pagedCharges(); track c.id; let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(c)">
+          <div class="mcs-avatar" [class]="c.paymentStatus === 'paid' ? 'ok' : 'warn'">
+            <mac-icon name="card" [size]="14"/>
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600;">{{ c.description }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new);">{{ c.unitCode }} · {{ c.userName }}</div>
+          </div>
+          <div style="width: 140px; font-weight: 700; font-family: var(--font-mono);">
+            {{ c.amount | currency: 'USD' }}
+          </div>
+          <div style="width: 130px;">
+            <span class="mcs-badge" [class]="c.paymentStatus === 'paid' ? 'ok' : 'warn'">{{ c.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente' }}</span>
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(c)">
+              <mac-icon name="edit" [size]="13"/>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(c, $event)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <footer class="pagination mcs-row mcs-between mcs-mt-lg">
+      <div class="mcs-text-muted text-sm">
+        Página {{ page() }} de {{ totalPages() }}
+      </div>
+      <div class="mcs-row mcs-gap">
+        <button class="mcs-btn sm secondary-soft" [disabled]="page() === 1" (click)="page.set(page() - 1)">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        <button class="mcs-btn sm secondary-soft" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </div>
+    </footer>
+  }
+
+  <!-- ─── Drawer: Detail ─── -->
+  <mac-drawer
+    [open]="detail() !== null"
+    [title]="'Detalle de cargo'"
+    [subtitle]="detail() ? (detail()!.unitCode + ' · ' + detail()!.userName) : null"
+    [width]="480"
+    (closed)="closeDetail()">
+
+    <ng-container body>
+      @if (detail(); as c) {
+        <div class="detail-hero" [class.paid]="c.paymentStatus === 'paid'">
+          <div class="amount mono tabular">{{ c.amount | currency:'USD':'symbol':'1.2-2' }}</div>
+          <div class="status">Estado: {{ c.paymentStatus === 'paid' ? 'Pagado' : 'Pendiente' }}</div>
+        </div>
+
+        <div class="mcs-section-title">Información general</div>
+        <div class="mcs-stack-sm" style="font-size:13px;">
+          <div class="mcs-row mcs-between">
+            <span class="text-faint">Descripción</span>
+            <span class="text-soft">{{ c.description }}</span>
+          </div>
+          <div class="mcs-row mcs-between">
+            <span class="text-faint">Unidad</span>
+            <span class="mono">{{ c.unitCode }}</span>
+          </div>
+          <div class="mcs-row mcs-between">
+            <span class="text-faint">Usuario</span>
+            <span class="text-soft">{{ c.userName }}</span>
+          </div>
+          <div class="mcs-row mcs-between">
+            <span class="text-faint">Fecha vencimiento</span>
+            <span class="text-soft">{{ c.dueDate | date:'longDate':'':'es-MX' }}</span>
+          </div>
+          <div class="mcs-row mcs-between">
+            <span class="text-faint">Recargo por día</span>
+            <span class="mono">{{ (c.lateFeePerDay || 0) | currency:'USD':'symbol':'1.0-0' }}</span>
+          </div>
+        </div>
+
+        <div class="mcs-section-title" style="margin-top:22px;">Registro</div>
+        <div style="padding:14px; background:var(--surface-muted); border-radius:10px; font-size:13px; color:var(--text-soft);">
+          Creado {{ c.createdAt | date:'medium':'':'es-MX' }}
+        </div>
+      }
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeDetail()">Cerrar</button>
+      @if (detail()) {
+        <button class="mcs-btn primary" type="button" (click)="openEdit(detail()!)">
+          <mac-icon name="edit" [size]="13"/><span>Editar</span>
+        </button>
+      }
+    </ng-container>
+  </mac-drawer>
+
+  <!-- ─── Drawer: Create / Edit ─── -->
+  <mac-drawer
+    [open]="editorOpen()"
+    [title]="editorMode() === 'create' ? 'Nuevo cargo' : 'Editar cargo'"
+    [subtitle]="editorMode() === 'create' ? 'Asigne un nuevo cargo a una unidad/residente' : 'Actualizar información del cargo'"
+    [width]="520"
+    (closed)="closeEditor()">
+
+    <ng-container body>
+      <form [formGroup]="form" (ngSubmit)="saveCharge()" class="mcs-stack">
+        @if (isSuperadmin()) {
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant</label>
+            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un tenant'" [options]="tenantOptions()"/>
+          </div>
+        }
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Unidad</label>
+          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona una unidad'" [options]="unitOptions()"/>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Usuario</label>
+          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona un usuario'" [options]="userOptions()"/>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Descripción</label>
+          <textarea class="mcs-textarea" formControlName="description" placeholder="Ej: Mantenimiento Mensual Abril 2024"></textarea>
+        </div>
+
+        <div class="mcs-row mcs-gap">
+          <div class="mcs-field mcs-grow">
+            <label class="mcs-field-label">Monto</label>
+            <input class="mcs-input mono" type="number" formControlName="amount" placeholder="0.00"/>
+          </div>
+          <div class="mcs-field mcs-grow">
+            <label class="mcs-field-label">Recargo por día (opcional)</label>
+            <input class="mcs-input mono" type="number" formControlName="lateFeePerDay" placeholder="0.00"/>
+          </div>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Fecha de vencimiento</label>
+          <input class="mcs-input" type="date" formControlName="dueDate"/>
+        </div>
+      </form>
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
+      <button class="mcs-btn primary" type="button" (click)="saveCharge()" [disabled]="loading()">
+        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
+        @else { <mac-icon name="check" [size]="13"/><span>{{ editorMode() === 'create' ? 'Crear cargo' : 'Guardar cambios' }}</span> }
+      </button>
+    </ng-container>
+  </mac-drawer>
+
+  <!-- ─── Confirm delete ─── -->
+  <mac-confirm-modal
+    [open]="toDelete() !== null"
+    title="¿Eliminar cargo?"
+    [message]="toDelete() ? 'Se eliminará el cargo por ' + (toDelete()!.amount | currency:'USD') + '. Esta acción no se puede deshacer.' : ''"
+    confirmLabel="Eliminar"
+    (cancelled)="cancelDelete()"
+    (confirmed)="confirmDelete()">
+  </mac-confirm-modal>
+</section>

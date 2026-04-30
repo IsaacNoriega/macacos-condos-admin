@@ -1,27 +1,78 @@
-<div class="shell">
-	<aside class="sidebar" [class.open]="menuOpen()">
-		<header>
-			<h1>Macacos Condos</h1>
-			<p>Admin SaaS</p>
-		</header>
+<div class="mcs app-root" [class.sidebar-collapsed]="sidebarCollapsed()">
+  <aside class="sidebar" [class.collapsed]="sidebarCollapsed()" [class.open]="menuOpen()">
+    <!-- Brand -->
+    <div class="sidebar-brand">
+      <img src="logo.png" class="logo-img" alt="Macacos Logo">
+      <div class="wordmark-wrap">
+        <div class="wordmark">Macacos</div>
+        <span class="wordmark-sub">Condos · Admin</span>
+      </div>
+      <button class="collapse-toggle" type="button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir sidebar' : 'Contraer sidebar'">
+        <mac-icon name="panelLeft" [size]="15"/>
+      </button>
+    </div>
 
-		<nav>
-			@for (item of availableItems(); track item.route) {
-			<a [routerLink]="item.route" routerLinkActive="active" (click)="closeMenu()">
-				{{ item.label }}
-			</a>
-			}
-		</nav>
+    <!-- Nav -->
+    <nav class="sidebar-nav mcs-scroll-soft">
+      @for (section of availableSections(); track section.title) {
+        <div class="nav-group">
+          <div class="nav-group-label">{{ section.title }}</div>
+          @for (item of section.items; track item.route) {
+            <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" (click)="closeMenu()" [title]="sidebarCollapsed() ? item.label : null">
+              <span class="ni-icon">
+                <mac-icon [name]="item.icon" [size]="18"/>
+              </span>
+              <span class="ni-label">{{ item.label }}</span>
+              @if (item.badge) {
+                <span class="ni-badge">{{ item.badge }}</span>
+              }
+            </a>
+          }
+        </div>
+      }
+    </nav>
 
-		<footer>
-			<p>{{ auth.user()?.name }}</p>
-			<small>{{ auth.user()?.role }}</small>
-			<button type="button" (click)="logout()">Cerrar sesion</button>
-		</footer>
-	</aside>
+    <!-- Footer (user chip + dropdown) -->
+    <footer class="sidebar-footer" #footerRef>
+      <button class="user-chip" type="button" (click)="toggleUserMenu()">
+        <div class="mcs-avatar">{{ userInitials() }}</div>
+        <div class="uc-info">
+          <div class="uc-name">{{ auth.user()?.name || 'Invitado' }}</div>
+          <div class="uc-role">{{ roleLabel() }}</div>
+        </div>
+        <span class="uc-caret">
+          <mac-icon [name]="userMenuOpen() ? 'chevronDown' : 'chevronUp'" [size]="14"/>
+        </span>
+      </button>
 
-	<main>
-		<button class="menu-toggle" type="button" (click)="toggleMenu()">Menu</button>
-		<router-outlet />
-	</main>
+      @if (userMenuOpen()) {
+        <div class="user-dropdown">
+          <div class="dd-section">
+            <div class="dd-section-label">Sesión</div>
+            <div class="dd-email">{{ auth.user()?.email }}</div>
+          </div>
+          <div class="dd-divider"></div>
+          <button type="button" class="dd-item" (click)="toggleTheme()">
+            <mac-icon [name]="darkMode() ? 'sun' : 'moon'" [size]="15"/>
+            <span>{{ darkMode() ? 'Tema claro' : 'Tema oscuro' }}</span>
+          </button>
+          <div class="dd-divider"></div>
+          <button type="button" class="dd-item danger" (click)="logout()">
+            <mac-icon name="logOut" [size]="15"/>
+            <span>Cerrar sesión</span>
+          </button>
+        </div>
+      }
+    </footer>
+  </aside>
+
+  <button class="sidebar-backdrop" type="button" [class.visible]="menuOpen()" (click)="closeMenu()" aria-label="Cerrar menú"></button>
+
+  <main class="main">
+    <button class="menu-toggle mcs-btn ghost sm" type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()">
+      <mac-icon name="panelLeft" [size]="16"/>
+      <span>Menú</span>
+    </button>
+    <router-outlet/>
+  </main>
 </div>

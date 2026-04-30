@@ -17,14 +17,47 @@ import { stripeWebhook } from './modules/payments/controller';
 import maintenanceRoutes from './modules/maintenance/routes';
 import reservationsRoutes from './modules/reservations/routes';
 import amenitiesRoutes from './modules/amenities/routes';
+import noticesRoutes from './modules/notices/routes';
 import { AppError } from './utils/httpError';
 import logger from './utils/logger';
 
 const app = express();
 
 // Middleware de seguridad
-app.use(helmet());
-app.use(cors());
+app.use(helmet({ crossOriginResourcePolicy: false }));
+
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost:4200',
+  'https://delightful-bay-02eed360f.2.azurestaticapps.net',
+];
+
+const configuredCorsOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedCorsOrigins = new Set<string>([...DEFAULT_CORS_ORIGINS, ...configuredCorsOrigins]);
+
+// Azure Static Web Apps issues preview deployments on *.azurestaticapps.net;
+// we allow those by default so PR preview environments can reach the API.
+const AZURE_SWA_ORIGIN_REGEX = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.azurestaticapps\.net$/i;
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedCorsOrigins.has(origin) || AZURE_SWA_ORIGIN_REGEX.test(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id']
+}));
 
 // Middleware de logging
 app.use(morgan('combined'));
@@ -52,6 +85,7 @@ app.use('/api/payments', authMiddleware, tenantMiddleware, paymentsRoutes);
 app.use('/api/maintenance', authMiddleware, tenantMiddleware, maintenanceRoutes);
 app.use('/api/reservations', authMiddleware, tenantMiddleware, reservationsRoutes);
 app.use('/api/amenities', authMiddleware, tenantMiddleware, amenitiesRoutes);
+app.use('/api/notices', authMiddleware, tenantMiddleware, noticesRoutes);
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

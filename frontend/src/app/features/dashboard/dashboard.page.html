@@ -1,26 +1,152 @@
-<section class="dashboard-page">
-	<header class="hero">
-		<div>
-			<h1>Panel de control</h1>
-			<p>
-				Bienvenido, <strong>{{ auth.user()?.name }}</strong>.
-				Rol actual: <strong>{{ auth.user()?.role }}</strong>.
-			</p>
-			<small>Actualizado: {{ now() | date : 'medium' }}</small>
-		</div>
-		<button class="refresh" type="button" (click)="refresh()" [disabled]="loading()">Actualizar metricas</button>
-	</header>
+<section class="mcs mcs-page dashboard-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">{{ greeting() }}{{ firstName() ? ', ' + firstName() : '' }}.</h1>
+      <p class="mcs-page-sub">Resumen del condominio · {{ todayLabel() }}</p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      <button type="button" class="mcs-btn" (click)="refresh()" [disabled]="loading()">
+        <mac-icon name="arrowRight" [size]="14"/>
+        <span>{{ loading() ? 'Cargando...' : 'Actualizar' }}</span>
+      </button>
+    </div>
+  </header>
 
-	@if (error()) {
-	<p class="error">{{ error() }}</p>
-	}
+  @if (error()) {
+    <div class="mcs-card" style="padding:14px 18px; margin-bottom:16px; background: var(--bad-100); border-color: var(--bad-200); color: var(--bad-700);">
+      <div class="mcs-row mcs-gap-sm">
+        <mac-icon name="xCircle" [size]="16"/>
+        <span>{{ error() }}</span>
+      </div>
+    </div>
+  }
 
-	<div class="cards">
-		@for (card of cards(); track card.label) {
-		<article class="card">
-			<h2>{{ card.label }}</h2>
-			<p>{{ card.value }}</p>
-		</article>
-		}
-	</div>
+  <!-- KPIs -->
+  <div class="mcs-grid cols-4" style="margin-bottom: 20px;">
+    @for (kpi of kpiViews(); track kpi.label) {
+      <div class="mcs-card hoverable kpi-card">
+        <div class="mcs-row mcs-between">
+          <div class="mcs-i-round" [class.navy]="kpi.tone === 'navy'" [class.amber]="kpi.tone === 'amber'" [class.ok]="kpi.tone === 'ok'" [class.warn]="kpi.tone === 'warn'">
+            <mac-icon [name]="kpi.icon" [size]="17"/>
+          </div>
+          @if (kpi.trend !== 'flat') {
+            <span class="mcs-badge" [class.ok]="kpi.trend === 'up'" [class.bad]="kpi.trend === 'down'">
+              <mac-icon [name]="kpi.trend === 'up' ? 'arrowUp' : 'arrowDown'" [size]="10"/>
+              <span>{{ kpi.deltaPercent | number:'1.0-0' }}%</span>
+            </span>
+          } @else {
+            <span class="mcs-badge">— 0%</span>
+          }
+        </div>
+        @if (loading()) {
+          <div class="mcs-skel" style="height:28px; width:70%; margin-top:6px;"></div>
+        } @else {
+          <div>
+            <div class="mono tabular kpi-value">{{ kpi.value }}</div>
+            <div class="kpi-label">{{ kpi.label }}</div>
+          </div>
+        }
+        <div class="kpi-foot">{{ kpi.note }}</div>
+      </div>
+    }
+  </div>
+
+  <!-- Quick actions -->
+  <div class="mcs-card quick-actions">
+    <div class="mcs-i-round amber"><mac-icon name="sparkle" [size]="18"/></div>
+    <div class="mcs-grow">
+      <div class="qa-title">Acciones rápidas</div>
+      <div class="qa-sub">Atajos para las tareas más frecuentes.</div>
+    </div>
+    <div class="mcs-row mcs-gap-sm qa-buttons">
+      @for (action of quickActions(); track action.route) {
+        <button type="button" class="mcs-btn sm" (click)="goTo(action.route)">
+          <mac-icon [name]="action.icon" [size]="14"/>
+          <span>{{ action.label }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <!-- Trend -->
+    <article class="mcs-card">
+      <div class="mcs-card-head between">
+        <div>
+          <div class="mcs-card-title">Tendencia de actividad</div>
+          <div class="mcs-card-sub">Últimos {{ monthWindows().length }} meses · registros</div>
+        </div>
+        <div class="trend-legend">
+          @for (series of lineSeries(); track series.label) {
+            <div class="trend-chip">
+              <span class="sw" [style.background]="series.color"></span>
+              <span>{{ series.label }}</span>
+              <small>{{ series.latest }}</small>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="mcs-card-body chart-body">
+        <svg class="line-chart" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Tendencia mensual">
+          <defs>
+            @for (series of lineSeries(); track series.label) {
+              <linearGradient [attr.id]="'g-' + series.label" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" [attr.stop-color]="series.color" stop-opacity="0.24"/>
+                <stop offset="100%" [attr.stop-color]="series.color" stop-opacity="0"/>
+              </linearGradient>
+            }
+          </defs>
+
+          <!-- horizontal grid -->
+          @for (n of [0, 25, 50, 75, 100]; track n) {
+            <line x1="0" [attr.x2]="100" [attr.y1]="n" [attr.y2]="n" stroke="var(--border-subtle)" stroke-width="0.15" stroke-dasharray="0.6 0.8"/>
+          }
+
+          @for (series of lineSeries(); track series.label) {
+            <polyline class="line-area"
+              [attr.points]="series.points + ' 100,100 0,100'"
+              [attr.fill]="'url(#g-' + series.label + ')'"/>
+            <polyline class="line-stroke"
+              [attr.points]="series.points"
+              [attr.stroke]="series.color"/>
+          }
+        </svg>
+        <div class="month-labels">
+          @for (w of monthWindows(); track w.key) {
+            <span>{{ w.label }}</span>
+          }
+        </div>
+      </div>
+    </article>
+
+    <!-- Distribution -->
+    <article class="mcs-card">
+      <div class="mcs-card-head">
+        <div>
+          <div class="mcs-card-title">Distribución del mes</div>
+          <div class="mcs-card-sub">Composición por área</div>
+        </div>
+      </div>
+      <div class="mcs-card-body donut-body">
+        <div class="donut" [style.background]="donutGradient()">
+          <div class="donut-hole">
+            <strong class="mono tabular">{{ totalMetrics() }}</strong>
+            <span>Total</span>
+          </div>
+        </div>
+        <div class="donut-legend">
+          @for (group of chartGroups(); track group.label) {
+            <div class="legend-row">
+              <span class="sw" [style.background]="group.color"></span>
+              <span class="grow">{{ group.label }}</span>
+              <span class="mono tabular">{{ group.percent }}%</span>
+            </div>
+          }
+        </div>
+      </div>
+    </article>
+  </div>
+
 </section>

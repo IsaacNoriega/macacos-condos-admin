@@ -1,10 +1,15 @@
-﻿import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
-import { Payment, StripeCheckoutResponse } from '../../../core/api.models';
+import { firstValueFrom, finalize, forkJoin } from 'rxjs';
+import { Payment, PaymentProofUploadResponse, StripeCheckoutResponse, Tenant, Unit, User as ApiUser, Charge as ApiCharge } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { FancySelectComponent } from '../../shared/form/fancy-select.component';
+import { MacIconComponent } from '../../shared/mac-icon/mac-icon.component';
+import { DrawerComponent } from '../../shared/drawer/drawer.component';
+import { ToastService } from '../../../core/services/toast.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 interface SelectOption {
   label: string;
@@ -25,447 +30,435 @@ interface PaymentCharge {
 @Component({
   selector: 'app-payments-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DatePipe, CurrencyPipe],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DatePipe,
+    CurrencyPipe,
+    FancySelectComponent,
+    MacIconComponent,
+    DrawerComponent
+  ],
   templateUrl: './payments.page.html',
   styleUrl: './payments.page.css',
 })
 export class PaymentsPage implements OnInit {
-  private readonly fb = inject(FormBuilder);
+  private api = inject(ApiService);
+  private auth = inject(AuthService);
+  private fb = inject(FormBuilder);
+  private readonly toast = inject(ToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
-  readonly payments = signal<Payment[]>([]);
-  readonly tenants = signal<SelectOption[]>([]);
-  readonly users = signal<SelectOption[]>([]);
-  readonly units = signal<SelectOption[]>([]);
-  readonly charges = signal<PaymentCharge[]>([]);
-  readonly loading = signal(false);
-  readonly loadingOptions = signal(false);
-  readonly message = signal<string | null>(null);
-  readonly error = signal<string | null>(null);
-  readonly selectedFile = signal<File | null>(null);
-  readonly selectedChargeForProof = signal<string | null>(null);
-  readonly uploadingProof = signal(false);
+  private refreshIntervalId: any;
 
-  readonly role = computed(() => this.auth.role());
-  readonly isSuperadmin = computed(() => this.role() === 'superadmin');
-  readonly isAdmin = computed(() => this.role() === 'admin');
-  readonly isResidente = computed(() => this.role() === 'residente' || this.role() === 'familiar');
-  readonly isStaff = computed(() => this.isSuperadmin() || this.isAdmin());
-  readonly userId = computed(() => this.auth.user()?._id);
+  // Data signals
+  payments = signal<Payment[]>([]);
+  residentCharges = signal<PaymentCharge[]>([]);
+  tenants = signal<Tenant[]>([]);
+  units = signal<Unit[]>([]);
+  users = signal<ApiUser[]>([]);
+  chargeOptions = signal<SelectOption[]>([]);
 
-  readonly visibleCharges = computed(() => {
-    const selectedUserId = this.paymentForm.get('userId')?.value;
-    const selectedUnitId = this.paymentForm.get('unitId')?.value;
+  // UI State signals
+  loading = signal(false);
+  stripeConfirming = signal(false);
+  loadingOptions = signal(false);
+  error = signal<string | null>(null);
+  message = signal<string | null>(null);
+  selectedFile = signal<File | null>(null);
 
-    // Si no hay filtros seleccionados, mostrar todos los cargos
-    if (!selectedUserId && !selectedUnitId) {
-      return this.charges();
-    }
+  // Pattern Signals
+  readonly page = signal(1);
+  readonly pageSize = 6;
+  readonly view = signal<'grid' | 'list'>('grid');
+  searchTerm = signal('');
+  activeFilter = signal('all');
+  editorOpen = signal(false);
+  proofDrawerOpen = signal(false);
+  selectedChargeId = signal<string | null>(null);
 
-    return this.charges().filter((charge) => {
-      if (selectedUserId && charge.userId !== selectedUserId) {
-        return false;
-      }
-      if (selectedUnitId && charge.unitId && charge.unitId !== selectedUnitId) {
-        return false;
-      }
-      return true;
-    });
-  });
-
-  readonly residentCharges = computed(() => {
-    const currentUserId = this.userId();
-    if (!currentUserId) {
-      return [] as PaymentCharge[];
-    }
-
-    const paidChargeIds = new Set(
-      this.payments()
-        .filter((payment) => payment.status === 'paid' || payment.status === 'completed')
-        .map((payment) => String(payment.chargeId))
-    );
-
-    return this.charges().filter((charge) => {
-      if (String(charge.userId) !== String(currentUserId)) {
-        return false;
-      }
-      if (charge.isPaid) {
-        return false;
-      }
-      return !paidChargeIds.has(String(charge._id));
-    });
-  });
-
-  readonly visiblePayments = computed(() => {
-    const allPayments = this.payments();
-
-    if (this.isResidente()) {
-      const currentUserId = this.userId();
-      return allPayments.filter((payment) => String(payment.userId) === String(currentUserId));
-    }
-
-    const selectedUserId = this.paymentForm.get('userId')?.value;
-    const selectedUnitId = this.paymentForm.get('unitId')?.value;
-
-    return allPayments.filter((payment) => {
-      if (selectedUserId && String(payment.userId) !== String(selectedUserId)) {
-        return false;
-      }
-      if (selectedUnitId && payment.unitId && String(payment.unitId) !== String(selectedUnitId)) {
-        return false;
-      }
-      return true;
-    });
-  });
-
-  readonly paymentForm = this.fb.group({
+  paymentForm = this.fb.group({
     tenantId: [''],
-    unitId: [''],
-    userId: [''],
+    unitId: ['', Validators.required],
+    userId: ['', Validators.required],
     chargeId: ['', Validators.required],
-    amount: [0, [Validators.required, Validators.min(1)]],
-    currency: ['mxn'],
-    provider: ['stripe'],
+    amount: [0, [Validators.required, Validators.min(0)]],
+    currency: ['mxn', Validators.required],
   });
 
-  constructor(
-    private readonly api: ApiService,
-    private readonly auth: AuthService
-  ) {}
+  readonly role = computed(() => this.auth.role() ?? 'admin');
+  readonly isSuperadmin = computed(() => this.role() === 'superadmin');
+  readonly isStaff = computed(() => ['admin', 'superadmin', 'staff'].includes(this.role()));
+  readonly currentUserId = computed(() => this.auth.user()?._id);
 
-  ngOnInit(): void {
-    if (this.isResidente()) {
-      this.paymentForm.patchValue({ userId: this.userId() });
-    }
-    
-    this.loadOptions();
-    this.loadPayments();
-  }
+  readonly tenantOptions = computed(() => this.tenants().map((t) => ({ label: t.name, value: t._id })));
+  readonly unitOptions = computed(() => {
+    const tid = this.paymentForm.get('tenantId')?.value;
+    return this.units()
+      .filter((u) => !tid || u.tenantId === tid)
+      .map((u) => ({ label: u.code, value: u._id }));
+  });
+  readonly userOptions = computed(() => {
+    const tid = this.paymentForm.get('tenantId')?.value;
+    return this.users()
+      .filter((u) => !tid || u.tenantId === tid)
+      .map((u) => ({ label: u.name || u.email, value: u._id }));
+  });
 
-  onTenantChange(): void {
-    this.paymentForm.patchValue({ unitId: '', userId: this.isResidente() ? this.userId() : '', chargeId: '' });
-    this.loadOptions();
-    this.loadPayments();
-  }
+  filteredPayments = computed(() => {
+    let list = this.payments();
+    const search = this.searchTerm().toLowerCase();
+    const filter = this.activeFilter();
 
-  onUserOrUnitChange(): void {
-    this.paymentForm.patchValue({ chargeId: '' });
-  }
-
-  onChargeSelected(): void {
-    const chargeId = this.paymentForm.get('chargeId')?.value;
-    const selectedCharge = this.charges().find((charge) => String(charge._id) === String(chargeId));
-    if (selectedCharge) {
-      this.paymentForm.patchValue({ amount: this.getChargeTotalAmount(selectedCharge) });
-    }
-  }
-
-  loadPayments(): void {
-    this.loading.set(true);
-    this.error.set(null);
-
-    const tenantId = this.paymentForm.get('tenantId')?.value;
-    const endpoint = this.isSuperadmin() && tenantId ? `/payments?tenantId=${tenantId}` : '/payments';
-
-    this.api
-      .get<{ success: boolean; payments: Payment[] }>(endpoint)
-      .pipe(finalize(() => this.loading.set(false)))
-      .subscribe({
-        next: (response) => this.payments.set(response.payments || []),
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible cargar pagos.'),
-      });
-  }
-
-  private loadOptions(): void {
-    this.loadingOptions.set(true);
-
-    const tenantId = this.paymentForm.get('tenantId')?.value;
-    const tenantQuery = this.isSuperadmin() && tenantId ? `?tenantId=${tenantId}` : '';
-
-    if (this.isSuperadmin()) {
-      this.api.get<{ success: boolean; tenants: Array<{ _id: string; name: string; contactEmail?: string }> }>('/tenants').subscribe({
-        next: (response) => {
-          this.tenants.set(
-            (response.tenants || []).map((tenant) => ({
-              value: tenant._id,
-              label: tenant.contactEmail ? `${tenant.name} (${tenant.contactEmail})` : tenant.name,
-            }))
-          );
-        },
-      });
+    if (search) {
+      list = list.filter(p => 
+        this.getUserLabel(p.userId).toLowerCase().includes(search) ||
+        this.getUnitLabel(p.unitId).toLowerCase().includes(search)
+      );
     }
 
-    this.api.get<{ success: boolean; units: Array<{ _id: string; code: string }> }>(`/units${tenantQuery}`).subscribe({
-      next: (response) => {
-        this.units.set((response.units || []).map((unit) => ({ value: unit._id, label: unit.code })));
-      },
-    });
+    if (filter !== 'all') {
+      list = list.filter(p => p.status === filter);
+    }
 
-    this.api
-      .get<{ success: boolean; users: Array<{ _id: string; name: string; email: string }> }>(`/users${tenantQuery}`)
-      .subscribe({
-        next: (response) => {
-          this.users.set(
-            (response.users || []).map((user) => ({
-              value: user._id,
-              label: `${user.name} (${user.email})`,
-            }))
-          );
-        },
-      });
+    return list;
+  });
 
-    this.api
-      .get<{ success: boolean; charges: PaymentCharge[] }>(`/charges${tenantQuery}`)
-      .pipe(finalize(() => this.loadingOptions.set(false)))
-      .subscribe({
-        next: (response) => {
-          this.charges.set(response.charges || []);
-        },
-        error: () => {
-          this.loadingOptions.set(false);
-        },
-      });
+  pagedPayments = computed(() => {
+    const start = (this.page() - 1) * this.pageSize;
+    return this.filteredPayments().slice(start, start + this.pageSize);
+  });
+
+  totalPages = computed(() => Math.ceil(this.filteredPayments().length / this.pageSize));
+
+  // Filter options
+  filters = [
+    { label: 'Todo', value: 'all' },
+    { label: 'Pagados', value: 'completed' },
+    { label: 'En revisión', value: 'in_review' },
+    { label: 'Fallidos', value: 'failed' }
+  ];
+
+  ngOnInit() {
+    this.loadData();
+    this.checkStripeResponse();
+    this.refreshIntervalId = setInterval(() => this.loadPayments(), 30000);
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files?.[0]) {
-      this.selectedFile.set(input.files[0]);
+  ngOnDestroy() {
+    if (this.refreshIntervalId) clearInterval(this.refreshIntervalId);
+  }
+
+  private checkStripeResponse() {
+    const sessionId = this.route.snapshot.queryParamMap.get('session_id');
+    const stripeStatus = this.route.snapshot.queryParamMap.get('stripe');
+
+    if (sessionId && stripeStatus === 'success') {
+      this.confirmStripePayment(sessionId);
+    } else if (stripeStatus === 'cancel') {
+      this.toast.bad('Pago cancelado');
     }
   }
 
-  selectChargeForProof(chargeId: string): void {
-    this.selectedChargeForProof.set(chargeId);
+  private async confirmStripePayment(sessionId: string) {
+    this.stripeConfirming.set(true);
+    try {
+      await firstValueFrom(this.api.post(`/payments/checkout-session/${sessionId}/confirm`, {}));
+      this.toast.ok('¡Pago confirmado con éxito!');
+      this.loadPayments();
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { session_id: null, stripe: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+    } catch (err: any) {
+      this.toast.bad('Error al confirmar pago', err?.error?.message || 'Error desconocido');
+    } finally {
+      this.stripeConfirming.set(false);
+    }
+  }
+
+  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
+  setFilter(val: any): void { this.activeFilter.set(val); this.page.set(1); }
+  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+
+  openRegister() {
+    this.paymentForm.reset({ currency: 'mxn', amount: 0 });
+    this.editorOpen.set(true);
+  }
+
+  closeEditor() {
+    this.editorOpen.set(false);
     this.selectedFile.set(null);
   }
 
-  payChargeWithStripe(charge: PaymentCharge): void {
-    const tenantId = this.paymentForm.get('tenantId')?.value;
-
-    this.api
-      .post<StripeCheckoutResponse>('/payments/checkout-session', {
-        ...(this.isSuperadmin() && tenantId ? { tenantId } : {}),
-        userId: this.userId(),
-        unitId: charge.unitId,
-        chargeId: charge._id,
-        amount: Number(charge.amount),
-        currency: 'mxn',
-      })
-      .subscribe({
-        next: (response) => {
-          this.message.set('Checkout de Stripe creado. Redirigiendo...');
-          this.error.set(null);
-          if (response.checkoutUrl) {
-            window.location.href = response.checkoutUrl;
-          }
-        },
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible iniciar Stripe Checkout.'),
-      });
+  openProofDrawer(chargeId: string) {
+    this.selectedChargeId.set(chargeId);
+    this.selectedFile.set(null);
+    this.proofDrawerOpen.set(true);
   }
 
-  submitProofForSelectedCharge(): void {
-    const chargeId = this.selectedChargeForProof();
-    const charge = this.residentCharges().find((item) => String(item._id) === String(chargeId));
+  closeProofDrawer() {
+    this.proofDrawerOpen.set(false);
+    this.selectedChargeId.set(null);
+  }
 
-    if (!charge) {
-      this.error.set('Selecciona un cargo válido para subir comprobante.');
-      return;
-    }
 
-    if (!this.selectedFile()) {
-      this.error.set('Debes seleccionar un comprobante de pago.');
-      return;
-    }
+  loadData(): void {
+    this.loading.set(true);
+    
+    if (this.isStaff()) {
+      const requests: any = {
+        units: this.api.get<{ units: Unit[] }>('/units'),
+        users: this.api.get<{ users: ApiUser[] }>('/users'),
+      };
 
-    const proofUrl = URL.createObjectURL(this.selectedFile()!);
+      if (this.isSuperadmin()) {
+        requests.tenants = this.api.get<{ tenants: Tenant[] }>('/tenants');
+      }
 
-    this.api
-      .post('/payments', {
-        userId: this.userId(),
-        unitId: charge.unitId,
-        chargeId: charge._id,
-        amount: Number(charge.amount),
-        currency: 'mxn',
-        provider: 'manual',
-        proofOfPaymentUrl: proofUrl,
-      })
-      .subscribe({
-        next: () => {
-          this.message.set('Comprobante enviado. Tu pago quedó en revisión.');
-          this.error.set(null);
-          this.selectedFile.set(null);
-          this.selectedChargeForProof.set(null);
+      forkJoin(requests).subscribe({
+        next: (res: any) => {
+          if (this.isSuperadmin()) {
+            this.tenants.set(res.tenants.tenants || []);
+          }
+          this.units.set(res.units.units || []);
+          this.users.set(res.users.users || []);
           this.loadPayments();
         },
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible enviar el comprobante.'),
-      });
-  }
-
-  registerPaymentWithProof(): void {
-    if (this.paymentForm.invalid) {
-      this.paymentForm.markAllAsTouched();
-      return;
-    }
-
-    if (!this.selectedFile()) {
-      this.error.set('Debes seleccionar un comprobante de pago.');
-      return;
-    }
-
-    const { tenantId, userId, unitId, chargeId, amount, currency } = this.paymentForm.getRawValue();
-
-    if (!userId || !chargeId || !amount) {
-      this.error.set('Debes rellenar todos los campos requeridos.');
-      return;
-    }
-
-    const proofUrl = URL.createObjectURL(this.selectedFile()!);
-
-    this.api
-      .post('/payments', {
-        ...(this.isSuperadmin() && tenantId ? { tenantId } : {}),
-        userId,
-        unitId,
-        chargeId,
-        amount: Number(amount),
-        currency,
-        provider: 'manual',
-        proofOfPaymentUrl: proofUrl,
-      })
-      .subscribe({
-        next: () => {
-          this.message.set('Pago registrado pendiente de revisión.');
-          this.error.set(null);
-          this.selectedFile.set(null);
-          this.paymentForm.reset({ provider: 'stripe' });
-          this.loadPayments();
+        error: () => {
+          this.loading.set(false);
+          this.toast.bad('Error cargando catálogos');
         },
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible registrar el pago.'),
       });
+    } else {
+      this.loadPayments();
+    }
   }
 
-  goToStripeCheckout(): void {
-    if (this.paymentForm.invalid) {
-      this.paymentForm.markAllAsTouched();
-      return;
+  async loadPayments() {
+    try {
+      const res = await firstValueFrom(this.api.get<{ payments: Payment[] }>('/payments'));
+      this.payments.set(res.payments || []);
+
+      if (!this.isStaff()) {
+        const chargesRes = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>('/charges'));
+        const charges = chargesRes.charges || [];
+        this.residentCharges.set(charges.filter((c) => !c.isPaid && c.userId === this.currentUserId()) as any);
+      }
+    } catch (err) {
+      this.error.set('Error al cargar pagos');
+    } finally {
+      this.loading.set(false);
     }
-
-    const { tenantId, userId, unitId, chargeId, amount, currency } = this.paymentForm.getRawValue();
-
-    if (!userId || !chargeId || !amount) {
-      this.error.set('Debes seleccionar usuario, cargo y monto.');
-      return;
-    }
-
-    this.api
-      .post<StripeCheckoutResponse>('/payments/checkout-session', {
-        ...(this.isSuperadmin() && tenantId ? { tenantId } : {}),
-        userId,
-        unitId,
-        chargeId,
-        amount: Number(amount),
-        currency,
-      })
-      .subscribe({
-        next: (response) => {
-          this.message.set('Checkout de Stripe creado. Redirigiendo...');
-          this.error.set(null);
-          if (response.checkoutUrl) {
-            window.location.href = response.checkoutUrl;
-          }
-        },
-        error: (err) => this.error.set(err?.error?.message || 'No fue posible iniciar Stripe Checkout.'),
-      });
   }
 
-  approvePayment(paymentId: string): void {
-    this.api.post(`/payments/${paymentId}/approve`, {}).subscribe({
-      next: () => {
-        this.message.set('Pago aprobado correctamente.');
-        this.error.set(null);
-        this.loadPayments();
-      },
-      error: (err) => this.error.set(err?.error?.message || 'No fue posible aprobar el pago.'),
+  async loadOptions() {
+  }
+
+  async onTenantChange() {
+    const tid = this.paymentForm.get('tenantId')?.value;
+    this.paymentForm.patchValue({ unitId: '', userId: '', chargeId: '' });
+    if (!tid) return;
+
+    try {
+      const res = await firstValueFrom(this.api.get<{ units: Unit[] }>(`/units?tenantId=${tid}`));
+      this.units.set(res.units || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async onUserOrUnitChange() {
+    const usid = this.paymentForm.get('userId')?.value;
+
+    if (usid) {
+      try {
+        const res = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>(`/charges?userId=${usid}`));
+        const pending = (res.charges || []).filter((c) => !c.isPaid);
+        this.chargeOptions.set(pending.map((c) => ({ label: `${c.description} ($${c.amount})`, value: c._id })));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
+  onChargeSelected() {
+    const cid = this.paymentForm.get('chargeId')?.value;
+    if (!cid) return;
+
+    this.api.get<{ charges: ApiCharge[] }>('/charges').subscribe((res) => {
+      const c = (res.charges || []).find((x) => x._id === cid);
+      if (c) {
+        this.paymentForm.patchValue({ amount: this.getChargeTotalAmount(c as any) });
+      }
     });
   }
 
-  rejectPayment(paymentId: string): void {
-    this.api.post(`/payments/${paymentId}/reject`, {}).subscribe({
-      next: () => {
-        this.message.set('Pago rechazado.');
-        this.error.set(null);
-        this.loadPayments();
-      },
-      error: (err) => this.error.set(err?.error?.message || 'No fue posible rechazar el pago.'),
-    });
+  onFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) this.selectedFile.set(file);
   }
 
-  getStatusLabel(status: string): string {
-    const labels: { [key: string]: string } = {
-      pending: 'Pendiente',
-      in_review: 'En revisión',
-      completed: 'Completado',
-      failed: 'Rechazado',
-      paid: 'Pagado',
-    };
-    return labels[status] || status;
-  }
+  async registerPaymentWithProof() {
+    if (this.paymentForm.invalid) return;
+    this.loading.set(true);
+    this.message.set(null);
 
-  getStatusColor(status: string): string {
-    const colors: { [key: string]: string } = {
-      pending: 'pending',
-      in_review: 'in-review',
-      completed: 'completed',
-      failed: 'failed',
-      paid: 'paid',
-    };
-    return colors[status] || 'pending';
-  }
+    const val = this.paymentForm.value;
+    try {
+      let proofUrl = '';
+      if (this.selectedFile()) {
+        const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(this.selectedFile()!)));
+        proofUrl = upload.proofOfPaymentUrl || upload.url;
+      }
 
-  getUserLabel(userId: string): string {
-    const user = this.users().find((item) => String(item.value) === String(userId));
-    return user?.label || userId;
-  }
+      await firstValueFrom(
+        this.api.post('/payments', {
+          userId: val.userId!,
+          chargeId: val.chargeId!,
+          amount: val.amount!,
+          currency: val.currency!,
+          provider: 'manual',
+          proofOfPaymentUrl: proofUrl,
+        })
+      );
 
-  getChargeLabel(chargeId: string): string {
-    const charge = this.charges().find((item) => String(item._id) === String(chargeId));
-    if (!charge) {
-      return chargeId;
+      this.message.set('Pago registrado correctamente');
+      this.closeEditor();
+      this.loadPayments();
+    } catch (err: any) {
+      this.error.set(err.error?.message || 'Error al registrar pago');
+    } finally {
+      this.loading.set(false);
     }
-    const totalAmount = this.getChargeTotalAmount(charge);
-    return `${charge.description} (${totalAmount.toFixed(2)} MXN)`;
   }
 
-  getUnitLabel(unitId?: string): string {
-    if (!unitId) {
-      return '-';
-    }
-
-    const unit = this.units().find((item) => String(item.value) === String(unitId));
-    return unit?.label || unitId;
+  private createFormData(file: File): FormData {
+    const formData = new FormData();
+    formData.append('file', file);
+    return formData;
   }
 
-  getChargeDaysOverdue(charge: PaymentCharge): number {
-    if (!charge.dueDate) {
-      return 0;
-    }
 
-    const dueDate = new Date(charge.dueDate);
+  async submitProofForSelectedCharge() {
+    const cid = this.selectedChargeId();
+    const file = this.selectedFile();
+    if (!cid || !file) return;
+
+    this.loading.set(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', formData));
+      await firstValueFrom(
+        this.api.post('/payments', {
+          userId: this.currentUserId(),
+          chargeId: cid,
+          amount: 0,
+          currency: 'mxn',
+          provider: 'manual',
+          proofOfPaymentUrl: upload.proofOfPaymentUrl || upload.url,
+        })
+      );
+      this.toast.ok('Comprobante enviado a revisión');
+      this.closeProofDrawer();
+      this.loadPayments();
+    } catch (err) {
+      this.toast.bad('Error al subir comprobante');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+  async goToStripeCheckout() {
+    const cid = this.paymentForm.get('chargeId')?.value;
+    if (!cid) return;
+    try {
+      const payload = {
+        userId: this.auth.user()?._id,
+        chargeId: cid,
+        amount: this.paymentForm.get('amount')?.value || 0,
+        currency: 'mxn'
+      };
+      const res: any = await firstValueFrom(this.api.post<any>('/payments/checkout-session', payload));
+      window.location.href = res.checkoutUrl || res.url;
+    } catch (err) {
+      this.error.set('Error al iniciar pago con Stripe');
+    }
+  }
+
+  async payChargeWithStripe(charge: PaymentCharge) {
+    try {
+      const payload = {
+        userId: this.auth.user()?._id,
+        chargeId: charge._id,
+        amount: this.getChargeTotalAmount(charge),
+        currency: 'mxn'
+      };
+      const res: any = await firstValueFrom(this.api.post<any>('/payments/checkout-session', payload));
+      window.location.href = res.checkoutUrl || res.url;
+    } catch (err) {
+      this.error.set('Error al iniciar pago con Stripe');
+    }
+  }
+
+  async approvePayment(id: string) {
+    try {
+      await firstValueFrom(this.api.post(`/payments/${id}/approve`, {}));
+      this.loadPayments();
+      this.toast.ok('Pago aprobado');
+    } catch (e) {
+      this.error.set('Error al aprobar');
+    }
+  }
+
+  async rejectPayment(id: string) {
+    try {
+      await firstValueFrom(this.api.post(`/payments/${id}/reject`, {}));
+      this.loadPayments();
+      this.toast.ok('Pago rechazado');
+    } catch (e) {
+      this.error.set('Error al rechazar');
+    }
+  }
+
+  openPaymentProof(payment: Payment) {
+    if (payment.proofOfPaymentUrl) window.open(payment.proofOfPaymentUrl, '_blank');
+  }
+
+  // Helpers
+  getUserLabel(id: string) {
+    const user = this.users().find(u => u._id === id);
+    return user?.name || user?.email || 'Usuario';
+  }
+  getUnitLabel(id?: string) {
+    const unit = this.units().find(u => u._id === id);
+    return unit?.code || id || '—';
+  }
+  getChargeLabel(id: string) {
+    return 'Mensualidad';
+  }
+  getStatusLabel(s: string) {
+    const map: any = { completed: 'Pagado', paid: 'Pagado', pending: 'Pendiente', in_review: 'En revisión', failed: 'Fallido' };
+    return map[s] || s;
+  }
+  getStatusColor(s: string) {
+    const map: any = { completed: 'ok', paid: 'ok', pending: 'warn', in_review: 'info', failed: 'error' };
+    return map[s] || 'info';
+  }
+
+  getChargeLateFeeAmount(c: PaymentCharge) {
+    if (!c.dueDate || !c.lateFeePerDay) return 0;
+    const due = new Date(c.dueDate);
     const now = new Date();
-    if (Number.isNaN(dueDate.getTime()) || now.getTime() <= dueDate.getTime()) {
-      return 0;
-    }
-
-    const dayMs = 24 * 60 * 60 * 1000;
-    return Math.max(1, Math.ceil((now.getTime() - dueDate.getTime()) / dayMs));
+    if (now <= due) return 0;
+    const diff = Math.floor((now.getTime() - due.getTime()) / (1000 * 3600 * 24));
+    return diff * c.lateFeePerDay;
   }
 
-  getChargeLateFeeAmount(charge: PaymentCharge): number {
-    const daysOverdue = this.getChargeDaysOverdue(charge);
-    const lateFeePerDay = Number(charge.lateFeePerDay ?? 10);
-    return Math.max(0, daysOverdue * lateFeePerDay);
-  }
-
-  getChargeTotalAmount(charge: PaymentCharge): number {
-    return Number(charge.amount) + this.getChargeLateFeeAmount(charge);
+  getChargeTotalAmount(c: PaymentCharge) {
+    return c.amount + this.getChargeLateFeeAmount(c);
   }
 }

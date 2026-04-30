@@ -1,18 +1,19 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 import { CrudConfig, CrudField, CrudFieldOption } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
+import { FancySelectComponent } from '../form/fancy-select.component';
 
 @Component({
   selector: 'app-crud-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FancySelectComponent],
   templateUrl: './crud-page.component.html',
   styleUrl: './crud-page.component.css',
 })
-export class CrudPageComponent implements OnInit {
+export class CrudPageComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
 
@@ -29,6 +30,7 @@ export class CrudPageComponent implements OnInit {
   readonly loadingOptions = signal(false);
   readonly selectedTenantIdForFiltering = signal<string | null>(null);
   readonly filterValues = signal<Record<string, string>>({});
+  private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
   readonly filteredItems = computed(() => {
     const activeFilters = this.filterValues();
@@ -53,11 +55,39 @@ export class CrudPageComponent implements OnInit {
   readonly canCreate = computed(() => this.config.allowCreate !== false);
   readonly canEdit = computed(() => this.config.allowEdit !== false);
   readonly canDelete = computed(() => this.config.allowDelete !== false);
+  readonly hasRowActions = computed(() => this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)));
+  readonly formFields = computed(() => this.config.fields.filter((field) => !field.tableOnly));
+  readonly tableFields = computed(() => this.config.fields);
+
+  readonly isResidentsFormSkin = computed(() =>
+    ['/reservations', '/tenants', '/charges', '/maintenance'].includes(this.config.endpoint)
+  );
+
+  readonly createCardTitle = computed(() => {
+    return this.editingId() ? 'Editar registro' : 'Nuevo registro';
+  });
+
+  readonly tableCardTitle = computed(() => 'Registros');
 
   ngOnInit(): void {
     this.buildForm();
     this.form.valueChanges.subscribe(() => this.syncFormFilters());
     this.loadSelectOptions();
+
+    if (this.config.endpoint === '/reservations') {
+      this.refreshIntervalId = setInterval(() => {
+        if (!this.editingId()) {
+          this.loadItems();
+        }
+      }, 60_000);
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.refreshIntervalId) {
+      clearInterval(this.refreshIntervalId);
+      this.refreshIntervalId = null;
+    }
   }
 
   loadItems(): void {
@@ -129,7 +159,7 @@ export class CrudPageComponent implements OnInit {
   }
 
   startEdit(item: Record<string, unknown>): void {
-    if (!this.canEdit()) {
+    if (!this.canEditItem(item)) {
       return;
     }
 
@@ -143,7 +173,7 @@ export class CrudPageComponent implements OnInit {
     this.errorMessage.set(null);
 
     const patch: Record<string, unknown> = {};
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       const rawValue = item[field.key];
       if (field.type === 'date' && typeof rawValue === 'string') {
         patch[field.key] = rawValue.slice(0, 10);
@@ -155,10 +185,17 @@ export class CrudPageComponent implements OnInit {
     }
 
     this.form.patchValue(patch);
+
+    if (this.config.endpoint === '/residents') {
+      const emailValue = this.form.get('email')?.value;
+      if (typeof emailValue === 'string' && emailValue) {
+        this.syncResidentRelationshipByRole(emailValue);
+      }
+    }
   }
 
   deleteItem(item: Record<string, unknown>): void {
-    if (!this.canDelete()) {
+    if (!this.canDeleteItem(item)) {
       return;
     }
 
@@ -199,6 +236,27 @@ export class CrudPageComponent implements OnInit {
   }
 
   getFieldOptions(field: CrudField): CrudFieldOption[] {
+    if (this.config.endpoint === '/residents' && field.key === 'relationship') {
+      const baseOptions = field.options || [];
+      const emailValue = this.form.get('email')?.value;
+      if (typeof emailValue !== 'string' || !emailValue) {
+        return baseOptions;
+      }
+
+      const selectedResidentUser = this.optionLookupByField.get('email')?.get(emailValue);
+      const selectedRole = String(selectedResidentUser?.['role'] ?? '');
+
+      if (selectedRole === 'familiar') {
+        return baseOptions.filter((option) => option.value === 'familiar');
+      }
+
+      if (selectedRole === 'residente') {
+        return baseOptions.filter((option) => option.value === 'propietario' || option.value === 'inquilino');
+      }
+
+      return baseOptions;
+    }
+
     const dynamic = this.dynamicOptions()[field.key];
     if (dynamic) {
       return dynamic;
@@ -207,7 +265,15 @@ export class CrudPageComponent implements OnInit {
     return field.options || [];
   }
 
+  getFieldOptionsWithPlaceholder(field: CrudField): CrudFieldOption[] {
+    return [{ label: 'Selecciona...', value: '' }, ...this.getFieldOptions(field)];
+  }
+
   onSelectChange(field: CrudField, rawValue: string): void {
+    if (this.config.endpoint === '/residents' && field.key === 'email') {
+      this.syncResidentRelationshipByRole(rawValue);
+    }
+
     if (!field.autoFill?.length) {
       return;
     }
@@ -226,6 +292,26 @@ export class CrudPageComponent implements OnInit {
     this.form.patchValue(patch);
   }
 
+  private syncResidentRelationshipByRole(emailValue: string): void {
+    const selectedResidentUser = this.optionLookupByField.get('email')?.get(emailValue);
+    const selectedRole = String(selectedResidentUser?.['role'] ?? '');
+    const currentRelationship = String(this.form.get('relationship')?.value ?? '');
+
+    if (selectedRole === 'familiar') {
+      if (currentRelationship !== 'familiar') {
+        this.form.patchValue({ relationship: 'familiar' });
+      }
+      return;
+    }
+
+    if (selectedRole === 'residente') {
+      const allowed = currentRelationship === 'propietario' || currentRelationship === 'inquilino';
+      if (!allowed) {
+        this.form.patchValue({ relationship: 'propietario' });
+      }
+    }
+  }
+
   onTenantIdChange(value: string): void {
     this.selectedTenantIdForFiltering.set(value || null);
     this.loadSelectOptions();
@@ -239,6 +325,34 @@ export class CrudPageComponent implements OnInit {
     const value = item[key];
     if (value === null || value === undefined || value === '') {
       return '-';
+    }
+
+    if (this.config.endpoint === '/charges' && key === 'paymentStatus') {
+      const normalizedStatus = String(value).toLowerCase();
+      const labels: Record<string, string> = {
+        pending: 'Pendiente',
+        in_review: 'En revisión',
+        completed: 'Completado',
+        failed: 'Rechazado',
+        paid: 'Pagado',
+      };
+
+      return labels[normalizedStatus] || normalizedStatus;
+    }
+
+    if (this.config.endpoint === '/reservations' && key === 'status') {
+      const currentStatus = String(item['currentStatus'] ?? '');
+      if (currentStatus === 'finalizada' || currentStatus === 'cancelada') {
+        return currentStatus;
+      }
+
+      const endValue = item['end'];
+      if (typeof endValue === 'string') {
+        const endDate = new Date(endValue);
+        if (!Number.isNaN(endDate.getTime()) && endDate.getTime() <= Date.now()) {
+          return 'finalizada';
+        }
+      }
     }
 
     const field = this.config.fields.find((candidate) => candidate.key === key);
@@ -270,8 +384,24 @@ export class CrudPageComponent implements OnInit {
     return !!control && control.invalid && (control.touched || control.dirty);
   }
 
+  canEditItem(item: Record<string, unknown>): boolean {
+    if (!this.canEdit()) {
+      return false;
+    }
+
+    return this.config.canEditItem ? this.config.canEditItem(item) : true;
+  }
+
+  canDeleteItem(item: Record<string, unknown>): boolean {
+    if (!this.canDelete()) {
+      return false;
+    }
+
+    return this.config.canDeleteItem ? this.config.canDeleteItem(item) : true;
+  }
+
   private buildForm(): void {
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       const validators = field.required ? [Validators.required] : [];
       this.form.addControl(field.key, this.fb.control('', validators));
     }
@@ -281,7 +411,7 @@ export class CrudPageComponent implements OnInit {
   private syncFormFilters(): void {
     const nextFilters: Record<string, string> = {};
 
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       if (field.type !== 'select') {
         continue;
       }
@@ -302,7 +432,7 @@ export class CrudPageComponent implements OnInit {
   }
 
   private loadSelectOptions(): void {
-    const fieldsWithSource = this.config.fields.filter((field) => field.type === 'select' && !!field.optionsSource);
+    const fieldsWithSource = this.formFields().filter((field) => field.type === 'select' && !!field.optionsSource);
 
     if (!fieldsWithSource.length) {
       this.loadItems();
@@ -368,7 +498,7 @@ export class CrudPageComponent implements OnInit {
   }
 
   private emptyFormValues(): Record<string, unknown> {
-    return this.config.fields.reduce<Record<string, unknown>>((acc, field) => {
+    return this.formFields().reduce<Record<string, unknown>>((acc, field) => {
       acc[field.key] = '';
       return acc;
     }, {});
@@ -377,7 +507,7 @@ export class CrudPageComponent implements OnInit {
   private normalizePayload(raw: Record<string, unknown>): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
-    for (const field of this.config.fields) {
+    for (const field of this.formFields()) {
       const value = raw[field.key];
       if (value === '' || value === null || value === undefined) {
         continue;

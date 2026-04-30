@@ -8,8 +8,10 @@ import {
   findReservationConflict,
   findAllReservations,
   findReservationsByTenant,
+  serializeReservation,
   updateReservationInTenant,
 } from './service';
+import Amenity from '../amenities/model';
 
 export const getAllReservations = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -20,7 +22,7 @@ export const getAllReservations = async (req: Request, res: Response, next: Next
         : await findAllReservations()
       : await findReservationsByTenant(req.tenantId);
 
-    res.json({ success: true, reservations });
+    res.json({ success: true, reservations: reservations.map((reservation) => serializeReservation(reservation)) });
   } catch (err: unknown) {
     next(new AppError('Error al obtener reservaciones', 500, { cause: toError(err).message }));
   }
@@ -50,6 +52,15 @@ export const createReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
+    // Validar duración máxima si está configurada en la amenidad
+    const amenityDoc = await Amenity.findOne({ name: amenity, tenantId: targetTenantId });
+    if (amenityDoc && amenityDoc.maxDurationHours) {
+      const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+      if (durationHours > amenityDoc.maxDurationHours) {
+        throw new AppError(`La duración máxima permitida para ${amenity} es de ${amenityDoc.maxDurationHours} horas. Tu reserva es de ${durationHours.toFixed(1)} horas.`, 400);
+      }
+    }
+
     const targetUserId = req.user?.role === 'residente' || req.user?.role === 'familiar'
       ? String(req.user.id)
       : (requestedUserId ? String(requestedUserId) : String(req.user?.id || ''));
@@ -59,7 +70,7 @@ export const createReservation = async (req: Request, res: Response, next: NextF
       targetTenantId
     );
     logger.log('reservations.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { reservationId: String(reservation._id) });
-    res.status(201).json({ success: true, reservation });
+    res.status(201).json({ success: true, reservation: serializeReservation(reservation) });
   } catch (err: unknown) {
     logger.error('reservations.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al crear reservación', 400, { cause: toError(err).message }));
@@ -71,6 +82,13 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
     const currentReservation = await findReservationByIdInTenant(String(req.params.id), req.tenantId);
     if (!currentReservation) {
       throw new AppError('Reservación no encontrada', 404);
+    }
+
+    const role = req.user?.role;
+    const isSelfServiceRole = role === 'residente' || role === 'familiar';
+    const currentUserId = req.user?.id ? String(req.user.id) : '';
+    if (isSelfServiceRole && String(currentReservation.userId) !== currentUserId) {
+      throw new AppError('No tienes permiso para actualizar reservaciones de otros usuarios', 403);
     }
 
     const nextAmenityRaw = req.body.amenity ?? currentReservation.amenity;
@@ -93,15 +111,31 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
-    const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, {
+    // Validar duración máxima si está configurada en la amenidad
+    const amenityDoc = await Amenity.findOne({ name: nextAmenity, tenantId: req.tenantId });
+    if (amenityDoc && amenityDoc.maxDurationHours) {
+      const durationHours = (nextEnd.getTime() - nextStart.getTime()) / (1000 * 60 * 60);
+      if (durationHours > amenityDoc.maxDurationHours) {
+        throw new AppError(`La duración máxima permitida para ${nextAmenity} es de ${amenityDoc.maxDurationHours} horas. Tu reserva es de ${durationHours.toFixed(1)} horas.`, 400);
+      }
+    }
+
+    const payload: Record<string, unknown> = {
       ...req.body,
       amenity: nextAmenity,
       start: nextStart,
       end: nextEnd,
-    });
+    };
+
+    if (isSelfServiceRole) {
+      delete payload.userId;
+      delete payload.tenantId;
+    }
+
+    const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, payload);
 
     logger.log('reservations.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
-    res.json({ success: true, reservation });
+    res.json({ success: true, reservation: serializeReservation(reservation) });
   } catch (err: unknown) {
     logger.error('reservations.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al actualizar reservación', 400, { cause: toError(err).message }));
@@ -110,6 +144,18 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
 
 export const deleteReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const currentReservation = await findReservationByIdInTenant(String(req.params.id), req.tenantId);
+    if (!currentReservation) {
+      throw new AppError('Reservación no encontrada', 404);
+    }
+
+    const role = req.user?.role;
+    const isSelfServiceRole = role === 'residente' || role === 'familiar';
+    const currentUserId = req.user?.id ? String(req.user.id) : '';
+    if (isSelfServiceRole && String(currentReservation.userId) !== currentUserId) {
+      throw new AppError('No tienes permiso para eliminar reservaciones de otros usuarios', 403);
+    }
+
     const reservation = await deleteReservationInTenant(String(req.params.id), req.tenantId);
     if (!reservation) {
       throw new AppError('Reservación no encontrada', 404);

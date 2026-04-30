@@ -257,6 +257,37 @@ Webhook Stripe
 Actualización del pago en base de datos
 ```
 
+## Comprobantes de pago en Azure Blob Storage
+
+Los comprobantes de pago se suben al backend y este los guarda en Azure Blob Storage.
+
+### Variables de entorno del backend
+
+Configura estas variables tanto en local como en Azure App Service:
+
+```
+AZURE_STORAGE_CONNECTION_STRING=
+AZURE_STORAGE_CONTAINER_NAME=condominios
+```
+
+### Configuración en Azure
+
+1. Crea una cuenta de Storage en Azure.
+2. Crea un contenedor llamado `condominios`.
+3. Si quieres abrir los comprobantes con un enlace directo desde el frontend, habilita acceso público de tipo `Blob` en el contenedor.
+4. Agrega `AZURE_STORAGE_CONNECTION_STRING` y `AZURE_STORAGE_CONTAINER_NAME` como Application Settings en el App Service del backend.
+
+### Flujo implementado
+
+1. El usuario selecciona una imagen del comprobante.
+2. El frontend envía el archivo con `FormData` a `POST /api/payments/proofs`.
+3. El backend lo sube a Blob Storage y devuelve la URL del archivo.
+4. El frontend registra el pago usando esa URL en `proofOfPaymentUrl`.
+
+### Nota
+
+Por ahora el flujo acepta solo imágenes (`image/*`). Si quieres admitir PDF también, puedo ampliar la validación y el `accept` del input.
+
 ---
 
 # Modelo de Ocupación de Departamentos

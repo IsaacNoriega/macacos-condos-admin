@@ -28,7 +28,10 @@ export const getAllUsers = async (req: Request, res: Response, next: NextFunctio
 
 export const getUserById = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await findUserByIdInTenant(String(req.params.id), req.tenantId);
+    const queryTenantId = req.query.tenantId ? String(req.query.tenantId) : undefined;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || req.tenantId) : req.tenantId;
+
+    const user = await findUserByIdInTenant(String(req.params.id), tenantScope);
     if (!user) {
       throw new AppError('Usuario no encontrado', 404);
     }
@@ -60,11 +63,14 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 
 export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const queryTenantId = req.query.tenantId ? String(req.query.tenantId) : undefined;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || req.tenantId) : req.tenantId;
+
     const update: Record<string, unknown> = { ...req.body };
     if (update.password) {
       update.password = await bcrypt.hash(String(update.password), 10);
     }
-    const user = await updateUserInTenant(String(req.params.id), req.tenantId, update);
+    const user = await updateUserInTenant(String(req.params.id), tenantScope, update);
     if (!user) {
       throw new AppError('Usuario no encontrado', 404);
     }
@@ -79,7 +85,10 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
 
 export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const user = await deleteUserInTenant(String(req.params.id), req.tenantId);
+    const queryTenantId = req.query.tenantId ? String(req.query.tenantId) : undefined;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || req.tenantId) : req.tenantId;
+
+    const user = await deleteUserInTenant(String(req.params.id), tenantScope);
     if (!user) {
       throw new AppError('Usuario no encontrado', 404);
     }

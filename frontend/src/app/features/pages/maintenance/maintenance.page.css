@@ -1,0 +1,123 @@
+/* ============================================
+   MAINTENANCE PAGE (Modern Style)
+   ============================================ */
+
+:host {
+  display: block;
+}
+
+.maintenance-page {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toolbar & Filters */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+/* Report Card */
+.report-card {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-head {
+  padding: 20px;
+  display: flex;
+  gap: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.report-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.report-date {
+  font-size: 11px;
+  color: var(--text-muted-new);
+  font-weight: 500;
+}
+
+.report-user {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.report-body {
+  padding: 20px;
+  flex-grow: 1;
+}
+
+.report-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.report-tenant {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted-new);
+  font-weight: 600;
+}
+
+.card-foot {
+  padding: 16px 20px;
+  background: var(--surface-low);
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.report-info {
+  font-size: 12px;
+  color: var(--text-muted-new);
+  font-style: italic;
+  width: 100%;
+  text-align: center;
+}
+
+/* Pagination */
+.pagination {
+  padding: 20px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

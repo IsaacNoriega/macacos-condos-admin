@@ -11,7 +11,7 @@ export interface IMaintenance extends Document {
   userId: mongoose.Types.ObjectId;
   description: string;
   status: 'pendiente' | 'en progreso' | 'resuelto';
-  assignedTo?: mongoose.Types.ObjectId;
+  assignedTo?: string;
   history: IMaintenanceHistory[];
   createdAt: Date;
 }
@@ -21,7 +21,7 @@ const maintenanceSchema = new Schema<IMaintenance>({
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   description: { type: String, required: true },
   status: { type: String, enum: ['pendiente', 'en progreso', 'resuelto'], default: 'pendiente' },
-  assignedTo: { type: Schema.Types.ObjectId, ref: 'User' },
+  assignedTo: { type: String },
   history: [{
     status: String,
     date: Date,

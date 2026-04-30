@@ -1,0 +1,256 @@
+<section class="mcs mcs-page amenities-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">Amenidades</h1>
+      <p class="mcs-page-sub">
+        {{ filteredAmenities().length }} amenidades disponibles · {{ amenities().length }} totales
+      </p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      @if (isSuperadmin()) {
+        <div class="mcs-field" style="margin: 0; min-width: 240px;">
+          <select class="mcs-input" [value]="viewTenantId()" (change)="onTenantFilterChange($event)">
+            <option value="">Todos los condominios</option>
+            @for (t of tenants(); track t._id) {
+              <option [value]="t._id">{{ t.name }}</option>
+            }
+          </select>
+        </div>
+      }
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
+          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nueva amenidad</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+      <input
+        class="mcs-input with-icon"
+        type="search"
+        placeholder="Buscar amenidad..."
+        [value]="searchTerm()"
+        (input)="setSearch($any($event.target).value)"/>
+    </div>
+    <div class="filter-chips">
+      @for (f of filters; track f.value) {
+        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Content -->
+  @if (loading() && amenities().length === 0) {
+    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+      <span class="mcs-loader"></span>
+      <p>Cargando amenidades...</p>
+    </div>
+  } @else if (filteredAmenities().length === 0) {
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
+      <mac-icon name="building" [size]="48" style="opacity: 0.3;"/>
+      <h3>Sin amenidades</h3>
+      <p>No se encontraron resultados para los filtros actuales.</p>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()" style="margin-top: 16px;">
+        <mac-icon name="plus" [size]="14"/>
+        <span>Crear amenidad</span>
+      </button>
+    </div>
+  } @else if (view() === 'grid') {
+    <div class="mcs-grid cols-3">
+      @for (amenity of pagedAmenities(); track amenity.id) {
+        <article class="mcs-card hoverable amenity-card" (click)="selectAmenity(amenity)">
+          <div class="mcs-row mcs-gap">
+            <div class="mcs-avatar lg" [style.background]="amenity.avatarBg">
+              {{ initials(amenity.name) }}
+            </div>
+            <div class="mcs-grow" style="min-width:0;">
+              <div class="amenity-name">{{ amenity.name }}</div>
+              <div class="mcs-row mcs-gap-sm" style="margin-top:3px;">
+                <span class="mcs-badge" [class.ok]="amenity.isActive" [class.warn]="!amenity.isActive">
+                  {{ amenity.isActive ? 'Activa' : 'Inactiva' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="amenity-info">
+            <p class="amenity-desc">{{ amenity.description || 'Sin descripción' }}</p>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="building" [size]="13"/>
+              <span>Tenant</span>
+              <strong style="margin-left:auto;">{{ amenity.tenant }}</strong>
+            </div>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="clock" [size]="13"/>
+              <span>Máximo: {{ amenity.maxDurationHours }} {{ amenity.maxDurationHours === 1 ? 'hora' : 'horas' }}</span>
+            </div>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="clock" [size]="13"/>
+              <span>Creado {{ relativeTime(amenity.createdAt) }}</span>
+            </div>
+          </div>
+
+          <div class="amenity-actions">
+            <button type="button" class="mcs-btn sm mcs-grow" (click)="selectAmenity(amenity); $event.stopPropagation()">
+              <mac-icon name="edit" [size]="13"/>
+              <span>Editar</span>
+            </button>
+            <button type="button" class="mcs-btn sm danger-soft icon-only" (click)="askDelete(amenity, $event)" aria-label="Eliminar">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        @for (n of pageNumbers(); track n) {
+          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">
+            {{ n }}
+          </button>
+        }
+        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </footer>
+    }
+  } @else {
+    <div class="mcs-card">
+      @for (amenity of pagedAmenities(); track amenity.id; let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="selectAmenity(amenity)">
+          <div class="mcs-avatar" [style.background]="amenity.avatarBg">
+            {{ initials(amenity.name) }}
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600;">{{ amenity.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new);">{{ amenity.description | slice:0:60 }}{{ amenity.description && amenity.description.length > 60 ? '...' : '' }}</div>
+          </div>
+          <div style="width: 150px;">
+             <span class="mcs-badge navy">{{ amenity.tenant }}</span>
+          </div>
+          <div style="width: 120px;">
+            <span class="mcs-badge" [class.ok]="amenity.isActive" [class.warn]="!amenity.isActive">
+              {{ amenity.isActive ? 'Activa' : 'Inactiva' }}
+            </span>
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); selectAmenity(amenity)">
+              <mac-icon name="edit" [size]="13"/>
+            </button>
+            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(amenity, $event)">
+              <mac-icon name="trash" [size]="13"/>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
+          <mac-icon name="chevronLeft" [size]="14"/>
+        </button>
+        @for (n of pageNumbers(); track n) {
+          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">
+            {{ n }}
+          </button>
+        }
+        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
+          <mac-icon name="chevronRight" [size]="14"/>
+        </button>
+      </footer>
+    }
+  }
+
+  <!-- Drawer: Create / Edit -->
+  <mac-drawer
+    [open]="editorOpen()"
+    [title]="selectedAmenity() ? 'Editar amenidad' : 'Nueva amenidad'"
+    [subtitle]="selectedAmenity() ? selectedAmenity()!.name : 'Registre los detalles de la nueva amenidad'"
+    [width]="520"
+    (closed)="closeEditor()">
+    
+    <ng-container body>
+      <form [formGroup]="form" (ngSubmit)="saveAmenity()" class="mcs-stack">
+        @if (isSuperadmin()) {
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant *</label>
+            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un tenant'" [options]="tenantOptions()" />
+          </div>
+        }
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Nombre *</label>
+          <input class="mcs-input" type="text" formControlName="name" placeholder="Ej: Alberca, Gimnasio..."/>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Descripción</label>
+          <textarea class="mcs-input" formControlName="description" rows="4" placeholder="Detalles de la amenidad..."></textarea>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Duración máxima por reserva (horas) *</label>
+          <div class="mcs-input-wrap">
+            <span class="mcs-input-icon"><mac-icon name="clock" [size]="14"/></span>
+            <input class="mcs-input with-icon" type="number" formControlName="maxDurationHours" min="0.5" step="0.5" placeholder="Ej: 2"/>
+          </div>
+          <div class="text-xs text-muted-new mcs-mt-xs">
+            Indica cuánto tiempo máximo puede durar una reserva para esta amenidad.
+          </div>
+        </div>
+
+        <div class="mcs-field">
+          <div style="padding: 12px; background: var(--surface-muted); border-radius: 10px;">
+            <label class="mcs-row mcs-gap-sm" style="cursor: pointer;">
+              <input type="checkbox" formControlName="isActive" style="accent-color: var(--primary-new);" />
+              <div class="mcs-grow">
+                <div style="font-size: 13.5px; font-weight: 600;">Amenidad activa</div>
+                <div style="font-size: 12px; color: var(--text-muted-new);">Las amenidades inactivas no pueden ser reservadas.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </form>
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
+      <button class="mcs-btn primary" type="button" (click)="saveAmenity()" [disabled]="loading()">
+        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
+        @else { <mac-icon name="check" [size]="13"/><span>{{ selectedAmenity() ? 'Guardar cambios' : 'Crear amenidad' }}</span> }
+      </button>
+    </ng-container>
+
+  </mac-drawer>
+
+  <!-- Confirm Delete -->
+  <mac-confirm-modal
+    [open]="toDelete() !== null"
+    title="¿Eliminar amenidad?"
+    [message]="toDelete() ? '¿Está seguro de que desea eliminar la amenidad ' + toDelete()!.name + '? Esta acción no se puede deshacer.' : ''"
+    confirmLabel="Eliminar"
+    (cancelled)="cancelDelete()"
+    (confirmed)="confirmDelete()">
+  </mac-confirm-modal>
+</section>

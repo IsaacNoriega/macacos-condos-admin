@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import Payment from './model';
 
 export const findAllPayments = () => {
@@ -5,7 +6,8 @@ export const findAllPayments = () => {
 };
 
 export const findPaymentsByTenant = (tenantId?: string) => {
-  return Payment.find({ tenantId });
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  return Payment.find(filter);
 };
 
 export const findPaymentByIdInTenant = (paymentId: string, tenantId?: string) => {

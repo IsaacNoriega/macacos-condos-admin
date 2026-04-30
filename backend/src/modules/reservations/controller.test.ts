@@ -7,22 +7,35 @@ vi.mock('../../utils/logger', () => ({
   },
 }));
 
+vi.mock('../amenities/model', () => ({
+  default: {
+    findOne: vi.fn(),
+  },
+}));
+
 vi.mock('./service', () => ({
+  findAllReservations: vi.fn(),
   findReservationsByTenant: vi.fn(),
   findReservationByIdInTenant: vi.fn(),
   findReservationConflict: vi.fn(),
   createReservationInTenant: vi.fn(),
   updateReservationInTenant: vi.fn(),
   deleteReservationInTenant: vi.fn(),
+  serializeReservation: vi.fn((reservation: any) => ({
+    ...reservation,
+    currentStatus: 'activa',
+  })),
 }));
 
 import { createReservation, getAllReservations } from './controller';
 import { createReservationInTenant, findReservationConflict, findReservationsByTenant } from './service';
+import Amenity from '../amenities/model';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
 
 describe('reservations controller', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(Amenity.findOne).mockResolvedValue({ name: 'Gym', maxDurationHours: 4 } as any);
   });
 
   it('getAllReservations returns data from service', async () => {
@@ -37,7 +50,7 @@ describe('reservations controller', () => {
     expect(findReservationsByTenant).toHaveBeenCalledWith('tenant-1');
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      reservations: [{ _id: 'r1', amenity: 'Pool' }],
+      reservations: [{ _id: 'r1', amenity: 'Pool', currentStatus: 'activa' }],
     });
     expect(next).not.toHaveBeenCalled();
   });

@@ -1,0 +1,260 @@
+<section class="mcs mcs-page units-page">
+  <!-- Header -->
+  <header class="mcs-page-head">
+    <div>
+      <h1 class="mcs-page-title">Unidades</h1>
+      <p class="mcs-page-sub">
+        {{ units().length }} unidades · {{ occupiedCount() }} ocupadas
+      </p>
+    </div>
+    <div class="mcs-row mcs-gap-sm">
+      <div class="mcs-seg">
+        <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
+          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+        </button>
+        <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
+          <mac-icon name="list" [size]="13"/><span>Lista</span>
+        </button>
+      </div>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="15"/>
+        <span>Nueva unidad</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="mcs-input-wrap" style="max-width: 320px; flex:1;">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+      <input
+        class="mcs-input with-icon"
+        type="search"
+        placeholder="Buscar código, tenant o descripción..."
+        [value]="searchTerm()"
+        (input)="setSearch($any($event.target).value)"/>
+    </div>
+    <div class="filter-chips">
+      @for (f of filters; track f.value) {
+        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Grid / List / Empty -->
+  @if (pagedUnits().length === 0) {
+    <div class="mcs-empty mcs-card" style="padding:60px 20px;">
+      <mac-icon name="building" [size]="36"/>
+      <h3>Sin unidades</h3>
+      <p>Agregue una unidad para comenzar a asignar residentes y cargos.</p>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="14"/>
+        <span>Nueva unidad</span>
+      </button>
+    </div>
+  } @else if (view() === 'grid') {
+    <div class="mcs-grid cols-3">
+      @for (u of pagedUnits(); track trackById($index, u)) {
+        <article class="mcs-card hoverable unit-card" (click)="openDetail(u)">
+          <div class="unit-band" [style.background]="typeVisual(u.type).color"></div>
+          <div class="unit-body">
+            <div class="mcs-row mcs-between">
+              <div class="mcs-row mcs-gap-sm">
+                <div class="mcs-i-round" style="background: var(--surface-muted);" [style.color]="typeVisual(u.type).color">
+                  <mac-icon [name]="typeVisual(u.type).icon" [size]="16"/>
+                </div>
+                <div>
+                  <div class="unit-code mono">{{ u.code }}</div>
+                  <div class="unit-type">{{ unitTypeLabel(u.type) }}</div>
+                </div>
+              </div>
+              @if (u.isActive) {
+                <span class="mcs-badge ok"><mac-icon name="check" [size]="11"/>Disponible</span>
+              } @else {
+                <span class="mcs-badge warn"><mac-icon name="lock" [size]="11"/>No disp.</span>
+              }
+            </div>
+            <div class="unit-desc">{{ u.description || 'Sin descripción' }}</div>
+            <div class="mcs-row mcs-between unit-meta">
+              <span>Tenant</span>
+              <strong>{{ u.tenant }}</strong>
+            </div>
+            <div class="unit-actions">
+              <button class="mcs-btn sm mcs-grow" type="button" (click)="openDetail(u); $event.stopPropagation()">
+                <mac-icon name="eye" [size]="13"/>
+                <span>Ver detalle</span>
+              </button>
+              <button class="mcs-btn sm icon-only" type="button" (click)="openEdit(u, $event)" aria-label="Editar">
+                <mac-icon name="edit" [size]="13"/>
+              </button>
+              <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(u, $event)" aria-label="Eliminar">
+                <mac-icon name="trash" [size]="13"/>
+              </button>
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  } @else {
+    <div class="mcs-card">
+      @for (u of pagedUnits(); track trackById($index, u); let i = $index) {
+        <div class="unit-row" [class.has-border]="i > 0" (click)="openDetail(u)">
+          <div class="mcs-i-round" style="background: var(--surface-muted);" [style.color]="typeVisual(u.type).color">
+            <mac-icon [name]="typeVisual(u.type).icon" [size]="16"/>
+          </div>
+          <div class="mono" style="width:90px; font-weight:600;">{{ u.code }}</div>
+          <div class="mcs-grow" style="font-size:13px; color:var(--text-soft);">{{ u.description || '—' }}</div>
+          <span class="mcs-badge">{{ unitTypeLabel(u.type) }}</span>
+          @if (u.isActive) {
+            <span class="mcs-badge ok">Disponible</span>
+          } @else {
+            <span class="mcs-badge warn">No disp.</span>
+          }
+          <button class="mcs-btn sm icon-only" type="button" (click)="openEdit(u, $event)" aria-label="Editar">
+            <mac-icon name="edit" [size]="13"/>
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <footer class="pagination">
+      <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
+        <mac-icon name="chevronLeft" [size]="14"/>
+      </button>
+      @for (n of pageNumbers(); track n) {
+        <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n }}</button>
+      }
+      <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
+        <mac-icon name="chevronRight" [size]="14"/>
+      </button>
+    </footer>
+  }
+
+  <!-- ─── Drawer: Detail ─── -->
+  <mac-drawer
+    [open]="detail() !== null"
+    [title]="detail()?.code || ''"
+    [subtitle]="detail() ? (unitTypeLabel(detail()!.type) + (detail()!.description ? ' · ' + detail()!.description : '')) : null"
+    [width]="480"
+    (closed)="closeDetail()">
+
+    <ng-container body>
+      @if (detail(); as u) {
+        <div class="unit-hero" [style.background]="typeVisual(u.type).color">
+          <span class="mono">{{ u.code }}</span>
+        </div>
+
+        <div class="mcs-grid cols-3" style="margin-bottom: 18px;">
+          <div class="unit-kpi">
+            <div class="kpi-label">Tipo</div>
+            <div class="kpi-value">{{ unitTypeLabel(u.type) }}</div>
+          </div>
+          <div class="unit-kpi">
+            <div class="kpi-label">Estado</div>
+            <div class="kpi-value" [style.color]="u.isActive ? 'var(--ok-700)' : 'var(--warn-700)'">{{ u.isActive ? 'Disponible' : 'Ocupada' }}</div>
+          </div>
+          <div class="unit-kpi">
+            <div class="kpi-label">Tenant</div>
+            <div class="kpi-value" style="font-size: 14px;">{{ u.tenant }}</div>
+          </div>
+        </div>
+
+        <div class="mcs-section-title">Descripción</div>
+        <div style="padding:14px; background:var(--surface-muted); border-radius:10px; font-size:13px; color:var(--text-soft);">
+          {{ u.description || 'Sin descripción disponible.' }}
+        </div>
+
+        <div class="mcs-section-title" style="margin-top:22px;">Registro</div>
+        <div style="font-size:13px; color:var(--text-muted-new);">
+          Última actividad: {{ relativeTime(u.lastActivity) }}
+        </div>
+      }
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeDetail()">Cerrar</button>
+      @if (detail()) {
+        <button class="mcs-btn primary" type="button" (click)="openEdit(detail()!)">
+          <mac-icon name="edit" [size]="13"/><span>Editar</span>
+        </button>
+      }
+    </ng-container>
+  </mac-drawer>
+
+  <!-- ─── Drawer: Create / Edit ─── -->
+  <mac-drawer
+    [open]="editorOpen()"
+    [title]="editorMode() === 'create' ? 'Nueva unidad' : 'Editar unidad'"
+    [subtitle]="editorMode() === 'create' ? 'Registre un nuevo inmueble del condominio' : (editingUnit()?.code ?? null)"
+    [width]="520"
+    (closed)="closeEditor()">
+
+    <ng-container body>
+      <form [formGroup]="form" (ngSubmit)="saveUnit()" class="mcs-stack">
+        @if (isSuperadmin()) {
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant</label>
+            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un tenant'" [options]="tenantOptions()"/>
+          </div>
+        }
+
+        <div class="mcs-section-title" style="margin-top:4px;">Tipo de unidad</div>
+        <div class="type-selector">
+          <button type="button" class="type-card" [class.on]="form.get('type')?.value === 'departamento'" (click)="setType('departamento')">
+            <div class="type-icon" style="background: var(--info-500);"><mac-icon name="building" [size]="18"/></div>
+            <div>Departamento</div>
+          </button>
+          <button type="button" class="type-card" [class.on]="form.get('type')?.value === 'casa'" (click)="setType('casa')">
+            <div class="type-icon" style="background: var(--ok-500);"><mac-icon name="home" [size]="18"/></div>
+            <div>Casa</div>
+          </button>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Código</label>
+          <input class="mcs-input mono" type="text" formControlName="code" placeholder="A-301"/>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Descripción</label>
+          <input class="mcs-input" type="text" formControlName="description" placeholder="Torre A · Piso 3"/>
+        </div>
+
+        <div class="mcs-field">
+          <div style="padding:12px; background:var(--surface-muted); border-radius:10px;">
+            <label class="mcs-row mcs-gap-sm" style="cursor:pointer;">
+              <input type="checkbox" formControlName="isActive" style="accent-color: var(--primary-new);"/>
+              <div class="mcs-grow">
+                <div style="font-size:13.5px; font-weight:600;">Disponible</div>
+                <div style="font-size:12px; color:var(--text-muted-new);">Una unidad disponible puede recibir nuevos residentes.</div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </form>
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
+      <button class="mcs-btn primary" type="button" (click)="saveUnit()" [disabled]="loading()">
+        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
+        @else { <mac-icon name="check" [size]="13"/><span>{{ editorMode() === 'create' ? 'Crear unidad' : 'Guardar cambios' }}</span> }
+      </button>
+    </ng-container>
+  </mac-drawer>
+
+  <!-- ─── Confirm delete ─── -->
+  <mac-confirm-modal
+    [open]="toDelete() !== null"
+    title="¿Eliminar unidad?"
+    [message]="toDelete() ? 'Se eliminará la unidad ' + toDelete()!.code + '. Esta acción no se puede deshacer.' : ''"
+    confirmLabel="Eliminar"
+    (cancelled)="cancelDelete()"
+    (confirmed)="confirmDelete()">
+  </mac-confirm-modal>
+</section>

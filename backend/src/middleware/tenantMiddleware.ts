@@ -14,6 +14,20 @@ const tenantMiddleware = (req: Request, res: Response, next: NextFunction) => {
     const tenantId = req.user?.tenantId;
 
     if (!tenantId) {
+      if (req.method === 'POST' && req.path === '/proofs') {
+        req.tenantId = req.user?.tenantId || 'global';
+        return next();
+      }
+
+      // Global superadmins (no tenantId claim) are allowed through only for
+      // payment routes, whose controllers resolve the target tenant from
+      // the request body, query, or stored Stripe session metadata. Other
+      // tenant-scoped modules still require a tenant claim so they don't
+      // silently query with tenantId=undefined.
+      if (req.user?.role === 'superadmin' && req.baseUrl === '/api/payments') {
+        return next();
+      }
+
       return res.status(403).json({
         success: false,
         message: 'No tenantId found in token',

@@ -3,20 +3,25 @@ import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { MacIconComponent } from '../../shared/mac-icon/mac-icon.component';
+
+type Panel = 'login' | 'forgot' | 'reset';
 
 @Component({
   selector: 'app-login-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, MacIconComponent],
   templateUrl: './login.page.html',
   styleUrl: './login.page.css',
 })
 export class LoginPage {
   private readonly fb = inject(FormBuilder);
 
-  readonly activePanel = signal<'login' | 'forgot' | 'reset'>('login');
+  readonly activePanel = signal<Panel>('login');
   readonly error = signal<string | null>(null);
   readonly info = signal<string | null>(null);
+  readonly loading = signal(false);
+  readonly showPassword = signal(false);
 
   readonly loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -38,16 +43,34 @@ export class LoginPage {
     private readonly router: Router
   ) {}
 
+  setPanel(panel: Panel): void {
+    this.activePanel.set(panel);
+    this.error.set(null);
+    this.info.set(null);
+  }
+
+  togglePassword(): void {
+    this.showPassword.update((v) => !v);
+  }
+
   login(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
     }
 
+    this.loading.set(true);
+    this.error.set(null);
     const { email, password } = this.loginForm.getRawValue();
     this.auth.login(String(email), String(password)).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
-      error: (err) => this.error.set(err?.error?.message || 'Credenciales inválidas.'),
+      next: () => {
+        this.loading.set(false);
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'Credenciales inválidas.');
+      },
     });
   }
 
@@ -57,20 +80,24 @@ export class LoginPage {
       return;
     }
 
+    this.loading.set(true);
+    this.error.set(null);
     const { tenantId, email } = this.forgotForm.getRawValue();
     this.auth.forgotPassword(String(email), String(tenantId)).subscribe({
       next: (response) => {
-        this.error.set(null);
+        this.loading.set(false);
         this.info.set(
           response.resetToken
             ? `Token de prueba: ${response.resetToken}`
             : response.message || 'Si el usuario existe, se envió recuperación.'
         );
       },
-      error: (err) => this.error.set(err?.error?.message || 'No se pudo iniciar recuperación.'),
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo iniciar recuperación.');
+      },
     });
   }
-
 
   resetPassword(): void {
     if (this.resetForm.invalid) {
@@ -78,14 +105,19 @@ export class LoginPage {
       return;
     }
 
+    this.loading.set(true);
+    this.error.set(null);
     const { token, newPassword } = this.resetForm.getRawValue();
     this.auth.resetPassword(String(token), String(newPassword)).subscribe({
       next: (response) => {
-        this.error.set(null);
+        this.loading.set(false);
         this.info.set(response.message || 'Contraseña actualizada.');
         this.activePanel.set('login');
       },
-      error: (err) => this.error.set(err?.error?.message || 'No se pudo restablecer contraseña.'),
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message || 'No se pudo restablecer contraseña.');
+      },
     });
   }
 }

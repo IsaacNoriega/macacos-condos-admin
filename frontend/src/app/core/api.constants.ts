@@ -1,4 +1,6 @@
-export const API_BASE_URL = 'https://api-macacos-backend-h4ahfkbwb5h2brdj.eastus-01.azurewebsites.net/api';
+import { environment } from '../../environments/environment';
+
+export const API_BASE_URL = "https://macacos-condos-admin-production.up.railway.app";
 
 export const STORAGE_KEYS = {
   token: 'macacos_token',

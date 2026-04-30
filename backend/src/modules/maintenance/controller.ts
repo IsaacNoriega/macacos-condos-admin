@@ -13,8 +13,7 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
         ? await maintenanceService.findMaintenanceByTenant(String(queryTenantId))
         : await maintenanceService.findAllMaintenance();
     } else if (req.user?.role === 'residente' || req.user?.role === 'familiar') {
-      const tenantReports = await maintenanceService.findMaintenanceByTenant(req.tenantId);
-      reports = tenantReports.filter((report) => String(report.userId) === String(req.user?.id));
+      reports = await maintenanceService.findMaintenanceByUser(req.tenantId, String(req.user?.id));
     } else {
       reports = await maintenanceService.findMaintenanceByTenant(req.tenantId);
     }

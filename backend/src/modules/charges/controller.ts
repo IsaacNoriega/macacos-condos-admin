@@ -1,7 +1,68 @@
 import { NextFunction, Request, Response } from 'express';
+import Payment from '../payments/model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as chargesService from './service';
+
+type ChargeWithStatusBase = {
+  _id: unknown;
+  isPaid?: boolean;
+};
+
+const enrichChargesWithPaymentStatus = async <T extends ChargeWithStatusBase>(charges: T[]): Promise<Array<T & { paymentStatus: string }>> => {
+  if (!charges.length) {
+    return [];
+  }
+
+  const chargeIds = charges
+    .map((charge) => String(charge._id))
+    .filter((id) => id.length > 0);
+
+  if (!chargeIds.length) {
+    return charges.map((charge) => ({
+      ...charge,
+      paymentStatus: charge.isPaid ? 'paid' : 'pending',
+    }));
+  }
+
+  const payments = await Payment.find({ chargeId: { $in: chargeIds } })
+    .select('chargeId status paymentDate createdAt')
+    .lean();
+
+  const latestPaymentByCharge = new Map<string, { status?: string; paymentDate?: Date; createdAt?: Date }>();
+
+  for (const payment of payments) {
+    const chargeId = String(payment.chargeId);
+    const existing = latestPaymentByCharge.get(chargeId);
+    const paymentTs = new Date(payment.paymentDate || payment.createdAt || 0).getTime();
+    const existingTs = existing ? new Date(existing.paymentDate || existing.createdAt || 0).getTime() : -1;
+
+    if (!existing || paymentTs >= existingTs) {
+      latestPaymentByCharge.set(chargeId, {
+        status: typeof payment.status === 'string' ? payment.status : undefined,
+        paymentDate: payment.paymentDate,
+        createdAt: payment.createdAt,
+      });
+    }
+  }
+
+  return charges.map((charge) => {
+    const chargeId = String(charge._id);
+    const latestPayment = latestPaymentByCharge.get(chargeId);
+
+    // A settled charge must stay 'paid' even if a later abandoned/pending
+    // Stripe attempt exists; only non-settled charges defer to the latest
+    // payment row for display status.
+    const paymentStatus = charge.isPaid
+      ? 'paid'
+      : latestPayment?.status || 'pending';
+
+    return {
+      ...charge,
+      paymentStatus,
+    };
+  });
+};
 
 export const getAllCharges = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -19,7 +80,8 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
       charges = await chargesService.findChargesByTenant(req.tenantId);
     }
 
-    res.json({ success: true, charges });
+    const chargesWithPaymentStatus = await enrichChargesWithPaymentStatus(charges);
+    res.json({ success: true, charges: chargesWithPaymentStatus });
   } catch (err: unknown) {
     next(new AppError('Error al obtener cargos', 500, { cause: toError(err).message }));
   }

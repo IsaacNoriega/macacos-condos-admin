@@ -1,70 +1,191 @@
-<section class="login-page">
-  <article class="card">
-    <header>
-      <h1>Macacos Condos Admin</h1>
-      <p>Plataforma multi-tenant para administración de condominios.</p>
-    </header>
+<section class="mcs login-split">
+  <!-- LEFT BRAND PANEL -->
+  <aside class="brand-panel">
+    <div class="brand-photo-overlay"></div>
 
-    <div class="tabs">
-      <button type="button" [class.active]="activePanel() === 'login'" (click)="activePanel.set('login')">
-        Login
-      </button>
-      <button type="button" [class.active]="activePanel() === 'forgot'" (click)="activePanel.set('forgot')">
-        Recuperar
-      </button>
-      <button type="button" [class.active]="activePanel() === 'reset'" (click)="activePanel.set('reset')">
-        Reset
-      </button>
+    <div class="brand-header">
+      <img src="/logo.png" class="brand-logo" alt="Macacos logo" />
+      <div>
+        <div class="brand-title">Macacos</div>
+        <div class="brand-sub">Condominios · Plataforma</div>
+      </div>
     </div>
 
-    @if (error()) {
-    <p class="message error">{{ error() }}</p>
-    }
+    <div class="brand-body">
+      <h2 class="brand-headline">
+        La administración<br>de su condominio,<br><em>sin complicaciones.</em>
+      </h2>
+      <p class="brand-copy">
+        Cobros, reportes de mantenimiento, reservas de amenidades y comunicación con residentes — todo en un solo lugar.
+      </p>
+    </div>
 
-    @if (info()) {
-    <p class="message info">{{ info() }}</p>
-    }
+    <div class="brand-footer">
+      <span>© 2026 Macacos</span>
+      <span>·</span>
+      <span>v2.4.0</span>
+      <span>·</span>
+      <span>Hecho con cariño en CDMX</span>
+    </div>
+  </aside>
 
-    @if (activePanel() === 'login') {
-    <form [formGroup]="loginForm" (ngSubmit)="login()" class="form-grid">
-      <label>
-        Email
-        <input type="email" formControlName="email" />
-      </label>
-      <label>
-        Contraseña
-        <input type="password" formControlName="password" />
-      </label>
-      <button class="primary" type="submit">Entrar</button>
-    </form>
-    }
+  <!-- RIGHT FORM PANEL -->
+  <div class="form-panel">
+    <div class="form-wrap">
 
-    @if (activePanel() === 'forgot') {
-    <form [formGroup]="forgotForm" (ngSubmit)="forgotPassword()" class="form-grid">
-      <label>
-        Tenant ID
-        <input type="text" formControlName="tenantId" />
-      </label>
-      <label>
-        Email de la cuenta
-        <input type="email" formControlName="email" />
-      </label>
-      <button class="primary" type="submit">Generar recuperación</button>
-    </form>
-    }
+      @if (activePanel() === 'login') {
+        <h1 class="serif form-title">Bienvenido de vuelta</h1>
+        <p class="form-lead">Ingrese sus credenciales para acceder al panel.</p>
 
-    @if (activePanel() === 'reset') {
-    <form [formGroup]="resetForm" (ngSubmit)="resetPassword()" class="form-grid">
-      <label>
-        Token
-        <input type="text" formControlName="token" />
-      </label>
-      <label>
-        Nueva contraseña
-        <input type="password" formControlName="newPassword" />
-      </label>
-      <button class="primary" type="submit">Actualizar contraseña</button>
-    </form>
-    }
-  </article>
+        @if (error()) {
+          <div class="form-alert bad">
+            <mac-icon name="xCircle" [size]="15"/>
+            <span>{{ error() }}</span>
+          </div>
+        }
+        @if (info()) {
+          <div class="form-alert info">
+            <mac-icon name="info" [size]="15"/>
+            <span>{{ info() }}</span>
+          </div>
+        }
+
+        <form [formGroup]="loginForm" (ngSubmit)="login()" class="mcs-stack">
+          <div class="mcs-field">
+            <label class="mcs-field-label">Correo electrónico</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>
+              <input class="mcs-input with-icon" type="email" formControlName="email" autocomplete="email" placeholder="correo@ejemplo.com"/>
+            </div>
+          </div>
+
+          <div class="mcs-field">
+            <div class="mcs-row mcs-between">
+              <label class="mcs-field-label">Contraseña</label>
+              <span class="mcs-link" style="font-size:12px;" (click)="setPanel('forgot')">¿Olvidó su contraseña?</span>
+            </div>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="lock" [size]="15"/></span>
+              <input class="mcs-input with-icon" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" style="padding-right:36px;"/>
+              <button type="button" class="pwd-toggle" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15"/>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%; margin-top:4px;">
+            @if (loading()) {
+              <span class="mcs-btn-spin"></span>
+              <span>Ingresando...</span>
+            } @else {
+              <span>Ingresar</span>
+              <mac-icon name="arrowRight" [size]="15"/>
+            }
+          </button>
+        </form>
+
+        <p class="form-foot">
+          ¿Necesita restablecer con un token?
+          <span class="mcs-link" (click)="setPanel('reset')">Ingrese su token</span>
+        </p>
+      }
+
+      @if (activePanel() === 'forgot') {
+        <h1 class="serif form-title">Recupere el acceso</h1>
+        <p class="form-lead">Le enviaremos un enlace para restablecer la contraseña.</p>
+
+        @if (error()) {
+          <div class="form-alert bad">
+            <mac-icon name="xCircle" [size]="15"/>
+            <span>{{ error() }}</span>
+          </div>
+        }
+        @if (info()) {
+          <div class="form-alert info">
+            <mac-icon name="info" [size]="15"/>
+            <span>{{ info() }}</span>
+          </div>
+        }
+
+        <form [formGroup]="forgotForm" (ngSubmit)="forgotPassword()" class="mcs-stack">
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant ID</label>
+            <input class="mcs-input mono" type="text" formControlName="tenantId" placeholder="Identificador del condominio"/>
+          </div>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Correo electrónico</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>
+              <input class="mcs-input with-icon" type="email" formControlName="email" autocomplete="email"/>
+            </div>
+          </div>
+
+          <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%;">
+            @if (loading()) {
+              <span class="mcs-btn-spin"></span>
+              <span>Enviando...</span>
+            } @else {
+              <span>Enviar enlace</span>
+              <mac-icon name="send" [size]="14"/>
+            }
+          </button>
+          <button type="button" class="mcs-btn ghost" style="width:100%;" (click)="setPanel('login')">
+            <mac-icon name="chevronLeft" [size]="14"/>
+            <span>Volver al inicio de sesión</span>
+          </button>
+        </form>
+      }
+
+      @if (activePanel() === 'reset') {
+        <h1 class="serif form-title">Nueva contraseña</h1>
+        <p class="form-lead">Ingrese el token que recibió y defina su nueva contraseña.</p>
+
+        @if (error()) {
+          <div class="form-alert bad">
+            <mac-icon name="xCircle" [size]="15"/>
+            <span>{{ error() }}</span>
+          </div>
+        }
+        @if (info()) {
+          <div class="form-alert info">
+            <mac-icon name="info" [size]="15"/>
+            <span>{{ info() }}</span>
+          </div>
+        }
+
+        <form [formGroup]="resetForm" (ngSubmit)="resetPassword()" class="mcs-stack">
+          <div class="mcs-field">
+            <label class="mcs-field-label">Token</label>
+            <input class="mcs-input mono" type="text" formControlName="token" placeholder="Pegue aquí el token"/>
+          </div>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Nueva contraseña</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="lock" [size]="15"/></span>
+              <input class="mcs-input with-icon" [type]="showPassword() ? 'text' : 'password'" formControlName="newPassword" autocomplete="new-password" style="padding-right:36px;"/>
+              <button type="button" class="pwd-toggle" (click)="togglePassword()" aria-label="Mostrar/ocultar contraseña">
+                <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15"/>
+              </button>
+            </div>
+            <div class="mcs-field-hint">Mínimo 6 caracteres.</div>
+          </div>
+
+          <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%;">
+            @if (loading()) {
+              <span class="mcs-btn-spin"></span>
+              <span>Actualizando...</span>
+            } @else {
+              <span>Actualizar contraseña</span>
+              <mac-icon name="check" [size]="15"/>
+            }
+          </button>
+          <button type="button" class="mcs-btn ghost" style="width:100%;" (click)="setPanel('login')">
+            <mac-icon name="chevronLeft" [size]="14"/>
+            <span>Volver al inicio de sesión</span>
+          </button>
+        </form>
+      }
+
+    </div>
+  </div>
 </section>

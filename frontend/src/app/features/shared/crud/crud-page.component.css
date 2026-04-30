@@ -1,38 +1,72 @@
 .crud-page {
   display: grid;
-  gap: 1rem;
+  gap: 1.1rem;
+  max-width: 1320px;
+  margin: 0 auto;
 }
 
 .page-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
 }
 
 .page-head h1 {
   margin: 0;
   font-size: clamp(1.4rem, 3vw, 1.8rem);
+  color: var(--text-heading);
 }
 
 .grid-layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 1rem;
+  grid-template-columns: minmax(320px, 410px) 1fr;
+  gap: 1.1rem;
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #d5e4e8;
-  border-radius: 1rem;
-  padding: 1rem;
-  box-shadow: 0 12px 30px rgba(8, 31, 41, 0.08);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.6rem;
+  padding: clamp(1.25rem, 2vw, 1.6rem);
+  box-shadow: var(--glass-shadow);
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0));
+  opacity: 0.7;
+}
+
+.card:hover {
+  transform: translateY(-2px) scale(1.004);
+  box-shadow: 0 24px 52px -28px rgba(14, 165, 233, 0.3), var(--glass-shadow);
+  background: var(--glass-bg-hover);
 }
 
 .form-card h2,
 .table-card h2 {
   margin: 0 0 0.75rem;
-  font-size: 1rem;
+  font-size: 1.05rem;
   letter-spacing: 0.01em;
+  color: var(--text-heading);
+}
+
+.form-card {
+  overflow: visible;
+}
+
+.form-card::before {
+  display: none;
 }
 
 .form-grid {
@@ -46,56 +80,71 @@
   font-size: 0.88rem;
 }
 
+.field span {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
 .field input,
 .field textarea,
 .field select {
-  border: 1px solid #bfd6dc;
-  border-radius: 0.65rem;
-  padding: 0.55rem 0.65rem;
-  font: inherit;
-  background: #f7fcfd;
-}
-
-.field input:focus,
-.field textarea:focus,
-.field select:focus {
-  outline: 2px solid #4eb1be;
-  border-color: #4eb1be;
+  width: 100%;
 }
 
 .actions {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.25rem;
+  flex-wrap: wrap;
 }
 
 .btn {
   border: 1px solid transparent;
-  border-radius: 999px;
-  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-pill);
+  padding: 0.55rem 0.92rem;
   font: inherit;
   cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
 
 .btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: wait;
 }
 
 .btn-primary {
-  background: #0b8ea0;
-  color: #fff;
+  background: var(--color-primary-gradient);
+  color: var(--text-on-primary);
+  font-weight: 700;
+  box-shadow: 0 4px 14px var(--color-primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.015);
+  filter: brightness(1.04);
+  box-shadow: 0 6px 18px var(--color-primary-glow-hover);
 }
 
 .btn-ghost {
-  background: transparent;
-  border-color: #99b6bd;
-  color: #255362;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  backdrop-filter: blur(4px);
+}
+
+.btn-ghost:hover {
+  background: var(--glass-bg-hover);
+  transform: translateY(-1px) scale(1.01);
+  filter: brightness(1.05);
+  box-shadow: var(--glass-drop-shadow);
 }
 
 .table-wrap {
   overflow: auto;
   max-height: 72vh;
+  border-radius: var(--radius-md);
 }
 
 table {
@@ -106,8 +155,8 @@ table {
 
 th,
 td {
-  border-bottom: 1px solid #e3edf0;
-  padding: 0.5rem;
+  border-bottom: 1px solid var(--table-border);
+  padding: 0.55rem 0.5rem;
   text-align: left;
   vertical-align: top;
 }
@@ -115,8 +164,24 @@ td {
 th {
   position: sticky;
   top: 0;
-  background: #f3f8fa;
+  background: var(--table-header-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 1;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tr {
+  transition: var(--transition-fast);
+}
+
+tr:hover {
+  background: var(--table-row-hover);
+  filter: brightness(1.03);
 }
 
 .row-actions {
@@ -125,43 +190,377 @@ th {
 
 .btn-mini {
   margin-right: 0.35rem;
-  border: 1px solid #93b3bc;
-  background: #ffffff;
-  color: #244d59;
-  border-radius: 0.5rem;
-  padding: 0.25rem 0.45rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.6rem;
+  margin-bottom: 0.3rem;
+  transition: var(--transition-fast);
+}
+
+.btn-mini:hover {
+  background: var(--glass-bg-hover);
+  transform: translateY(-1px) scale(1.03);
+  filter: brightness(1.05);
+  box-shadow: var(--glass-drop-shadow);
 }
 
 .btn-mini.danger {
-  border-color: #d98181;
-  color: #932f2f;
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border-color: var(--color-danger-border);
+}
+
+.btn-mini.danger:hover {
+  background: rgba(254, 226, 226, 0.8);
 }
 
 .message {
   margin: 0;
-  border-radius: 0.7rem;
+  border-radius: var(--radius-sm);
   padding: 0.6rem 0.75rem;
   font-size: 0.88rem;
 }
 
 .message.error {
-  background: #fdeceb;
-  color: #8f1f1f;
-  border: 1px solid #efb2af;
+  background: rgba(254, 226, 226, 0.6);
+  color: #991b1b;
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .message.success {
-  background: #e9f9f1;
-  color: #0f6f47;
-  border: 1px solid #a8e4c8;
+  background: var(--color-success-bg);
+  color: #065f46;
+  border: 1px solid var(--color-success-border);
 }
 
 .error {
-  color: #8f1f1f;
+  color: #991b1b;
 }
 
 @media (max-width: 1100px) {
   .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════
+   RESIDENTS FORM SKIN — Reservations/Tenants/Charges/Maintenance
+   ═══════════════════════════════════════ */
+.crud-page.residents-form-skin .form-grid {
+  gap: 0.7rem;
+  align-content: start;
+}
+
+.crud-page.residents-form-skin .field {
+  gap: 0.3rem;
+}
+
+.crud-page.residents-form-skin .field span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.crud-page.residents-form-skin .field input,
+.crud-page.residents-form-skin .field select,
+.crud-page.residents-form-skin .field textarea {
+  min-height: 2.45rem;
+  padding: 0.62rem 0.78rem;
+  border-radius: 0.72rem;
+  border: 1px solid rgba(14, 165, 233, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.crud-page.residents-form-skin .field input:focus,
+.crud-page.residents-form-skin .field select:focus,
+.crud-page.residents-form-skin .field textarea:focus {
+  border-color: rgba(14, 165, 233, 0.45);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16);
+  background: #ffffff;
+}
+
+.crud-page.residents-form-skin .field textarea {
+  min-height: 5.1rem;
+  resize: vertical;
+}
+
+.crud-page.residents-form-skin .field select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2.15rem;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #0284c7 50%),
+    linear-gradient(135deg, #0284c7 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% - 3px),
+    calc(100% - 10px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
+.crud-page.residents-form-skin .btn {
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+
+.crud-page.residents-form-skin .btn-primary {
+  background: var(--color-primary-gradient);
+  color: var(--text-on-primary);
+  border: none;
+  box-shadow: 0 4px 14px var(--color-primary-glow);
+}
+
+.crud-page.residents-form-skin .btn-primary:hover {
+  box-shadow: 0 6px 18px var(--color-primary-glow-hover);
+}
+
+.crud-page.residents-form-skin .btn-ghost {
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  border: 1px solid rgba(14, 165, 233, 0.35);
+  color: #0c4a6e;
+}
+
+.crud-page.residents-form-skin .btn-ghost:hover {
+  background: linear-gradient(135deg, #bae6fd, #bfdbfe);
+}
+
+/* ═══════════════════════════════════════
+   TENANTS SKIN — Unified glass overrides
+   ═══════════════════════════════════════ */
+.crud-page.tenants-skin {
+  gap: 0.8rem;
+}
+
+.crud-page.tenants-skin .page-head {
+  align-items: center;
+}
+
+.crud-page.tenants-skin .page-head h1 {
+  font-size: clamp(1.7rem, 3.2vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-heading);
+}
+
+.crud-page.tenants-skin .btn-ghost {
+  border-radius: var(--radius-pill);
+  background: rgba(14, 165, 233, 0.06);
+  border-color: rgba(14, 165, 233, 0.15);
+  color: var(--color-primary);
+  padding: 0.4rem 0.7rem;
+}
+
+.crud-page.tenants-skin .btn-ghost:hover {
+  background: rgba(14, 165, 233, 0.12);
+}
+
+.crud-page.tenants-skin .grid-layout {
+  grid-template-columns: minmax(300px, 1.2fr) minmax(0, 2.2fr);
+  gap: 0.65rem;
+}
+
+.crud-page.tenants-skin .card {
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 0.8rem;
+}
+
+.crud-page.tenants-skin .form-card h2,
+.crud-page.tenants-skin .table-card h2 {
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.crud-page.tenants-skin .form-grid {
+  gap: 0.5rem;
+}
+
+.crud-page.tenants-skin .field {
+  gap: 0.22rem;
+  font-size: 0.8rem;
+}
+
+.crud-page.tenants-skin .field span {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.crud-page.tenants-skin .field input,
+.crud-page.tenants-skin .field textarea,
+.crud-page.tenants-skin .field select {
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  min-height: 1.75rem;
+  width: 100%;
+}
+
+.crud-page.tenants-skin .actions {
+  margin-top: 0.25rem;
+}
+
+.crud-page.tenants-skin .btn-primary {
+  background: var(--color-primary-gradient);
+  border-color: transparent;
+  color: var(--text-on-primary);
+}
+
+.crud-page.tenants-skin .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px var(--color-primary-glow-hover);
+}
+
+.crud-page.tenants-skin .table-wrap {
+  max-height: 62vh;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+}
+
+.crud-page.tenants-skin table {
+  font-size: 0.82rem;
+}
+
+.crud-page.tenants-skin th,
+.crud-page.tenants-skin td {
+  padding: 0.45rem 0.5rem;
+}
+
+.crud-page.tenants-skin th {
+  background: var(--table-header-bg);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.crud-page.tenants-skin .btn-mini {
+  border-radius: var(--radius-pill);
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  margin-right: 0.35rem;
+  margin-bottom: 0;
+  font-size: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.crud-page.tenants-skin .btn-mini:hover {
+  transform: scale(1.08);
+}
+
+.crud-page.tenants-skin .btn-mini::before {
+  content: '✎';
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.crud-page.tenants-skin .btn-mini.danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+}
+
+.crud-page.tenants-skin .btn-mini.danger:hover {
+  background: rgba(254, 226, 226, 0.8);
+}
+
+.crud-page.tenants-skin .btn-mini.danger::before {
+  content: '🗑';
+  font-size: 0.95rem;
+  color: var(--color-danger);
+}
+
+/* Input icons for tenants form */
+.crud-page.tenants-skin .input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.crud-page.tenants-skin .input-wrapper::before {
+  content: '';
+  position: absolute;
+  left: 0.55rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  pointer-events: none;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.crud-page.tenants-skin .field-name .input-wrapper::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="1.5"><circle cx="12" cy="7" r="3.5"/><path d="M 6 21 C 6 17.5 8.5 15 12 15 C 15.5 15 18 17.5 18 21"/></svg>');
+}
+
+.crud-page.tenants-skin .field-address .input-wrapper::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="1.5"><path d="M 12 2 C 8.7 2 6 4.7 6 8 C 6 13 12 22 12 22 S 18 13 18 8 C 18 4.7 15.3 2 12 2 M 12 10 C 10.9 10 10 9.1 10 8 C 10 6.9 10.9 6 12 6 C 13.1 6 14 6.9 14 8 C 14 9.1 13.1 10 12 10"/></svg>');
+}
+
+.crud-page.tenants-skin .field-contactEmail .input-wrapper::before {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%2364748b" stroke-width="1.5"><path d="M 3 5 H 21 C 21.5 5 22 5.5 22 6 V 18 C 22 18.5 21.5 19 21 19 H 3 C 2.5 19 2 18.5 2 18 V 6 C 2 5.5 2.5 5 3 5 M 3 5 L 12 12 L 21 5"/></svg>');
+}
+
+.crud-page.tenants-skin .input-wrapper input {
+  padding-left: 2.2rem;
+  padding-right: 0.55rem;
+}
+
+/* Button icons for tenants form */
+.crud-page.tenants-skin .actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.crud-page.tenants-skin .btn-primary,
+.crud-page.tenants-skin .btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.crud-page.tenants-skin .btn-primary::before {
+  content: '';
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>');
+}
+
+.crud-page.tenants-skin .btn-ghost::before {
+  content: '';
+  display: inline-block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%230ea5e9" stroke-width="2"><path d="M 3 3 L 21 3 L 18 13 C 17 17 13 20 9 20 C 5 20 1 17 0 13 L 3 3"/><line x1="6" y1="3" x2="6" y2="10"/><line x1="10" y1="3" x2="10" y2="10"/><line x1="14" y1="3" x2="14" y2="10"/><line x1="18" y1="3" x2="18" y2="10"/></svg>');
+}
+
+.crud-page.tenants-skin .row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .crud-page.tenants-skin .grid-layout {
     grid-template-columns: 1fr;
   }
 }

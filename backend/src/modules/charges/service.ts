@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import Charge from './model';
 
 export const findAllCharges = () => {
@@ -5,7 +6,8 @@ export const findAllCharges = () => {
 };
 
 export const findChargesByTenant = (tenantId?: string) => {
-  return Charge.find({ tenantId }).lean();
+  const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
+  return Charge.find(filter).lean();
 };
 
 export const findChargeByIdInTenant = (chargeId: string, tenantId?: string) => {

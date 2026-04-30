@@ -86,6 +86,7 @@ export interface Payment {
   provider: 'manual' | 'stripe';
   status: 'pending' | 'in_review' | 'completed' | 'failed' | 'paid';
   proofOfPaymentUrl?: string;
+  proofOfPaymentBlobName?: string;
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   paymentDate: string;
@@ -95,11 +96,12 @@ export interface Payment {
 
 export interface MaintenanceReport {
   _id: string;
-  tenantId: string;
-  userId: string;
+  tenantId: string | { _id: string; name: string };
+  userId: string | { _id: string; name: string; email: string };
   description: string;
   status: 'pendiente' | 'en progreso' | 'resuelto';
   assignedTo?: string;
+  createdAt: string;
 }
 
 export interface Reservation {
@@ -110,12 +112,29 @@ export interface Reservation {
   start: string;
   end: string;
   status: 'activa' | 'cancelada';
+  currentStatus?: 'activa' | 'cancelada' | 'finalizada';
+}
+
+export interface Notice {
+  _id: string;
+  tenantId: string;
+  title: string;
+  content: string;
+  category: 'info' | 'urgente' | 'evento';
+  createdAt: string;
+  authorName?: string;
 }
 
 export interface StripeCheckoutResponse {
   success: boolean;
   sessionId: string;
   checkoutUrl: string;
+}
+
+export interface PaymentProofUploadResponse {
+  success: boolean;
+  proofOfPaymentUrl: string;
+  blobName: string;
 }
 
 export interface CrudFieldOption {
@@ -145,6 +164,7 @@ export interface CrudField {
   key: string;
   label: string;
   type: 'text' | 'email' | 'number' | 'date' | 'datetime-local' | 'textarea' | 'select';
+  tableOnly?: boolean;
   required?: boolean;
   placeholder?: string;
   options?: CrudFieldOption[];
@@ -168,4 +188,6 @@ export interface CrudConfig {
   allowCreate?: boolean;
   allowEdit?: boolean;
   allowDelete?: boolean;
+  canEditItem?: (item: Record<string, unknown>) => boolean;
+  canDeleteItem?: (item: Record<string, unknown>) => boolean;
 }
