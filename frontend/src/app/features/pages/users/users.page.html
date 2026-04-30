@@ -239,7 +239,7 @@
           <input class="mcs-input" type="text" formControlName="name" placeholder="Ej: Juan Pérez"/>
           @if (form.get('name')?.invalid && (form.get('name')?.dirty || form.get('name')?.touched)) {
             <div class="mcs-field-error">
-              <mac-icon name="alertCircle" [size]="12"/>
+              <mac-icon name="alert" [size]="12"/>
               <span>El nombre es obligatorio.</span>
             </div>
           }
