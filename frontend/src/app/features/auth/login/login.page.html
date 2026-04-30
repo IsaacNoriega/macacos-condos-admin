@@ -57,6 +57,12 @@
               <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>
               <input class="mcs-input with-icon" type="email" formControlName="email" autocomplete="email" placeholder="correo@ejemplo.com"/>
             </div>
+            @if (loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)) {
+              <div class="mcs-field-error">
+                <mac-icon name="alertCircle" [size]="12"/>
+                <span>Ingrese un correo electrónico válido.</span>
+              </div>
+            }
           </div>
 
           <div class="mcs-field">
@@ -118,6 +124,12 @@
               <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>
               <input class="mcs-input with-icon" type="email" formControlName="email" autocomplete="email"/>
             </div>
+            @if (forgotForm.get('email')?.invalid && (forgotForm.get('email')?.dirty || forgotForm.get('email')?.touched)) {
+              <div class="mcs-field-error">
+                <mac-icon name="alertCircle" [size]="12"/>
+                <span>Ingrese un correo electrónico válido.</span>
+              </div>
+            }
           </div>
 
           <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%;">
@@ -167,7 +179,14 @@
                 <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15"/>
               </button>
             </div>
-            <div class="mcs-field-hint">Mínimo 6 caracteres.</div>
+            @if (resetForm.get('newPassword')?.invalid && (resetForm.get('newPassword')?.dirty || resetForm.get('newPassword')?.touched)) {
+              <div class="mcs-field-error">
+                <mac-icon name="alertCircle" [size]="12"/>
+                <span>Mínimo 6 caracteres.</span>
+              </div>
+            } @else {
+              <div class="mcs-field-hint">Mínimo 6 caracteres.</div>
+            }
           </div>
 
           <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%;">
