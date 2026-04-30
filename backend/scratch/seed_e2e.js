@@ -15,8 +15,9 @@ async function seedE2E() {
     const tenantColl = mongoose.connection.collection('tenants');
     const userColl = mongoose.connection.collection('users');
     const unitColl = mongoose.connection.collection('units');
+    const residentColl = mongoose.connection.collection('residents');
 
-    // Create Tenant
+    // 1. Create Tenant
     let tenant = await tenantColl.findOne({ name: 'E2E Test Tenant' });
     if (!tenant) {
       const res = await tenantColl.insertOne({
@@ -27,24 +28,29 @@ async function seedE2E() {
         updatedAt: new Date()
       });
       tenant = { _id: res.insertedId, name: 'E2E Test Tenant' };
-      console.log('Created Tenant');
     }
 
-    // Create Unit
-    let unit = await unitColl.findOne({ tenantId: tenant._id, number: 'E2E-101' });
-    if (!unit) {
-      await unitColl.insertOne({
-        tenantId: tenant._id,
-        number: 'E2E-101',
-        type: 'departamento',
-        floor: '1',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      console.log('Created Unit');
+    // CLEAR ALL RESIDENTS TO BE 100% SURE
+    await residentColl.deleteMany({});
+    console.log('Cleared ALL residents for clean slate');
+
+    // 2. Create Units
+    const unitNumbers = ['E2E-101', 'E2E-999'];
+    for (const num of unitNumbers) {
+      let unit = await unitColl.findOne({ tenantId: tenant._id, code: num });
+      if (!unit) {
+        await unitColl.insertOne({
+          tenantId: tenant._id,
+          code: num,
+          type: 'departamento',
+          floor: '1',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+      }
     }
 
-    // Create Resident User
+    // 3. Create Resident User
     let user = await userColl.findOne({ email: 'resident@test.com' });
     if (!user) {
       const hashedPassword = await bcrypt.hash('password123', 10);
@@ -58,7 +64,6 @@ async function seedE2E() {
         createdAt: new Date(),
         updatedAt: new Date()
       });
-      console.log('Created Resident User');
     }
 
     console.log('E2E Seed complete!');

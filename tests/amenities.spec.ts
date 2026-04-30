@@ -8,6 +8,16 @@ async function login(page: Page) {
   await expect(page).toHaveURL(/\/dashboard/);
 }
 
+async function selectFancy(page: Page, fieldLabel: string, optionSubstring: string) {
+  const field = page.locator('.mcs-field', { hasText: fieldLabel });
+  await field.locator('button.fancy-trigger').click();
+  const menu = page.locator('.fancy-menu');
+  await expect(menu).toBeVisible();
+  const option = menu.locator('button.fancy-option').filter({ hasText: optionSubstring }).first();
+  await option.click();
+  await expect(menu).not.toBeVisible();
+}
+
 test.describe('Amenities Management', () => {
   test.beforeEach(async ({ page }) => {
     await login(page);
@@ -16,16 +26,15 @@ test.describe('Amenities Management', () => {
   });
 
   test('should create a new amenity', async ({ page }) => {
+    const randomName = `Gym ${Math.floor(Math.random() * 10000)}`;
     await page.click('button:has-text("Nueva amenidad")');
     
-    await page.fill('input[formControlName="name"]', 'Gym E2E Test');
+    await page.fill('input[formControlName="name"]', randomName);
     await page.fill('textarea[formControlName="description"]', 'A test gym created via E2E.');
     await page.fill('input[formControlName="maxDurationHours"]', '2');
     
-    const tenantSelect = page.locator('select[formControlName="tenantId"]');
-    if (await tenantSelect.isVisible()) {
-      await expect(tenantSelect.locator('option').nth(1)).toBeAttached();
-      await tenantSelect.selectOption({ label: 'E2E Test Tenant' });
+    if (await page.locator('app-fancy-select[formControlName="tenantId"]').isVisible()) {
+      await selectFancy(page, 'Tenant *', 'E2E Test Tenant');
     }
     
     await page.click('button:has-text("Crear amenidad")');
@@ -34,6 +43,11 @@ test.describe('Amenities Management', () => {
     await expect(toast).toBeVisible();
     await expect(toast).toContainText(/Amenidad creada/);
     
-    await expect(page.locator('.amenity-card').filter({ hasText: 'Gym E2E Test' }).first()).toBeVisible();
+    const searchBox = page.getByPlaceholder('Buscar amenidad...');
+    await searchBox.fill(randomName);
+    await page.waitForTimeout(500);
+    
+    const newCard = page.locator('.amenity-card').filter({ hasText: randomName }).first();
+    await expect(newCard).toBeVisible({ timeout: 7000 });
   });
 });
