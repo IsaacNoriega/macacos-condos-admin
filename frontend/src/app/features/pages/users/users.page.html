@@ -250,7 +250,7 @@
           <input class="mcs-input" type="email" formControlName="email" placeholder="usuario@ejemplo.com"/>
           @if (form.get('email')?.invalid && (form.get('email')?.dirty || form.get('email')?.touched)) {
             <div class="mcs-field-error">
-              <mac-icon name="alertCircle" [size]="12"/>
+              <mac-icon name="alert" [size]="12"/>
               <span>Ingrese un correo electrónico válido.</span>
             </div>
           }
