@@ -192,8 +192,9 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
           tenantId: '',
           userId: '',
           amenity: '',
-          start: '',
-          end: '',
+          date: '',
+          startTime: '08:00',
+          endTime: '09:00',
           status: 'activa',
         }, { emitEvent: false });
         return;
