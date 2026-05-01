@@ -38,3 +38,9 @@ export const updateResidentInTenant = (residentId: string, tenantId: string | un
 export const deleteResidentInTenant = (residentId: string, tenantId?: string) => {
   return Resident.findOneAndDelete({ _id: residentId, tenantId });
 };
+
+export const findUnitsByUserEmail = (email: string, tenantId?: string) => {
+  const filter: any = { email: email.toLowerCase().trim() };
+  if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
+  return Resident.find(filter).select('unitId').lean();
+};

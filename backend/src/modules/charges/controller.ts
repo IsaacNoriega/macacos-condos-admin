@@ -3,6 +3,7 @@ import Payment from '../payments/model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as chargesService from './service';
+import * as residentsService from '../residents/service';
 
 type ChargeWithStatusBase = {
   _id: unknown;
@@ -74,8 +75,9 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
         ? await chargesService.findChargesByTenant(String(queryTenantId))
         : await chargesService.findAllCharges();
     } else if (req.user?.role === 'residente' || req.user?.role === 'familiar') {
-      const tenantCharges = await chargesService.findChargesByTenant(req.tenantId);
-      charges = tenantCharges.filter((charge) => String(charge.userId) === String(req.user?.id));
+      const userResidents = await residentsService.findUnitsByUserEmail(req.user.email, req.tenantId);
+      const unitIds = userResidents.map((r) => r.unitId);
+      charges = await chargesService.findChargesByUnits(unitIds, req.tenantId);
     } else {
       charges = await chargesService.findChargesByTenant(req.tenantId);
     }
@@ -96,6 +98,7 @@ export const createCharge = async (req: Request, res: Response, next: NextFuncti
       throw new AppError('No se pudo determinar el tenant destino', 400);
     }
 
+    if (payload.userId === '') delete payload.userId;
     const charge = await chargesService.createChargeInTenant(payload, targetTenantId);
     logger.log('charges.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { chargeId: String(charge._id) });
     res.status(201).json({ success: true, charge });
@@ -107,14 +110,17 @@ export const createCharge = async (req: Request, res: Response, next: NextFuncti
 
 export const updateCharge = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user?.role === 'superadmin' && req.body?.tenantId ? String(req.body.tenantId) : req.tenantId;
-    const { tenantId: _ignoredTenantId, ...payload } = req.body;
-    const charge = await chargesService.updateChargeInTenant(String(req.params.id), tenantId, payload);
+    const { tenantId: bodyTenantId, ...payload } = req.body;
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || bodyTenantId || undefined) : req.tenantId;
+
+    if (payload.userId === '') payload.userId = null;
+    const charge = await chargesService.updateChargeInTenant(String(req.params.id), tenantScope ? String(tenantScope) : undefined, payload);
     if (!charge) {
       throw new AppError('Cargo no encontrado', 404);
     }
 
-    logger.log('charges.update', req.user?.id ? String(req.user.id) : 'system', tenantId || 'global', { chargeId: req.params.id });
+    logger.log('charges.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
     res.json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -124,13 +130,14 @@ export const updateCharge = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteCharge = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const tenantId = req.user?.role === 'superadmin' && req.query?.tenantId ? String(req.query.tenantId) : req.tenantId;
-    const charge = await chargesService.deleteChargeInTenant(String(req.params.id), tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId ? String(queryTenantId) : undefined) : req.tenantId;
+    const charge = await chargesService.deleteChargeInTenant(String(req.params.id), tenantScope);
     if (!charge) {
       throw new AppError('Cargo no encontrado', 404);
     }
 
-    logger.log('charges.delete', req.user?.id ? String(req.user.id) : 'system', tenantId || 'global', { chargeId: req.params.id });
+    logger.log('charges.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
     res.json({ success: true, message: 'Cargo eliminado' });
   } catch (err: unknown) {
     logger.error('charges.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

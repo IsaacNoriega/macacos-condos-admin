@@ -24,7 +24,7 @@ interface ChargeCard {
   lateFeePerDay: number;
   paymentStatus: 'pending' | 'paid';
   unitCode: string;
-  userName: string;
+  userName?: string;
   createdAt: Date;
 }
 
@@ -76,7 +76,7 @@ export class ChargesPage implements OnInit {
       lateFeePerDay: c.lateFeePerDay || 0,
       paymentStatus: c.isPaid ? ('paid' as const) : ('pending' as const),
       unitCode: units.find((u) => u._id === c.unitId)?.code || 'N/A',
-      userName: users.find((u) => u._id === c.userId)?.name || 'N/A',
+      userName: users.find((u) => u._id === c.userId)?.name || (c.userId ? 'N/A' : 'Toda la unidad'),
       createdAt: new Date((c as any).createdAt || Date.now()),
     }));
   });
@@ -101,9 +101,10 @@ export class ChargesPage implements OnInit {
   });
   readonly userOptions = computed(() => {
     const selectedTenant = this.form.get('tenantId')?.value;
-    return this.users()
+    const list = this.users()
       .filter((u) => !selectedTenant || u.tenantId === selectedTenant)
       .map((u) => ({ value: u._id, label: `${u.name} (${u.email})` }));
+    return [{ value: '', label: 'A toda la unidad (Todos los residentes)' }, ...list];
   });
 
   readonly form: FormGroup;
@@ -177,7 +178,7 @@ export class ChargesPage implements OnInit {
     this.form = this.fb.group({
       tenantId: [''],
       unitId: ['', Validators.required],
-      userId: ['', Validators.required],
+      userId: [''],
       description: ['', Validators.required],
       amount: [0, [Validators.required, Validators.min(0.01)]],
       dueDate: ['', Validators.required],
@@ -249,7 +250,7 @@ export class ChargesPage implements OnInit {
   openCreate(): void {
     this.editingId.set(null);
     this.editorMode.set('create');
-    this.form.reset({ amount: 0, lateFeePerDay: 0 });
+    this.form.reset({ tenantId: '', unitId: '', userId: '', amount: 0, lateFeePerDay: 0 });
     this.editorOpen.set(true);
   }
 
@@ -306,7 +307,8 @@ export class ChargesPage implements OnInit {
     if (!charge) return;
     this.toDelete.set(null);
     this.loading.set(true);
-    this.api.delete(`/charges/${charge.id}`).pipe(finalize(() => this.loading.set(false))).subscribe({
+    const query = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(charge.tenantId)}` : '';
+    this.api.delete(`/charges/${charge.id}${query}`).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
         this.toast.ok('Cargo eliminado');
         this.loadCharges();
