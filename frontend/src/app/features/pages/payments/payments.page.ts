@@ -317,6 +317,7 @@ export class PaymentsPage implements OnInit {
 
       await firstValueFrom(
         this.api.post('/payments', {
+          tenantId: val.tenantId,
           userId: val.userId!,
           chargeId: val.chargeId!,
           amount: val.amount!,
@@ -355,6 +356,7 @@ export class PaymentsPage implements OnInit {
       const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', formData));
       await firstValueFrom(
         this.api.post('/payments', {
+          tenantId: this.auth.user()?.tenantId,
           userId: this.currentUserId(),
           chargeId: cid,
           amount: 0,
@@ -377,6 +379,7 @@ export class PaymentsPage implements OnInit {
     if (!cid) return;
     try {
       const payload = {
+        tenantId: this.paymentForm.get('tenantId')?.value,
         userId: this.auth.user()?._id,
         chargeId: cid,
         amount: this.paymentForm.get('amount')?.value || 0,
@@ -392,6 +395,7 @@ export class PaymentsPage implements OnInit {
   async payChargeWithStripe(charge: PaymentCharge) {
     try {
       const payload = {
+        tenantId: this.auth.user()?.tenantId,
         userId: this.auth.user()?._id,
         chargeId: charge._id,
         amount: this.getChargeTotalAmount(charge),
