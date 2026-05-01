@@ -17,9 +17,13 @@ export const createAmenityInTenant = async (payload: Record<string, unknown>, te
 };
 
 export const updateAmenityInTenant = (amenityId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
-  return Amenity.findOneAndUpdate({ _id: amenityId, tenantId }, payload, { new: true });
+  const filter: any = { _id: amenityId };
+  if (tenantId) filter.tenantId = tenantId;
+  return Amenity.findOneAndUpdate(filter, payload, { new: true });
 };
 
 export const deleteAmenityInTenant = (amenityId: string, tenantId?: string) => {
-  return Amenity.findOneAndDelete({ _id: amenityId, tenantId });
+  const filter: any = { _id: amenityId };
+  if (tenantId) filter.tenantId = tenantId;
+  return Amenity.findOneAndDelete(filter);
 };

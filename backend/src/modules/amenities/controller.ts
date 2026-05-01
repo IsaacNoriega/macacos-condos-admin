@@ -38,12 +38,16 @@ export const createAmenity = async (req: Request, res: Response, next: NextFunct
 
 export const updateAmenity = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const amenity = await amenitiesService.updateAmenityInTenant(String(req.params.id), req.tenantId, req.body);
+    const { tenantId: bodyTenantId, ...payload } = req.body;
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || bodyTenantId || undefined) : req.tenantId;
+
+    const amenity = await amenitiesService.updateAmenityInTenant(String(req.params.id), tenantScope ? String(tenantScope) : undefined, payload);
     if (!amenity) {
       throw new AppError('Amenidad no encontrada', 404);
     }
 
-    logger.log('amenities.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { amenityId: req.params.id });
+    logger.log('amenities.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { amenityId: req.params.id });
     res.json({ success: true, amenity });
   } catch (err: unknown) {
     logger.error('amenities.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -53,12 +57,15 @@ export const updateAmenity = async (req: Request, res: Response, next: NextFunct
 
 export const deleteAmenity = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const amenity = await amenitiesService.deleteAmenityInTenant(String(req.params.id), req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId ? String(queryTenantId) : undefined) : req.tenantId;
+
+    const amenity = await amenitiesService.deleteAmenityInTenant(String(req.params.id), tenantScope);
     if (!amenity) {
       throw new AppError('Amenidad no encontrada', 404);
     }
 
-    logger.log('amenities.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { amenityId: req.params.id });
+    logger.log('amenities.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { amenityId: req.params.id });
     res.json({ success: true, message: 'Amenidad eliminada' });
   } catch (err: unknown) {
     logger.error('amenities.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
