@@ -311,7 +311,8 @@ export class PaymentsPage implements OnInit {
     try {
       let proofUrl = '';
       if (this.selectedFile()) {
-        const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(this.selectedFile()!)));
+        const tid = val.tenantId || this.auth.user()?.tenantId || '';
+        const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(this.selectedFile()!, tid)));
         proofUrl = upload.proofOfPaymentUrl || upload.url;
       }
 
@@ -337,9 +338,10 @@ export class PaymentsPage implements OnInit {
     }
   }
 
-  private createFormData(file: File): FormData {
+  private createFormData(file: File, tenantId?: string): FormData {
     const formData = new FormData();
     formData.append('file', file);
+    if (tenantId) formData.append('tenantId', tenantId);
     return formData;
   }
 
@@ -351,9 +353,8 @@ export class PaymentsPage implements OnInit {
 
     this.loading.set(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', formData));
+      const tid = this.auth.user()?.tenantId || '';
+      const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(file, tid)));
       await firstValueFrom(
         this.api.post('/payments', {
           tenantId: this.auth.user()?.tenantId,
