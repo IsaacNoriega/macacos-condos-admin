@@ -172,7 +172,11 @@ export class MaintenancePage implements OnInit {
     });
     
     const isEditing = !!this.selectedReportId();
-    const endpoint = isEditing ? `/maintenance/${this.selectedReportId()}` : '/maintenance';
+    let endpoint = isEditing ? `/maintenance/${this.selectedReportId()}` : '/maintenance';
+
+    if (isEditing && this.isSuperadmin() && val.tenantId) {
+      endpoint += `?tenantId=${encodeURIComponent(val.tenantId)}`;
+    }
     
     this.loading.set(true);
     const req$ = isEditing ? this.api.put(endpoint, val) : this.api.post(endpoint, val);
@@ -197,7 +201,9 @@ export class MaintenancePage implements OnInit {
     if (!report) return;
 
     this.loading.set(true);
-    this.api.delete(`/maintenance/${report._id}`).pipe(finalize(() => this.loading.set(false))).subscribe({
+    const tid = typeof report.tenantId === 'string' ? report.tenantId : report.tenantId._id;
+    const query = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(tid)}` : '';
+    this.api.delete(`/maintenance/${report._id}${query}`).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
         this.toast.ok('Reporte eliminado');
         this.toDelete.set(null);
