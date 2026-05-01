@@ -191,7 +191,7 @@
   <mac-drawer
     [open]="detail() !== null"
     [title]="'Detalle de cargo'"
-    [subtitle]="detail() ? (detail()!.unitCode + ' · ' + detail()!.userName) : null"
+    [subtitle]="detail() ? (detail()!.unitCode + (detail()!.userId ? (' · ' + detail()!.userName) : ' · Toda la unidad')) : null"
     [width]="480"
     (closed)="closeDetail()">
 
@@ -213,8 +213,8 @@
             <span class="mono">{{ c.unitCode }}</span>
           </div>
           <div class="mcs-row mcs-between">
-            <span class="text-faint">Usuario</span>
-            <span class="text-soft">{{ c.userName }}</span>
+            <span class="text-faint">Asignado a</span>
+            <span class="text-soft">{{ c.userId ? c.userName : 'Toda la unidad (Cualquier residente puede pagar)' }}</span>
           </div>
           <div class="mcs-row mcs-between">
             <span class="text-faint">Fecha vencimiento</span>
@@ -267,7 +267,7 @@
 
         <div class="mcs-field">
           <label class="mcs-field-label">Usuario</label>
-          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona un usuario'" [options]="userOptions()"/>
+          <app-fancy-select formControlName="userId" [placeholder]="'Opcional: Asignar a usuario específico'" [options]="userOptions()"/>
         </div>
 
         <div class="mcs-field">

@@ -14,8 +14,8 @@ export interface ICharge extends Document {
 
 const chargeSchema = new Schema<ICharge>({
   tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
-  unitId: { type: Schema.Types.ObjectId, ref: 'Unit', index: true },
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  unitId: { type: Schema.Types.ObjectId, ref: 'Unit', required: true, index: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: false },
   description: { type: String, required: true },
   amount: { type: Number, required: true },
   dueDate: { type: Date, required: true },

@@ -50,12 +50,15 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
 
 export const updateReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = await maintenanceService.updateMaintenanceInTenant(String(req.params.id), req.tenantId, req.body);
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId ? String(queryTenantId) : undefined) : req.tenantId;
+
+    const report = await maintenanceService.updateMaintenanceInTenant(String(req.params.id), tenantScope, req.body);
     if (!report) {
       throw new AppError('Reporte no encontrado', 404);
     }
 
-    logger.log('maintenance.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reportId: req.params.id });
+    logger.log('maintenance.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { reportId: req.params.id });
     res.json({ success: true, report });
   } catch (err: unknown) {
     logger.error('maintenance.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -65,12 +68,15 @@ export const updateReport = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteReport = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const report = await maintenanceService.deleteMaintenanceInTenant(String(req.params.id), req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId ? String(queryTenantId) : undefined) : req.tenantId;
+
+    const report = await maintenanceService.deleteMaintenanceInTenant(String(req.params.id), tenantScope);
     if (!report) {
       throw new AppError('Reporte no encontrado', 404);
     }
 
-    logger.log('maintenance.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reportId: req.params.id });
+    logger.log('maintenance.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { reportId: req.params.id });
     res.json({ success: true, message: 'Reporte eliminado' });
   } catch (err: unknown) {
     logger.error('maintenance.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

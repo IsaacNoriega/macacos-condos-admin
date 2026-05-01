@@ -38,31 +38,26 @@ export const findReservationsByTenant = (tenantId?: string) => {
 };
 
 export const findReservationByIdInTenant = (reservationId: string, tenantId?: string) => {
-  return Reservation.findOne({ _id: reservationId, tenantId });
+  const filter: any = { _id: reservationId };
+  if (tenantId) filter.tenantId = tenantId;
+  return Reservation.findOne(filter);
 };
 
 export const findReservationConflict = (
-  tenantId: string,
+  tenantId: string | undefined,
   amenity: string,
   start: Date,
   end: Date,
   excludeReservationId?: string
 ) => {
-  const query: {
-    tenantId: string;
-    amenity: string;
-    status: 'activa';
-    start: { $lt: Date };
-    end: { $gt: Date };
-    _id?: { $ne: string };
-  } = {
-    tenantId: tenantId as any,
+  const query: any = {
     amenity,
     status: 'activa',
     start: { $lt: end },
     end: { $gt: start },
   };
 
+  if (tenantId) query.tenantId = tenantId;
   if (excludeReservationId) {
     query._id = { $ne: excludeReservationId };
   }
@@ -81,13 +76,17 @@ export const updateReservationInTenant = (
   tenantId: string | undefined,
   payload: Record<string, unknown>
 ) => {
+  const filter: any = { _id: reservationId };
+  if (tenantId) filter.tenantId = tenantId;
   return Reservation.findOneAndUpdate(
-    { _id: reservationId, tenantId },
+    filter,
     payload,
     { new: true }
   );
 };
 
 export const deleteReservationInTenant = (reservationId: string, tenantId?: string) => {
-  return Reservation.findOneAndDelete({ _id: reservationId, tenantId });
+  const filter: any = { _id: reservationId };
+  if (tenantId) filter.tenantId = tenantId;
+  return Reservation.findOneAndDelete(filter);
 };

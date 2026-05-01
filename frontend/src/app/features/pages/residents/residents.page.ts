@@ -35,18 +35,18 @@ interface ResidentCard {
 }
 
 const FILTERS: Array<{ label: string; value: ResidentFilter }> = [
-  { label: 'Todos',       value: 'all' },
+  { label: 'Todos', value: 'all' },
   { label: 'Propietario', value: 'propietario' },
-  { label: 'Familiar',    value: 'familiar' },
-  { label: 'Inquilino',   value: 'inquilino' },
-  { label: 'Activos',     value: 'activos' },
-  { label: 'Inactivos',   value: 'inactivos' },
+  { label: 'Familiar', value: 'familiar' },
+  { label: 'Inquilino', value: 'inquilino' },
+  { label: 'Activos', value: 'activos' },
+  { label: 'Inactivos', value: 'inactivos' },
 ];
 
 const RELATIONSHIP_OPTIONS = [
   { label: 'Propietario', value: 'propietario' },
-  { label: 'Familiar',    value: 'familiar' },
-  { label: 'Inquilino',   value: 'inquilino' },
+  { label: 'Familiar', value: 'familiar' },
+  { label: 'Inquilino', value: 'inquilino' },
 ];
 
 @Component({
@@ -397,7 +397,7 @@ export class ResidentsPage {
 
   // ─── Pagination ─────────────────────────────────────────────────────────
   previousPage(): void { if (this.page() > 1) this.page.update((c) => c - 1); }
-  nextPage(): void     { if (this.page() < this.totalPages()) this.page.update((c) => c + 1); }
+  nextPage(): void { if (this.page() < this.totalPages()) this.page.update((c) => c + 1); }
   goToPage(n: number): void { if (n >= 1 && n <= this.totalPages()) this.page.set(n); }
 
   // ─── Formatters ─────────────────────────────────────────────────────────
@@ -433,10 +433,10 @@ export class ResidentsPage {
     }
 
     this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants').pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (r) => { 
+      next: (r) => {
         console.log('[DEBUG] loadInitialData (tenants) response:', r);
-        this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []); 
-        this.loadUnitsAndUsersAndResidents(); 
+        this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []);
+        this.loadUnitsAndUsersAndResidents();
       },
       error: () => { this.tenants.set([]); this.loadUnitsAndUsersAndResidents(); },
     });

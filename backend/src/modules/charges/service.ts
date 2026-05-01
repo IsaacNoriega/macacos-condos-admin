@@ -21,13 +21,23 @@ export const createChargeInTenant = async (payload: Record<string, unknown>, ten
 };
 
 export const updateChargeInTenant = (chargeId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
+  const filter: any = { _id: chargeId };
+  if (tenantId) filter.tenantId = tenantId;
   return Charge.findOneAndUpdate(
-    { _id: chargeId, tenantId },
+    filter,
     payload,
     { new: true }
   );
 };
 
 export const deleteChargeInTenant = (chargeId: string, tenantId?: string) => {
-  return Charge.findOneAndDelete({ _id: chargeId, tenantId });
+  const filter: any = { _id: chargeId };
+  if (tenantId) filter.tenantId = tenantId;
+  return Charge.findOneAndDelete(filter);
+};
+
+export const findChargesByUnits = (unitIds: Types.ObjectId[], tenantId?: string) => {
+  const filter: any = { unitId: { $in: unitIds } };
+  if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
+  return Charge.find(filter).lean();
 };

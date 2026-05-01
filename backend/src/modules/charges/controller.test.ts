@@ -10,9 +10,14 @@ vi.mock('../../utils/logger', () => ({
 vi.mock('./service', () => ({
   findAllCharges: vi.fn(),
   findChargesByTenant: vi.fn(),
+  findChargesByUnits: vi.fn(),
   createChargeInTenant: vi.fn(),
   updateChargeInTenant: vi.fn(),
   deleteChargeInTenant: vi.fn(),
+}));
+
+vi.mock('../residents/service', () => ({
+  findUnitsByUserEmail: vi.fn(),
 }));
 
 vi.mock('../payments/model', () => {
@@ -29,8 +34,10 @@ import {
   createChargeInTenant,
   deleteChargeInTenant,
   findChargesByTenant,
+  findChargesByUnits,
   updateChargeInTenant,
 } from './service';
+import { findUnitsByUserEmail } from '../residents/service';
 import Payment from '../payments/model';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
 
@@ -70,15 +77,15 @@ describe('charges controller', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
-    it('filters to own charges for residente role', async () => {
-      vi.mocked(findChargesByTenant).mockResolvedValue([
-        { _id: 'c1', userId: 'user-1', isPaid: false },
-        { _id: 'c2', userId: 'user-2', isPaid: false },
+    it('filters to own charges for residente role based on units', async () => {
+      vi.mocked(findUnitsByUserEmail).mockResolvedValue([{ unitId: 'u1' }] as any);
+      vi.mocked(findChargesByUnits).mockResolvedValue([
+        { _id: 'c1', unitId: 'u1', isPaid: false },
       ] as any);
 
       const req = mockRequest({
         tenantId: 'tenant-1',
-        user: { role: 'residente', id: 'user-1' },
+        user: { role: 'residente', id: 'user-1', email: 'user@test.com' },
         query: {},
       } as any);
       const res = mockResponse();
@@ -86,6 +93,8 @@ describe('charges controller', () => {
 
       await getAllCharges(req, res, next);
 
+      expect(findUnitsByUserEmail).toHaveBeenCalledWith('user@test.com', 'tenant-1');
+      expect(findChargesByUnits).toHaveBeenCalledWith(['u1'], 'tenant-1');
       const callArg = vi.mocked(res.json).mock.calls[0][0];
       expect(callArg.charges).toHaveLength(1);
       expect(callArg.charges[0]._id).toBe('c1');

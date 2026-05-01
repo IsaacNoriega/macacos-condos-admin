@@ -9,25 +9,25 @@
     </div>
     <div class="mcs-row mcs-gap-sm">
       @if (isSuperadmin()) {
-        <div class="mcs-field" style="margin: 0; min-width: 240px;">
-          <select class="mcs-input" [value]="viewTenantId()" (change)="onTenantFilterChange($event)">
-            <option value="">Todos los condominios</option>
-            @for (t of tenants(); track t._id) {
-              <option [value]="t._id">{{ t.name }}</option>
-            }
-          </select>
-        </div>
+      <div class="mcs-field" style="margin: 0; min-width: 240px;">
+        <select class="mcs-input" [value]="viewTenantId()" (change)="onTenantFilterChange($event)">
+          <option value="">Todos los condominios</option>
+          @for (t of tenants(); track t._id) {
+          <option [value]="t._id">{{ t.name }}</option>
+          }
+        </select>
+      </div>
       }
       <div class="mcs-seg">
         <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
-          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+          <mac-icon name="grid" [size]="13" /><span>Grid</span>
         </button>
         <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
-          <mac-icon name="list" [size]="13"/><span>Lista</span>
+          <mac-icon name="list" [size]="13" /><span>Lista</span>
         </button>
       </div>
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
-        <mac-icon name="plus" [size]="15"/>
+        <mac-icon name="plus" [size]="15" />
         <span>Nuevo usuario</span>
       </button>
     </div>
@@ -36,229 +36,225 @@
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
-      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
-      <input
-        class="mcs-input with-icon"
-        type="search"
-        placeholder="Buscar por nombre, correo o condominio..."
-        [value]="searchTerm()"
-        (input)="setSearch($any($event.target).value)"/>
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14" /></span>
+      <input class="mcs-input with-icon" type="search" placeholder="Buscar por nombre, correo o condominio..."
+        [value]="searchTerm()" (input)="setSearch($any($event.target).value)" />
     </div>
     <div class="filter-chips">
       @for (f of roleFilters; track f.value) {
-        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
-          {{ f.label }}
-        </button>
+      <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+        {{ f.label }}
+      </button>
       }
     </div>
   </div>
 
   <!-- Content -->
   @if (loading() && users().length === 0) {
-    <div class="mcs-loader-wrap" style="padding: 100px 0;">
-      <span class="mcs-loader"></span>
-      <p>Cargando usuarios...</p>
-    </div>
+  <div class="mcs-loader-wrap" style="padding: 100px 0;">
+    <span class="mcs-loader"></span>
+    <p>Cargando usuarios...</p>
+  </div>
   } @else if (filteredUsers().length === 0) {
-    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
-      <mac-icon name="user" [size]="48" style="opacity: 0.3;"/>
-      <h3>Sin usuarios</h3>
-      <p>No se encontraron usuarios con los filtros actuales.</p>
-      <button class="mcs-btn primary" type="button" (click)="openCreate()">
-        <mac-icon name="plus" [size]="14"/>
-        <span>Crear usuario</span>
-      </button>
-    </div>
+  <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
+    <mac-icon name="user" [size]="48" style="opacity: 0.3;" />
+    <h3>Sin usuarios</h3>
+    <p>No se encontraron usuarios con los filtros actuales.</p>
+    <button class="mcs-btn primary" type="button" (click)="openCreate()">
+      <mac-icon name="plus" [size]="14" />
+      <span>Crear usuario</span>
+    </button>
+  </div>
   } @else if (view() === 'grid') {
-    <div class="mcs-grid cols-3">
-      @for (u of pagedUsers(); track u.id) {
-        <article class="mcs-card hoverable user-card" (click)="openDetail(u)">
-          <div class="mcs-row mcs-gap">
-            <div class="mcs-avatar lg" [class]="getRoleColor(u.role)">{{ u.initials }}</div>
-            <div class="mcs-grow" style="min-width:0;">
-              <div class="user-name-text">{{ u.name }}</div>
-              <div class="mcs-row mcs-gap-sm" style="margin-top:3px; flex-wrap:wrap;">
-                <span class="mcs-badge" [class]="getRoleColor(u.role)">{{ u.role | titlecase }}</span>
-                <span class="user-email-text">{{ u.email }}</span>
-              </div>
-            </div>
-            <button type="button"
-              class="mcs-switch"
-              [class.on]="u.isActive"
-              (click)="toggleActive(u, $event)"
-              [attr.aria-label]="u.isActive ? 'Desactivar usuario' : 'Activar usuario'">
-            </button>
-          </div>
-
-          <div class="user-info-section">
-            <div class="mcs-row mcs-gap-sm">
-              <mac-icon name="building" [size]="13"/>
-              <span>Condominio</span>
-              <strong style="margin-left:auto; font-size:12px;">{{ u.tenantName }}</strong>
-            </div>
-            <div class="mcs-row mcs-gap-sm">
-              <mac-icon name="clock" [size]="13"/>
-              <span>{{ relativeTime(u.createdAt) }}</span>
-            </div>
-          </div>
-
-          <div class="user-actions-row">
-            <button type="button" class="mcs-btn sm mcs-grow" (click)="openEdit(u, $event)">
-              <mac-icon name="edit" [size]="13"/>
-              <span>Editar</span>
-            </button>
-            <button type="button" class="mcs-btn sm danger-soft icon-only" (click)="askDelete(u, $event)" aria-label="Eliminar">
-              <mac-icon name="trash" [size]="13"/>
-            </button>
-          </div>
-        </article>
-      }
-    </div>
-
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-      <footer class="pagination">
-        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
-          <mac-icon name="chevronLeft" [size]="14"/>
-        </button>
-        @for (n of pageNumbers(); track n) {
-          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n }}</button>
-        }
-        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
-          <mac-icon name="chevronRight" [size]="14"/>
-        </button>
-      </footer>
-    }
-  } @else {
-    <div class="mcs-card">
-      @for (u of pagedUsers(); track u.id; let i = $index) {
-        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(u)">
-          <div class="mcs-avatar" [class]="getRoleColor(u.role)">
-            {{ u.initials }}
-          </div>
-          <div class="mcs-grow">
-            <div style="font-weight: 600;">{{ u.name }}</div>
-            <div style="font-size: 12px; color: var(--text-muted-new);">{{ u.email }} · {{ u.role | titlecase }}</div>
-          </div>
-          <div style="width: 150px;">
-            <span class="mcs-badge navy">{{ u.tenantName }}</span>
-          </div>
-          <div style="width: 120px;">
-            <span class="mcs-badge" [class.ok]="u.isActive" [class.bad]="!u.isActive">
-              {{ u.isActive ? 'Activo' : 'Inactivo' }}
-            </span>
-          </div>
-          <div class="mcs-row mcs-gap-sm">
-            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(u)">
-              <mac-icon name="edit" [size]="13"/>
-            </button>
-            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(u, $event)">
-              <mac-icon name="trash" [size]="13"/>
-            </button>
+  <div class="mcs-grid cols-3">
+    @for (u of pagedUsers(); track u.id) {
+    <article class="mcs-card hoverable user-card" (click)="openDetail(u)">
+      <div class="mcs-row mcs-gap">
+        <div class="mcs-avatar lg" [class]="getRoleColor(u.role)">{{ u.initials }}</div>
+        <div class="mcs-grow" style="min-width:0;">
+          <div class="user-name-text">{{ u.name }}</div>
+          <div class="mcs-row mcs-gap-sm" style="margin-top:3px; flex-wrap:wrap;">
+            <span class="mcs-badge" [class]="getRoleColor(u.role)">{{ u.role | titlecase }}</span>
+            <span class="user-email-text">{{ u.email }}</span>
           </div>
         </div>
-      }
-    </div>
+        <button type="button" class="mcs-switch" [class.on]="u.isActive" (click)="toggleActive(u, $event)"
+          [attr.aria-label]="u.isActive ? 'Desactivar usuario' : 'Activar usuario'">
+        </button>
+      </div>
 
-    <!-- Pagination -->
-    @if (totalPages() > 1) {
-      <footer class="pagination">
-        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
-          <mac-icon name="chevronLeft" [size]="14"/>
+      <div class="user-info-section">
+        <div class="mcs-row mcs-gap-sm">
+          <mac-icon name="building" [size]="13" />
+          <span>Condominio</span>
+          <strong style="margin-left:auto; font-size:12px;">{{ u.tenantName }}</strong>
+        </div>
+        <div class="mcs-row mcs-gap-sm">
+          <mac-icon name="clock" [size]="13" />
+          <span>{{ relativeTime(u.createdAt) }}</span>
+        </div>
+      </div>
+
+      <div class="user-actions-row">
+        <button type="button" class="mcs-btn sm mcs-grow" (click)="openEdit(u, $event)">
+          <mac-icon name="edit" [size]="13" />
+          <span>Editar</span>
         </button>
-        @for (n of pageNumbers(); track n) {
-          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n }}</button>
-        }
-        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
-          <mac-icon name="chevronRight" [size]="14"/>
+        <button type="button" class="mcs-btn sm danger-soft icon-only" (click)="askDelete(u, $event)"
+          aria-label="Eliminar">
+          <mac-icon name="trash" [size]="13" />
         </button>
-      </footer>
+      </div>
+    </article>
     }
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+  <footer class="pagination">
+    <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1"
+      aria-label="Anterior">
+      <mac-icon name="chevronLeft" [size]="14" />
+    </button>
+    @for (n of pageNumbers(); track n) {
+    <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n
+      }}</button>
+    }
+    <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()"
+      aria-label="Siguiente">
+      <mac-icon name="chevronRight" [size]="14" />
+    </button>
+  </footer>
+  }
+  } @else {
+  <div class="mcs-card">
+    @for (u of pagedUsers(); track u.id; let i = $index) {
+    <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(u)">
+      <div class="mcs-avatar" [class]="getRoleColor(u.role)">
+        {{ u.initials }}
+      </div>
+      <div class="mcs-grow">
+        <div style="font-weight: 600;">{{ u.name }}</div>
+        <div style="font-size: 12px; color: var(--text-muted-new);">{{ u.email }} · {{ u.role | titlecase }}</div>
+      </div>
+      <div style="width: 150px;">
+        <span class="mcs-badge navy">{{ u.tenantName }}</span>
+      </div>
+      <div style="width: 120px;">
+        <span class="mcs-badge" [class.ok]="u.isActive" [class.bad]="!u.isActive">
+          {{ u.isActive ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+      <div class="mcs-row mcs-gap-sm">
+        <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(u)">
+          <mac-icon name="edit" [size]="13" />
+        </button>
+        <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(u, $event)">
+          <mac-icon name="trash" [size]="13" />
+        </button>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+  <footer class="pagination">
+    <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1"
+      aria-label="Anterior">
+      <mac-icon name="chevronLeft" [size]="14" />
+    </button>
+    @for (n of pageNumbers(); track n) {
+    <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n
+      }}</button>
+    }
+    <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()"
+      aria-label="Siguiente">
+      <mac-icon name="chevronRight" [size]="14" />
+    </button>
+  </footer>
+  }
   }
 
   <!-- Drawer: Detail -->
-  <mac-drawer
-    [open]="detailUser() !== null"
-    [title]="detailUser()?.name || ''"
-    [subtitle]="detailUser() ? (detailUser()!.role | titlecase) : null"
-    [width]="480"
-    (closed)="closeDetail()">
+  <mac-drawer [open]="detailUser() !== null" [title]="detailUser()?.name || ''"
+    [subtitle]="detailUser() ? (detailUser()!.role | titlecase) : null" [width]="480" (closed)="closeDetail()">
 
     <ng-container body>
       @if (detailUser(); as u) {
-        <div class="mcs-row mcs-gap" style="margin-bottom:24px;">
-          <div class="mcs-avatar lg" [class]="getRoleColor(u.role)" style="width:72px; height:72px; font-size:26px;">{{ u.initials }}</div>
-          <div class="mcs-grow">
-            <div class="mcs-row mcs-gap-sm" style="margin-bottom:6px; flex-wrap:wrap;">
-              <span class="mcs-badge" [class.ok]="u.isActive">
-                <span class="mcs-badge-dot"></span>{{ u.isActive ? 'Activo' : 'Inactivo' }}
-              </span>
-              <span class="mcs-badge" [class]="getRoleColor(u.role)">
-                <span class="mcs-badge-dot"></span>{{ u.role | titlecase }}
-              </span>
-            </div>
-            <div style="font-size:13px; color:var(--text-muted-new);">{{ u.tenantName }}</div>
+      <div class="mcs-row mcs-gap" style="margin-bottom:24px;">
+        <div class="mcs-avatar lg" [class]="getRoleColor(u.role)" style="width:72px; height:72px; font-size:26px;">{{
+          u.initials }}</div>
+        <div class="mcs-grow">
+          <div class="mcs-row mcs-gap-sm" style="margin-bottom:6px; flex-wrap:wrap;">
+            <span class="mcs-badge" [class.ok]="u.isActive">
+              <span class="mcs-badge-dot"></span>{{ u.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+            <span class="mcs-badge" [class]="getRoleColor(u.role)">
+              <span class="mcs-badge-dot"></span>{{ u.role | titlecase }}
+            </span>
           </div>
+          <div style="font-size:13px; color:var(--text-muted-new);">{{ u.tenantName }}</div>
         </div>
+      </div>
 
-        <div class="mcs-section-title">Información de contacto</div>
-        <div class="mcs-stack-sm" style="font-size:13px;">
-          <div class="mcs-row mcs-gap-sm"><mac-icon name="mail"  [size]="14"/><span>{{ u.email }}</span></div>
-          <div class="mcs-row mcs-gap-sm"><mac-icon name="building" [size]="14"/><span>{{ u.tenantName }}</span></div>
-        </div>
+      <div class="mcs-section-title">Información de contacto</div>
+      <div class="mcs-stack-sm" style="font-size:13px;">
+        <div class="mcs-row mcs-gap-sm"><mac-icon name="mail" [size]="14" /><span>{{ u.email }}</span></div>
+        <div class="mcs-row mcs-gap-sm"><mac-icon name="building" [size]="14" /><span>{{ u.tenantName }}</span></div>
+      </div>
 
-        <div class="mcs-section-title" style="margin-top:22px;">Registro</div>
-        <div style="padding:14px; background:var(--surface-muted); border-radius:10px; font-size:13px; color:var(--text-soft);">
-          Miembro {{ relativeTime(u.createdAt) }}
-        </div>
+      <div class="mcs-section-title" style="margin-top:22px;">Registro</div>
+      <div
+        style="padding:14px; background:var(--surface-muted); border-radius:10px; font-size:13px; color:var(--text-soft);">
+        Miembro {{ relativeTime(u.createdAt) }}
+      </div>
       }
     </ng-container>
 
     <ng-container footer>
       <button class="mcs-btn" type="button" (click)="closeDetail()">Cerrar</button>
       @if (detailUser()) {
-        <button class="mcs-btn primary" type="button" (click)="openEdit(detailUser()!)">
-          <mac-icon name="edit" [size]="13"/><span>Editar</span>
-        </button>
+      <button class="mcs-btn primary" type="button" (click)="openEdit(detailUser()!)">
+        <mac-icon name="edit" [size]="13" /><span>Editar</span>
+      </button>
       }
     </ng-container>
   </mac-drawer>
 
   <!-- Drawer: Editor -->
-  <mac-drawer
-    [open]="editorOpen()"
-    [title]="selectedUserId() ? 'Editar usuario' : 'Nuevo usuario'"
+  <mac-drawer [open]="editorOpen()" [title]="selectedUserId() ? 'Editar usuario' : 'Nuevo usuario'"
     [subtitle]="selectedUserId() ? 'Actualice la información del perfil' : 'Cree una nueva cuenta de acceso'"
-    [width]="520"
-    (closed)="closeEditor()">
-    
+    [width]="520" (closed)="closeEditor()">
+
     <ng-container body>
       <form [formGroup]="form" (ngSubmit)="saveUser()" class="mcs-stack">
         <div class="mcs-field">
           <label class="mcs-field-label">Nombre completo *</label>
-          <input class="mcs-input" type="text" formControlName="name" placeholder="Ej: Juan Pérez"/>
+          <input class="mcs-input" type="text" formControlName="name" placeholder="Ej: Juan Pérez" />
           @if (form.get('name')?.invalid && (form.get('name')?.dirty || form.get('name')?.touched)) {
-            <div class="mcs-field-error">
-              <mac-icon name="alert" [size]="12"/>
-              <span>El nombre es obligatorio.</span>
-            </div>
+          <div class="mcs-field-error">
+            <mac-icon name="alert" [size]="12" />
+            <span>El nombre es obligatorio.</span>
+          </div>
           }
         </div>
 
         <div class="mcs-field">
           <label class="mcs-field-label">Correo electrónico *</label>
-          <input class="mcs-input" type="email" formControlName="email" placeholder="usuario@ejemplo.com"/>
+          <input class="mcs-input" type="email" formControlName="email" placeholder="usuario@ejemplo.com" />
           @if (form.get('email')?.invalid && (form.get('email')?.dirty || form.get('email')?.touched)) {
-            <div class="mcs-field-error">
-              <mac-icon name="alert" [size]="12"/>
-              <span>Ingrese un correo electrónico válido.</span>
-            </div>
+          <div class="mcs-field-error">
+            <mac-icon name="alert" [size]="12" />
+            <span>Ingrese un correo electrónico válido.</span>
+          </div>
           }
         </div>
 
         <div class="mcs-field">
-          <label class="mcs-field-label">Contraseña {{ selectedUserId() ? '(dejar en blanco para no cambiar)' : '*' }}</label>
-          <input class="mcs-input" type="password" formControlName="password" placeholder="••••••••"/>
+          <label class="mcs-field-label">Contraseña {{ selectedUserId() ? '(dejar en blanco para no cambiar)' : '*'
+            }}</label>
+          <input class="mcs-input" type="password" formControlName="password" placeholder="••••••••" />
         </div>
 
         <div class="mcs-field">
@@ -267,19 +263,21 @@
         </div>
 
         @if (isSuperadmin()) {
-          <div class="mcs-field">
-            <label class="mcs-field-label">Condominio *</label>
-            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un condominio'" [options]="tenantOptions()" />
-          </div>
+        <div class="mcs-field">
+          <label class="mcs-field-label">Condominio *</label>
+          <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un condominio'"
+            [options]="tenantOptions()" />
+        </div>
         }
 
         <div class="mcs-field">
           <div style="padding:12px; background:var(--surface-muted); border-radius:10px;">
             <label class="mcs-row mcs-gap-sm" style="cursor:pointer;">
-              <input type="checkbox" formControlName="isActive" style="accent-color: var(--primary-new);"/>
+              <input type="checkbox" formControlName="isActive" style="accent-color: var(--primary-new);" />
               <div class="mcs-grow">
                 <div style="font-size:13.5px; font-weight:600;">Activo</div>
-                <div style="font-size:12px; color:var(--text-muted-new);">Permitir al usuario iniciar sesión en la plataforma.</div>
+                <div style="font-size:12px; color:var(--text-muted-new);">Permitir al usuario iniciar sesión en la
+                  plataforma.</div>
               </div>
             </label>
           </div>
@@ -291,18 +289,15 @@
       <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
       <button class="mcs-btn primary" type="button" (click)="saveUser()" [disabled]="loading()">
         @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
-        @else { <mac-icon name="check" [size]="13"/><span>{{ selectedUserId() ? 'Guardar cambios' : 'Crear usuario' }}</span> }
+        @else { <mac-icon name="check" [size]="13" /><span>{{ selectedUserId() ? 'Guardar cambios' : 'Crear usuario'
+          }}</span> }
       </button>
     </ng-container>
   </mac-drawer>
 
   <!-- Confirm Delete -->
-  <mac-confirm-modal
-    [open]="toDelete() !== null"
-    title="¿Eliminar usuario?"
+  <mac-confirm-modal [open]="toDelete() !== null" title="¿Eliminar usuario?"
     [message]="toDelete() ? 'Se eliminará a \'' + toDelete()!.name + '\'. Esta acción no se puede deshacer.' : ''"
-    confirmLabel="Eliminar"
-    (cancelled)="toDelete.set(null)"
-    (confirmed)="confirmDelete()">
+    confirmLabel="Eliminar" (cancelled)="toDelete.set(null)" (confirmed)="confirmDelete()">
   </mac-confirm-modal>
 </section>

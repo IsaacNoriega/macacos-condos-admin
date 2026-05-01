@@ -70,6 +70,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
   readonly isSuperadmin = computed(() => this.auth.role() === 'superadmin');
   readonly userRole = computed(() => this.auth.role());
   readonly nowTick = signal(Date.now());
+  readonly today = new Date();
   private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
 
   readonly calendarForm = this.fb.group({
@@ -82,8 +83,9 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     tenantId: [''],
     userId: [''],
     amenity: ['', Validators.required],
-    start: ['', Validators.required],
-    end: ['', Validators.required],
+    date: ['', Validators.required],
+    startTime: ['08:00', Validators.required],
+    endTime: ['09:00', Validators.required],
     status: ['activa'],
   });
 
@@ -155,6 +157,9 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
       if (reservation) {
         this.openEdit(reservation);
       }
+    },
+    datesSet: (info) => {
+      this.calendarRangeLabel.set(this.formatWeekRange(info.view.activeStart));
     }
   }));
 
@@ -187,19 +192,24 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
           tenantId: '',
           userId: '',
           amenity: '',
-          start: '',
-          end: '',
+          date: '',
+          startTime: '08:00',
+          endTime: '09:00',
           status: 'activa',
         }, { emitEvent: false });
         return;
       }
 
+      const start = editing.start ? new Date(editing.start) : null;
+      const end = editing.end ? new Date(editing.end) : null;
+
       this.form.patchValue({
         tenantId: editing.tenantId,
         userId: editing.userId,
         amenity: editing.amenity,
-        start: editing.start ? this.toDateTimeLocalValue(new Date(editing.start)) : '',
-        end: editing.end ? this.toDateTimeLocalValue(new Date(editing.end)) : '',
+        date: start ? this.toDateInputValue(start) : '',
+        startTime: start ? this.toTimeInputValue(start) : '08:00',
+        endTime: end ? this.toTimeInputValue(end) : '09:00',
         status: editing.status || 'activa',
       }, { emitEvent: false });
     });
@@ -297,9 +307,9 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     this.form.reset({
       tenantId: this.isSuperadmin() ? '' : (this.auth.user()?.tenantId || ''),
       userId: this.isSuperadmin() || this.auth.role() === 'admin' ? '' : (this.auth.user()?._id || ''),
-      amenity: filterAmenity,
-      start: this.toDateTimeLocalValue(start),
-      end: this.toDateTimeLocalValue(end),
+      date: this.toDateInputValue(start),
+      startTime: this.toTimeInputValue(start),
+      endTime: this.toTimeInputValue(end),
       status: 'activa',
     }, { emitEvent: false });
 
@@ -321,14 +331,32 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    const payload = this.form.getRawValue();
-    
+    const raw = this.form.getRawValue();
+    const dateStr = raw.date;
+    const startVal = new Date(`${dateStr}T${raw.startTime}:00`);
+    const endVal = new Date(`${dateStr}T${raw.endTime}:00`);
+    const now = new Date();
+
+    const payload = {
+      ...raw,
+      start: startVal.toISOString(),
+      end: endVal.toISOString()
+    };
+
+    if (startVal < now) {
+      this.toast.bad('No puedes crear reservaciones en el pasado.');
+      return;
+    }
+
+    if (startVal >= endVal) {
+      this.toast.bad('La fecha de inicio debe ser anterior a la de fin.');
+      return;
+    }
+
     // Validar duración máxima en frontend
     const amenityData = this.allAmenities().find(a => a.name === payload.amenity);
     if (amenityData && amenityData.maxDurationHours) {
-      const start = new Date(payload.start as string).getTime();
-      const end = new Date(payload.end as string).getTime();
-      const duration = (end - start) / (1000 * 60 * 60);
+      const duration = (endVal.getTime() - startVal.getTime()) / (1000 * 60 * 60);
       if (duration > amenityData.maxDurationHours) {
         this.toast.bad(`La duración máxima para ${payload.amenity} es de ${amenityData.maxDurationHours} horas.`);
         return;
@@ -336,7 +364,8 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const isEditing = !!this.editingReservationId();
-    const endpoint = isEditing ? `/reservations/${this.editingReservationId()}` : '/reservations';
+    const tenantParam = this.isSuperadmin() && payload.tenantId ? `?tenantId=${payload.tenantId}` : '';
+    const endpoint = isEditing ? `/reservations/${this.editingReservationId()}${tenantParam}` : '/reservations';
     
     this.loading.set(true);
     const request$ = isEditing 
@@ -368,7 +397,8 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     if (!r) return;
 
     this.loading.set(true);
-    this.api.delete<{success: boolean}>(`/reservations/${r._id}`).pipe(finalize(() => this.loading.set(false))).subscribe({
+    const tenantParam = this.isSuperadmin() && r.tenantId ? `?tenantId=${r.tenantId}` : '';
+    this.api.delete<{success: boolean}>(`/reservations/${r._id}${tenantParam}`).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
         this.toast.ok('Reservación eliminada');
         this.toDelete.set(null);
@@ -380,10 +410,17 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private toDateTimeLocalValue(date: Date): string {
-    const tzOffset = date.getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
-    return localISOTime;
+  public toTimeInputValue(date: Date): string {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  }
+
+  public toDateInputValue(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   ngOnInit(): void {
@@ -515,12 +552,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     return normalized;
   }
 
-  private toDateInputValue(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
+
 
   protected toTimeLabel(raw: string): string {
     const date = new Date(raw);
@@ -564,24 +596,31 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private formatWeekRange(start: Date): string {
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
+    const s = new Date(start);
+    const e = new Date(start);
+    e.setDate(s.getDate() + 6);
 
-    const formatter = new Intl.DateTimeFormat('es-MX', {
-      day: '2-digit',
-      month: 'short',
-    });
+    const f = (d: Date) => {
+      const day = d.getDate().toString().padStart(2, '0');
+      const month = d.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '').toUpperCase();
+      return `${day} ${month}`;
+    };
 
-    return `${formatter.format(start)} - ${formatter.format(end)}`;
+    return `${f(s)} - ${f(e)}`;
   }
 
   private syncCalendarView(weekStart?: Date): void {
     const rawValue = this.calendarForm.get('weekStart')?.value || this.toDateInputValue(this.startOfWeek(new Date()));
     const base = weekStart ? this.startOfWeek(weekStart) : this.startOfWeek(new Date(`${rawValue}T00:00:00`));
 
-    this.calendarRangeLabel.set(this.formatWeekRange(base));
     queueMicrotask(() => {
-      this.calendarComponent?.getApi().gotoDate(base);
+      const api = this.calendarComponent?.getApi();
+      if (api) {
+        api.gotoDate(base);
+        this.calendarRangeLabel.set(this.formatWeekRange(api.view.activeStart));
+      } else {
+        this.calendarRangeLabel.set(this.formatWeekRange(base));
+      }
     });
   }
 

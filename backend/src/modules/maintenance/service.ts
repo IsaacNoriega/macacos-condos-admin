@@ -27,13 +27,17 @@ export const createMaintenanceInTenant = async (payload: Record<string, unknown>
 };
 
 export const updateMaintenanceInTenant = (maintenanceId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
+  const filter: any = { _id: maintenanceId };
+  if (tenantId) filter.tenantId = tenantId;
   return Maintenance.findOneAndUpdate(
-    { _id: maintenanceId, tenantId },
+    filter,
     payload,
     { new: true }
   );
 };
 
 export const deleteMaintenanceInTenant = (maintenanceId: string, tenantId?: string) => {
-  return Maintenance.findOneAndDelete({ _id: maintenanceId, tenantId });
+  const filter: any = { _id: maintenanceId };
+  if (tenantId) filter.tenantId = tenantId;
+  return Maintenance.findOneAndDelete(filter);
 };

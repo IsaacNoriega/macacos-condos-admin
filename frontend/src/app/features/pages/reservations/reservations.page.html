@@ -160,14 +160,28 @@
           <app-fancy-select formControlName="amenity" [placeholder]="'Selecciona una amenidad'" [options]="formAmenityOptions()" />
         </div>
 
+        <div class="mcs-field">
+          <label class="mcs-field-label">Fecha de reservación *</label>
+          <div class="mcs-input-wrap">
+            <span class="mcs-input-icon"><mac-icon name="calendar" [size]="14"/></span>
+            <input class="mcs-input with-icon" type="date" formControlName="date" [min]="toDateInputValue(today)" />
+          </div>
+        </div>
+
         <div class="mcs-row mcs-gap">
           <div class="mcs-field mcs-grow">
-            <label class="mcs-field-label">Inicio *</label>
-            <input class="mcs-input" type="datetime-local" formControlName="start" />
+            <label class="mcs-field-label">Hora inicio *</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="clock" [size]="14"/></span>
+              <input class="mcs-input with-icon" type="time" formControlName="startTime" />
+            </div>
           </div>
           <div class="mcs-field mcs-grow">
-            <label class="mcs-field-label">Fin *</label>
-            <input class="mcs-input" type="datetime-local" formControlName="end" />
+            <label class="mcs-field-label">Hora fin *</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="clock" [size]="14"/></span>
+              <input class="mcs-input with-icon" type="time" formControlName="endTime" />
+            </div>
           </div>
         </div>
 

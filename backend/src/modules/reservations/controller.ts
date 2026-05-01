@@ -79,7 +79,11 @@ export const createReservation = async (req: Request, res: Response, next: NextF
 
 export const updateReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const currentReservation = await findReservationByIdInTenant(String(req.params.id), req.tenantId);
+    const { tenantId: bodyTenantId } = req.body;
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId || bodyTenantId || undefined) : req.tenantId;
+
+    const currentReservation = await findReservationByIdInTenant(String(req.params.id), tenantScope ? String(tenantScope) : undefined);
     if (!currentReservation) {
       throw new AppError('Reservación no encontrada', 404);
     }
@@ -107,12 +111,12 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('La fecha de inicio debe ser menor que la fecha de fin', 400);
     }
 
-    if (await findReservationConflict(req.tenantId as string, nextAmenity, nextStart, nextEnd, String(req.params.id))) {
+    if (await findReservationConflict(tenantScope ? String(tenantScope) : undefined, nextAmenity, nextStart, nextEnd, String(req.params.id))) {
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
     // Validar duración máxima si está configurada en la amenidad
-    const amenityDoc = await Amenity.findOne({ name: nextAmenity, tenantId: req.tenantId });
+    const amenityDoc = await Amenity.findOne({ name: nextAmenity, tenantId: tenantScope || currentReservation.tenantId });
     if (amenityDoc && amenityDoc.maxDurationHours) {
       const durationHours = (nextEnd.getTime() - nextStart.getTime()) / (1000 * 60 * 60);
       if (durationHours > amenityDoc.maxDurationHours) {
@@ -132,9 +136,9 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
       delete payload.tenantId;
     }
 
-    const reservation = await updateReservationInTenant(String(req.params.id), req.tenantId, payload);
+    const reservation = await updateReservationInTenant(String(req.params.id), tenantScope ? String(tenantScope) : undefined, payload);
 
-    logger.log('reservations.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
+    logger.log('reservations.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { reservationId: req.params.id });
     res.json({ success: true, reservation: serializeReservation(reservation) });
   } catch (err: unknown) {
     logger.error('reservations.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -144,7 +148,10 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
 
 export const deleteReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const currentReservation = await findReservationByIdInTenant(String(req.params.id), req.tenantId);
+    const { tenantId: queryTenantId } = req.query;
+    const tenantScope = req.user?.role === 'superadmin' ? (queryTenantId ? String(queryTenantId) : undefined) : req.tenantId;
+
+    const currentReservation = await findReservationByIdInTenant(String(req.params.id), tenantScope ? String(tenantScope) : undefined);
     if (!currentReservation) {
       throw new AppError('Reservación no encontrada', 404);
     }
@@ -156,12 +163,12 @@ export const deleteReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('No tienes permiso para eliminar reservaciones de otros usuarios', 403);
     }
 
-    const reservation = await deleteReservationInTenant(String(req.params.id), req.tenantId);
+    const reservation = await deleteReservationInTenant(String(req.params.id), tenantScope ? String(tenantScope) : undefined);
     if (!reservation) {
       throw new AppError('Reservación no encontrada', 404);
     }
 
-    logger.log('reservations.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { reservationId: req.params.id });
+    logger.log('reservations.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { reservationId: req.params.id });
     res.json({ success: true, message: 'Reservación eliminada' });
   } catch (err: unknown) {
     logger.error('reservations.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
