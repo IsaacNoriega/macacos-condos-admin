@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import Payment from '../payments/model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import User from '../users/model';
 import * as chargesService from './service';
 import * as residentsService from '../residents/service';
 
@@ -75,7 +76,15 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
         ? await chargesService.findChargesByTenant(String(queryTenantId))
         : await chargesService.findAllCharges();
     } else if (req.user?.role === 'residente' || req.user?.role === 'familiar') {
-      const userResidents = await residentsService.findUnitsByUserEmail(req.user.email, req.tenantId);
+      let email = req.user.email;
+      if (!email && req.user.id) {
+        const u = await User.findById(req.user.id).select('email').lean();
+        email = u?.email;
+      }
+      if (!email) {
+        throw new AppError('No se pudo determinar el correo del usuario', 400);
+      }
+      const userResidents = await residentsService.findUnitsByUserEmail(email, req.tenantId);
       const unitIds = userResidents.map((r) => r.unitId);
       charges = await chargesService.findChargesByUnits(unitIds, req.tenantId);
     } else {

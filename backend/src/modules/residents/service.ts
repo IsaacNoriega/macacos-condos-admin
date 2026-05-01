@@ -40,6 +40,7 @@ export const deleteResidentInTenant = (residentId: string, tenantId?: string) =>
 };
 
 export const findUnitsByUserEmail = (email: string, tenantId?: string) => {
+  if (!email) return Promise.resolve([]);
   const filter: any = { email: email.toLowerCase().trim() };
   if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
   return Resident.find(filter).select('unitId').lean();
