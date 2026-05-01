@@ -47,7 +47,11 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       throw new AppError('Credenciales inválidas', 401);
     }
 
-    const token = jwt.sign({ id: user._id, tenantId: user.tenantId, role: user.role }, process.env.JWT_SECRET as string, { expiresIn: '12h' });
+    const token = jwt.sign(
+      { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '12h' }
+    );
     logger.log('auth.login', String(user._id), String(user.tenantId), { email: user.email, role: user.role });
     res.json({ success: true, token, user: { ...user.toObject(), password: undefined } });
   } catch (err: unknown) {
