@@ -290,7 +290,7 @@ export class ResidentsPage {
       return;
     }
     const current = this.form.get('relationship')?.value;
-    if (current !== 'propietario' && current !== 'inquilino') {
+    if (current !== 'propietario' && current !== 'inquilino' && current !== 'familiar') {
       this.form.patchValue({ relationship: 'propietario' }, { emitEvent: false });
     }
   }

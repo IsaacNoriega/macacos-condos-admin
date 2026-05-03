@@ -12,7 +12,7 @@ const getAllowedRelationshipsByRole = (role: string): string[] => {
   }
 
   if (role === 'residente') {
-    return ['propietario', 'inquilino'];
+    return ['propietario', 'inquilino', 'familiar'];
   }
 
   return [];
