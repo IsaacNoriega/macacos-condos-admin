@@ -441,7 +441,11 @@ export class PaymentsPage implements OnInit {
   }
 
   // Helpers
-  getUserLabel(id: string) {
+  getUserLabel(userId: any) {
+    if (userId && typeof userId === 'object' && userId.name) {
+      return userId.name;
+    }
+    const id = typeof userId === 'object' ? userId?._id : userId;
     const user = this.users().find(u => u._id === id);
     return user?.name || user?.email || 'Usuario';
   }

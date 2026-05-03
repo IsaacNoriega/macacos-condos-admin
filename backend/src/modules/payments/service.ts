@@ -2,13 +2,14 @@ import { Types } from 'mongoose';
 import Payment from './model';
 
 export const findAllPayments = () => {
-  return Payment.find({});
+  return Payment.find({}).populate('userId', 'name email');
 };
 
 export const findPaymentsByTenant = (tenantId?: string) => {
   const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
-  return Payment.find(filter);
+  return Payment.find(filter).populate('userId', 'name email');
 };
+
 
 export const findPaymentByIdInTenant = (paymentId: string, tenantId?: string) => {
   return Payment.findOne({ _id: paymentId, tenantId });

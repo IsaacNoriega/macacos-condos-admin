@@ -25,6 +25,16 @@ vi.mock('../charges/model', () => ({
   },
 }));
 
+vi.mock('../users/model', () => ({
+  default: {
+    findById: vi.fn(),
+  },
+}));
+
+vi.mock('../residents/service', () => ({
+  findUnitsByUserEmail: vi.fn(),
+}));
+
 vi.mock('../../config/azureBlob', () => ({
   uploadPaymentProofToAzure: vi.fn(),
   getPaymentProofSasUrl: vi.fn(),
@@ -66,6 +76,8 @@ import {
   updatePaymentInTenant,
 } from './service';
 import Charge from '../charges/model';
+import User from '../users/model';
+import * as residentsService from '../residents/service';
 import { getPaymentProofSasUrl, resolveOwnedProofBlobName } from '../../config/azureBlob';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
 
@@ -97,14 +109,15 @@ describe('payments controller', () => {
     });
 
     it('filters to own payments for residente role', async () => {
+      vi.mocked(residentsService.findUnitsByUserEmail).mockResolvedValue([{ unitId: 'unit-1' }] as any);
       vi.mocked(findPaymentsByTenant).mockResolvedValue([
-        { _id: 'p1', userId: 'user-1' },
-        { _id: 'p2', userId: 'user-2' },
+        { _id: 'p1', userId: 'user-1', unitId: 'unit-1' },
+        { _id: 'p2', userId: 'user-2', unitId: 'unit-2' },
       ] as any);
 
       const req = mockRequest({
         tenantId: 'tenant-1',
-        user: { role: 'residente', id: 'user-1' },
+        user: { role: 'residente', id: 'user-1', email: 'user@test.com' },
         query: {},
       } as any);
       const res = mockResponse();
