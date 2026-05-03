@@ -4,6 +4,8 @@ import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as paymentsService from './service';
 import Charge from '../charges/model';
+import User from '../users/model';
+import * as residentsService from '../residents/service';
 import {
   deletePaymentProofBlob,
   getPaymentProofSasUrl,
@@ -115,13 +117,20 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
         ? await paymentsService.findPaymentsByTenant(String(queryTenantId))
         : await paymentsService.findAllPayments();
     } else if (role === 'residente' || role === 'familiar') {
-      // Self-service roles must only receive their own rows. Returning the
-      // entire tenant list here exposes other residents' proofOfPaymentUrl
-      // (currently a 24 h Azure SAS URL) to anyone inspecting the
-      // /payments response, even though the Angular UI filters them out.
-      const tenantPayments = await paymentsService.findPaymentsByTenant(req.tenantId);
+      let email = req.user.email;
+      if (!email && req.user.id) {
+        const u = await User.findById(req.user.id).select('email').lean();
+        email = u?.email;
+      }
+      
+      const userUnits = await residentsService.findUnitsByUserEmail(email || '', req.tenantId);
+      const unitIds = userUnits.map(u => String(u.unitId));
       const callerId = req.user?.id ? String(req.user.id) : '';
-      payments = tenantPayments.filter((payment) => String(payment.userId) === callerId);
+      
+      const tenantPayments = await paymentsService.findPaymentsByTenant(req.tenantId);
+      payments = tenantPayments.filter((payment) => 
+        String(payment.userId?._id || payment.userId) === callerId || (payment.unitId && unitIds.includes(String(payment.unitId)))
+      );
     } else {
       payments = await paymentsService.findPaymentsByTenant(req.tenantId);
     }
