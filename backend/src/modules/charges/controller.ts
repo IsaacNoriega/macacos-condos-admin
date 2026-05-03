@@ -68,7 +68,7 @@ const enrichChargesWithPaymentStatus = async <T extends ChargeWithStatusBase>(ch
 
 export const getAllCharges = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { tenantId: queryTenantId } = req.query;
+    const { tenantId: queryTenantId, userId, unitId } = req.query;
     let charges;
 
     if (req.user?.role === 'superadmin') {
@@ -88,7 +88,22 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
       const unitIds = userResidents.map((r) => r.unitId);
       charges = await chargesService.findChargesByUnits(unitIds, req.tenantId);
     } else {
-      charges = await chargesService.findChargesByTenant(req.tenantId);
+      // Build filter for admins/staff
+      const filter: any = { tenantId: req.tenantId };
+      
+      if (userId && unitId) {
+        // Find specific for user OR unit-wide (where userId is null/empty)
+        filter.$or = [
+          { userId },
+          { unitId, userId: { $in: [null, undefined, ''] } }
+        ];
+      } else if (userId) {
+        filter.userId = userId;
+      } else if (unitId) {
+        filter.unitId = unitId;
+      }
+
+      charges = await chargesService.findCharges(filter);
     }
 
     const chargesWithPaymentStatus = await enrichChargesWithPaymentStatus(charges);

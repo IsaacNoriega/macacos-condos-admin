@@ -11,6 +11,7 @@ vi.mock('./service', () => ({
   findAllCharges: vi.fn(),
   findChargesByTenant: vi.fn(),
   findChargesByUnits: vi.fn(),
+  findCharges: vi.fn(),
   createChargeInTenant: vi.fn(),
   updateChargeInTenant: vi.fn(),
   deleteChargeInTenant: vi.fn(),
@@ -35,6 +36,7 @@ import {
   deleteChargeInTenant,
   findChargesByTenant,
   findChargesByUnits,
+  findCharges,
   updateChargeInTenant,
 } from './service';
 import { findUnitsByUserEmail } from '../residents/service';
@@ -56,7 +58,7 @@ describe('charges controller', () => {
 
   describe('getAllCharges', () => {
     it('returns charges scoped to tenant for admin role', async () => {
-      vi.mocked(findChargesByTenant).mockResolvedValue([
+      vi.mocked(findCharges).mockResolvedValue([
         { _id: 'c1', amount: 1000, isPaid: false },
       ] as any);
 
@@ -70,10 +72,33 @@ describe('charges controller', () => {
 
       await getAllCharges(req, res, next);
 
-      expect(findChargesByTenant).toHaveBeenCalledWith('tenant-1');
+      expect(findCharges).toHaveBeenCalledWith({ tenantId: 'tenant-1' });
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({ success: true })
       );
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('filters by userId and unitId for admin role', async () => {
+      vi.mocked(findCharges).mockResolvedValue([] as any);
+
+      const req = mockRequest({
+        tenantId: 'tenant-1',
+        user: { role: 'admin', id: 'admin-1' },
+        query: { userId: 'u1', unitId: 'un1' },
+      } as any);
+      const res = mockResponse();
+      const next = mockNext();
+
+      await getAllCharges(req, res, next);
+
+      expect(findCharges).toHaveBeenCalledWith({
+        tenantId: 'tenant-1',
+        $or: [
+          { userId: 'u1' },
+          { unitId: 'un1', userId: { $in: [null, undefined, ''] } }
+        ]
+      });
       expect(next).not.toHaveBeenCalled();
     });
 

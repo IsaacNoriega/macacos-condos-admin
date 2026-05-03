@@ -246,7 +246,8 @@ export class PaymentsPage implements OnInit {
       if (!this.isStaff()) {
         const chargesRes = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>('/charges'));
         const charges = chargesRes.charges || [];
-        this.residentCharges.set(charges.filter((c) => !c.isPaid && c.userId === this.currentUserId()) as any);
+        // Show charges specifically for the user OR charges for the unit without a specific user
+        this.residentCharges.set(charges.filter((c) => !c.isPaid && (c.userId === this.currentUserId() || !c.userId)) as any);
       }
     } catch (err) {
       this.error.set('Error al cargar pagos');
@@ -273,10 +274,16 @@ export class PaymentsPage implements OnInit {
 
   async onUserOrUnitChange() {
     const usid = this.paymentForm.get('userId')?.value;
+    const unid = this.paymentForm.get('unitId')?.value;
 
-    if (usid) {
+    if (usid || unid) {
       try {
-        const res = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>(`/charges?userId=${usid}`));
+        // Send both userId and unitId so the backend can return user-specific AND unit-wide charges
+        const queryParams = [];
+        if (usid) queryParams.push(`userId=${usid}`);
+        if (unid) queryParams.push(`unitId=${unid}`);
+        
+        const res = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>(`/charges?${queryParams.join('&')}`));
         const pending = (res.charges || []).filter((c) => !c.isPaid);
         this.chargeOptions.set(pending.map((c) => ({ label: `${c.description} ($${c.amount})`, value: c._id })));
       } catch (e) {
