@@ -17,7 +17,20 @@ export const findTenantById = (tenantId: string) => {
   return Tenant.findById(tenantId);
 };
 
+export const findTenantByIdentifier = (identifier: string) => {
+  return Tenant.findOne({ identifier: identifier.toLowerCase().trim() });
+};
+
 export const createTenant = async (payload: Record<string, unknown>) => {
+  if (!payload.identifier && payload.name) {
+    payload.identifier = String(payload.name)
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
   const tenant = new Tenant(payload);
   await tenant.save();
   return tenant;

@@ -27,7 +27,6 @@ router.post(
 // Recuperación de contraseña
 router.post(
 	'/forgot-password',
-	body('tenantId').isMongoId().withMessage('tenantId invalido'),
 	body('email').isEmail().withMessage('Email invalido'),
 	validateRequest,
 	forgotPassword

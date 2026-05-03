@@ -29,7 +29,7 @@ export class LoginPage {
   });
 
   readonly forgotForm = this.fb.group({
-    tenantId: ['', [Validators.required]],
+    tenantIdentifier: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
   });
 
@@ -82,8 +82,8 @@ export class LoginPage {
 
     this.loading.set(true);
     this.error.set(null);
-    const { tenantId, email } = this.forgotForm.getRawValue();
-    this.auth.forgotPassword(String(email), String(tenantId)).subscribe({
+    const { tenantIdentifier, email } = this.forgotForm.getRawValue();
+    this.auth.forgotPassword(String(email), String(tenantIdentifier)).subscribe({
       next: (response) => {
         this.loading.set(false);
         this.info.set(

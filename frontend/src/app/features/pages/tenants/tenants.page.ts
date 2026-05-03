@@ -62,6 +62,7 @@ export class TenantsPage implements OnInit {
   constructor() {
     this.form = this.fb.group({
       name: ['', Validators.required],
+      identifier: [''],
       address: ['', Validators.required],
       contactEmail: ['', [Validators.required, Validators.email]],
       isActive: [true],
@@ -72,6 +73,7 @@ export class TenantsPage implements OnInit {
       if (!selected) {
         this.form.reset({
           name: '',
+          identifier: '',
           address: '',
           contactEmail: '',
           isActive: true,
@@ -81,6 +83,7 @@ export class TenantsPage implements OnInit {
 
       this.form.patchValue({
         name: selected.name,
+        identifier: (selected as any).identifier || '',
         address: selected.address,
         contactEmail: selected.contactEmail,
         isActive: selected.isActive,
