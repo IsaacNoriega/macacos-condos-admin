@@ -85,16 +85,15 @@
           </div>
         }
 
-        @if (loadingCalendar()) {
-          <div class="mcs-loader-wrap" style="padding: 100px 0;">
-            <span class="mcs-loader"></span>
-            <p>Cargando calendario...</p>
-          </div>
-        } @else {
-          <div class="calendar-frame">
-            <full-calendar [options]="calendarOptions()"></full-calendar>
-          </div>
-        }
+        <div class="calendar-frame" style="position: relative;">
+          @if (loadingCalendar()) {
+            <div class="calendar-loader-overlay">
+              <span class="mcs-loader"></span>
+              <p>Cargando reservaciones...</p>
+            </div>
+          }
+          <full-calendar [options]="calendarOptions()"></full-calendar>
+        </div>
       </div>
     </article>
   } @else {
