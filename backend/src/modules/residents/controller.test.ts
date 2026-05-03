@@ -160,6 +160,32 @@ describe('residents controller', () => {
       expect(next).not.toHaveBeenCalled();
     });
 
+    it('creates resident when role is residente and relationship is familiar', async () => {
+      vi.mocked(validateUnitInTenant).mockResolvedValue(true as any);
+      vi.mocked(countResidentsInUnit).mockResolvedValue(2 as any);
+      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', role: 'residente' } as any);
+      vi.mocked(createResidentInTenant).mockResolvedValue({ _id: 'r3', name: 'Bob' } as any);
+
+      const req = mockRequest({
+        tenantId: 'tenant-1',
+        user: { id: 'admin-1', role: 'admin' },
+        body: {
+          unitId: 'unit-1',
+          email: 'bob@example.com',
+          relationship: 'familiar',
+          name: 'Bob',
+        },
+      } as any);
+      const res = mockResponse();
+      const next = mockNext();
+
+      await createResident(req, res, next);
+
+      expect(createResidentInTenant).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(next).not.toHaveBeenCalled();
+    });
+
     it('calls next when unit does not belong to tenant', async () => {
       vi.mocked(validateUnitInTenant).mockResolvedValue(false as any);
 
