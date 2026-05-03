@@ -72,6 +72,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
   readonly nowTick = signal(Date.now());
   readonly today = new Date();
   private refreshIntervalId: ReturnType<typeof setInterval> | null = null;
+  private lastLoadedRange: { start: string, end: string } | null = null;
 
   readonly calendarForm = this.fb.group({
     tenantId: [''],
@@ -160,6 +161,13 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     },
     datesSet: (info) => {
       const start = info.view.activeStart;
+      const end = info.view.activeEnd;
+      
+      const startStr = start.toISOString();
+      const endStr = end.toISOString();
+      if (this.lastLoadedRange?.start === startStr && this.lastLoadedRange?.end === endStr) return;
+      this.lastLoadedRange = { start: startStr, end: endStr };
+
       this.calendarRangeLabel.set(this.formatWeekRange(start));
       this.calendarForm.patchValue({ weekStart: this.toDateInputValue(start) }, { emitEvent: false });
       this.loadCalendarReservations();
