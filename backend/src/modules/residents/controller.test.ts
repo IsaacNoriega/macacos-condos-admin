@@ -21,6 +21,14 @@ vi.mock('../users/service', () => ({
   findUserByEmailInTenant: vi.fn(),
 }));
 
+vi.mock('../tenants/service', () => ({
+  findTenantById: vi.fn(),
+}));
+
+vi.mock('../../utils/notifications', () => ({
+  sendWelcomeEmail: vi.fn(),
+}));
+
 import { createResident, deleteResident, getAllResidents, getResidentById, updateResident } from './controller';
 import {
   countResidentsInUnit,
@@ -32,6 +40,8 @@ import {
   validateUnitInTenant,
 } from './service';
 import { findUserByEmailInTenant } from '../users/service';
+import { findTenantById } from '../tenants/service';
+import { sendWelcomeEmail } from '../../utils/notifications';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
 
 describe('residents controller', () => {
@@ -137,7 +147,9 @@ describe('residents controller', () => {
     it('creates resident when all validations pass', async () => {
       vi.mocked(validateUnitInTenant).mockResolvedValue(true as any);
       vi.mocked(countResidentsInUnit).mockResolvedValue(2 as any);
-      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', role: 'residente' } as any);
+      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', name: 'Bob', role: 'residente' } as any);
+      vi.mocked(findTenantById).mockResolvedValue({ _id: 'tenant-1', identifier: 'mac-1' } as any);
+      vi.mocked(sendWelcomeEmail).mockResolvedValue(true as any);
       vi.mocked(createResidentInTenant).mockResolvedValue({ _id: 'r3', name: 'Bob' } as any);
 
       const req = mockRequest({
@@ -163,7 +175,9 @@ describe('residents controller', () => {
     it('creates resident when role is residente and relationship is familiar', async () => {
       vi.mocked(validateUnitInTenant).mockResolvedValue(true as any);
       vi.mocked(countResidentsInUnit).mockResolvedValue(2 as any);
-      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', role: 'residente' } as any);
+      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', name: 'Bob', role: 'residente' } as any);
+      vi.mocked(findTenantById).mockResolvedValue({ _id: 'tenant-1', identifier: 'mac-1' } as any);
+      vi.mocked(sendWelcomeEmail).mockResolvedValue(true as any);
       vi.mocked(createResidentInTenant).mockResolvedValue({ _id: 'r3', name: 'Bob' } as any);
 
       const req = mockRequest({
