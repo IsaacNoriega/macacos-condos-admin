@@ -41,3 +41,8 @@ export const findChargesByUnits = (unitIds: Types.ObjectId[], tenantId?: string)
   if (tenantId) filter.tenantId = new Types.ObjectId(tenantId);
   return Charge.find(filter).lean();
 };
+
+export const findCharges = (filter: any) => {
+  return Charge.find(filter).lean();
+};
+
