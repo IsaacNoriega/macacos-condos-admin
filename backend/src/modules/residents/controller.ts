@@ -3,6 +3,8 @@ import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as residentsService from './service';
 import { findUserByEmailInTenant } from '../users/service';
+import { findTenantById } from '../tenants/service';
+import { sendWelcomeEmail } from '../../utils/notifications';
 
 const MAX_RESIDENTS_PER_UNIT = 5;
 
@@ -97,6 +99,13 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
     ensureRelationshipMatchesRole(String(linkedUser.role), String(relationship));
 
     const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
+    
+    // Enviar correo de bienvenida
+    const tenant = await findTenantById(targetTenantId);
+    if (tenant) {
+      await sendWelcomeEmail(String(email), linkedUser.name, tenant.identifier);
+    }
+
     logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { residentId: String(resident._id), unitId });
     res.status(201).json({ success: true, resident });
   } catch (err: unknown) {
