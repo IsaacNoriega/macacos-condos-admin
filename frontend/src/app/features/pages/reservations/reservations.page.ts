@@ -159,7 +159,10 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
       }
     },
     datesSet: (info) => {
-      this.calendarRangeLabel.set(this.formatWeekRange(info.view.activeStart));
+      const start = info.view.activeStart;
+      this.calendarRangeLabel.set(this.formatWeekRange(start));
+      this.calendarForm.patchValue({ weekStart: this.toDateInputValue(start) }, { emitEvent: false });
+      this.loadCalendarReservations();
     }
   }));
 
@@ -458,33 +461,29 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   previousWeek(): void {
-    const current = this.startOfWeek(new Date(`${this.calendarForm.get('weekStart')?.value || this.toDateInputValue(new Date())}T00:00:00`));
-    const previous = new Date(current);
-    previous.setDate(current.getDate() - 7);
-    this.calendarForm.patchValue({ weekStart: this.toDateInputValue(previous) });
-    this.syncCalendarView(previous);
-    this.loadCalendarReservations();
+    const api = this.calendarComponent?.getApi();
+    if (api) {
+      api.prev();
+    }
   }
 
   nextWeek(): void {
-    const current = this.startOfWeek(new Date(`${this.calendarForm.get('weekStart')?.value || this.toDateInputValue(new Date())}T00:00:00`));
-    const next = new Date(current);
-    next.setDate(current.getDate() + 7);
-    this.calendarForm.patchValue({ weekStart: this.toDateInputValue(next) });
-    this.syncCalendarView(next);
-    this.loadCalendarReservations();
+    const api = this.calendarComponent?.getApi();
+    if (api) {
+      api.next();
+    }
   }
 
   goToCurrentWeek(): void {
-    this.calendarForm.patchValue({ weekStart: this.toDateInputValue(this.startOfWeek(new Date())) });
-    this.syncCalendarView();
-    this.loadCalendarReservations();
+    const api = this.calendarComponent?.getApi();
+    if (api) {
+      api.today();
+    }
   }
 
   applyCalendarFilters(): void {
     this.selectedAmenityFilter.set(this.calendarForm.get('amenity')?.value || '');
     this.syncCalendarView();
-    this.loadCalendarReservations();
     this.loadAmenities();
   }
 

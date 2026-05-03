@@ -13,7 +13,7 @@ export interface IReservation extends Document {
 const reservationSchema = new Schema<IReservation>({
   tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  amenity: { type: String, required: true },
+  amenity: { type: String, required: true, trim: true },
   start: { type: Date, required: true },
   end: { type: Date, required: true },
   status: { type: String, enum: ['activa', 'cancelada'], default: 'activa' },

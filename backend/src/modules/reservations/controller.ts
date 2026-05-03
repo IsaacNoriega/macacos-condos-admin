@@ -30,7 +30,8 @@ export const getAllReservations = async (req: Request, res: Response, next: Next
 
 export const createReservation = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { amenity, start, end, tenantId: requestedTenantId, userId: requestedUserId, ...rest } = req.body;
+    const { amenity: rawAmenity, start, end, tenantId: requestedTenantId, userId: requestedUserId, ...rest } = req.body;
+    const amenity = String(rawAmenity || '').trim();
     const targetTenantId = req.user?.role === 'superadmin' && requestedTenantId ? String(requestedTenantId) : req.tenantId;
 
     if (!targetTenantId) {
@@ -99,7 +100,7 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
     if (Array.isArray(nextAmenityRaw)) {
       throw new AppError('Amenidad inválida', 400);
     }
-    const nextAmenity = String(nextAmenityRaw);
+    const nextAmenity = String(nextAmenityRaw).trim();
     const nextStart = req.body.start ? new Date(req.body.start) : currentReservation.start;
     const nextEnd = req.body.end ? new Date(req.body.end) : currentReservation.end;
 
