@@ -115,6 +115,7 @@
           </div>
           <div class="mcs-grow">
             <div style="font-weight: 600;">{{ t.name }}</div>
+            <div style="font-size: 11px; color: var(--primary-600); font-family: monospace; font-weight: 700;">@{{ t.identifier }}</div>
             <div style="font-size: 12px; color: var(--text-muted-new);">{{ t.contactEmail }}</div>
           </div>
           <div style="width: 130px;">
@@ -162,6 +163,12 @@
         <div class="mcs-field">
           <label class="mcs-field-label">Nombre del condominio *</label>
           <input class="mcs-input" type="text" formControlName="name" placeholder="Ej: Residencial Las Flores"/>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Identificador único</label>
+          <input class="mcs-input mono" type="text" formControlName="identifier" placeholder="Ej: flores-residencial (Auto-generado si se deja vacío)"/>
+          <div class="mcs-field-hint">Este ID se usa para el inicio de sesión y recuperación de contraseña.</div>
         </div>
 
         <div class="mcs-field">

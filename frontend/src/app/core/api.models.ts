@@ -25,6 +25,7 @@ export interface LoginResponse {
 export interface Tenant {
   _id: string;
   name: string;
+  identifier: string;
   address: string;
   contactEmail: string;
   createdAt?: string;

@@ -26,6 +26,7 @@ async function reset() {
     console.log('Creating default tenant...');
     const tenant = await Tenant.create({
       name: 'Administración Central',
+      identifier: 'mac-admin',
       address: 'Sede Principal',
       contactEmail: 'admin@admin.com'
     });

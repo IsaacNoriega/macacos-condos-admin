@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import { createUserInTenant, findUserByEmailInTenant, findUsersByEmail, updateUserPasswordByResetToken } from '../users/service';
+import { findTenantByIdentifier, findTenantById } from '../tenants/service';
+import { sendResetPasswordEmail } from '../../utils/notifications';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -62,10 +64,30 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, tenantId } = req.body;
-    const user = await findUserByEmailInTenant(email, tenantId);
+    const { email, tenantId, tenantIdentifier } = req.body;
+    
+    let targetTenantId = tenantId;
+    let identifier = '';
+
+    if (tenantIdentifier) {
+      const tenant = await findTenantByIdentifier(tenantIdentifier);
+      if (!tenant) {
+        throw new AppError('Condominio no encontrado', 404);
+      }
+      targetTenantId = String(tenant._id);
+      identifier = tenant.identifier;
+    } else if (tenantId) {
+      const tenant = await findTenantById(tenantId);
+      identifier = tenant?.identifier || 'condominio';
+    }
+
+    if (!targetTenantId) {
+      throw new AppError('Se requiere el identificador del condominio', 400);
+    }
+
+    const user = await findUserByEmailInTenant(email, targetTenantId);
     if (!user) {
-      throw new AppError('Usuario no encontrado', 404);
+      throw new AppError('Usuario no encontrado en este condominio', 404);
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
@@ -76,11 +98,13 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = expiresAt;
     await user.save();
 
+    await sendResetPasswordEmail(user.email, user.name, rawToken, identifier);
+
     logger.log('auth.forgotPassword', String(user._id), String(user.tenantId), { email: user.email });
 
     res.json({
       success: true,
-      message: 'Se generó un token de recuperación con expiración de 15 minutos',
+      message: 'Se ha enviado un correo con las instrucciones para restablecer tu contraseña',
       ...(process.env.NODE_ENV !== 'production' ? { resetToken: rawToken, expiresAt: expiresAt.toISOString() } : {}),
     });
   } catch (err: unknown) {

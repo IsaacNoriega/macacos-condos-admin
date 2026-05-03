@@ -13,8 +13,18 @@ vi.mock('../users/service', () => ({
   updateUserPasswordByResetToken: vi.fn(),
 }));
 
+vi.mock('../tenants/service', () => ({
+  findTenantById: vi.fn(),
+  findTenantByIdentifier: vi.fn(),
+}));
+
+vi.mock('../../utils/notifications', () => ({
+  sendResetPasswordEmail: vi.fn(),
+}));
+
 import { forgotPassword, resetPassword } from './controller';
 import { findUserByEmailInTenant, updateUserPasswordByResetToken } from '../users/service';
+import { findTenantById } from '../tenants/service';
 import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks';
 
 describe('auth controller', () => {
@@ -32,6 +42,7 @@ describe('auth controller', () => {
       save,
     } as any;
 
+    vi.mocked(findTenantById).mockResolvedValue({ identifier: 'mac-1' } as any);
     vi.mocked(findUserByEmailInTenant).mockResolvedValue(user);
 
     const req = mockRequest({ body: { email: 'john@example.com', tenantId: 'tenant-1' } });
@@ -40,6 +51,7 @@ describe('auth controller', () => {
 
     await forgotPassword(req, res, next);
 
+    expect(findTenantById).toHaveBeenCalledWith('tenant-1');
     expect(findUserByEmailInTenant).toHaveBeenCalledWith('john@example.com', 'tenant-1');
     expect(save).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalledWith(
