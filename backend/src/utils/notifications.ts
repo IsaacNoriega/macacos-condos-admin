@@ -46,7 +46,7 @@ export const sendResetPasswordEmail = async (
     logger.log('email.sent', 'system', 'global', { messageId: info.messageId, email });
     
     // Si estamos en desarrollo y usamos Ethereal, mostrar la URL de previsualización
-    if (info.host === 'smtp.ethereal.email') {
+    if (process.env.SMTP_HOST === 'smtp.ethereal.email') {
       console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
     }
     
