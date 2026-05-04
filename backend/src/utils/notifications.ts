@@ -37,7 +37,7 @@ export const sendResetPasswordEmail = async (
   token: string,
   tenantIdentifier: string
 ) => {
-  const resetUrl = `https://delightful-bay-02eed360f.2.azurestaticapps.net/login`; // Redirigimos al login donde está tu vista
+  const resetUrl = `https://delightful-bay-02eed360f.2.azurestaticapps.net/login?panel=reset&token=${token}`; 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #333;">Hola, ${name}</h2>

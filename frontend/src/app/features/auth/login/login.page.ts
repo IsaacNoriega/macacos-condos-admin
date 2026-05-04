@@ -39,10 +39,21 @@ export class LoginPage {
     newPassword: ['', [Validators.required, Validators.minLength(6)]],
   });
 
+  private readonly route = inject(import('@angular/router').ActivatedRoute);
+
   constructor(
     private readonly auth: AuthService,
     private readonly router: Router
-  ) {}
+  ) {
+    this.route.queryParams.subscribe(params => {
+      if (params['panel'] === 'reset') {
+        this.activePanel.set('reset');
+      }
+      if (params['token']) {
+        this.resetForm.patchValue({ token: params['token'] });
+      }
+    });
+  }
 
   setPanel(panel: Panel): void {
     this.activePanel.set(panel);
