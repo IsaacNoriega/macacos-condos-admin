@@ -98,7 +98,8 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = expiresAt;
     await user.save();
 
-    await sendResetPasswordEmail(user.email, user.name, rawToken, identifier);
+    sendResetPasswordEmail(user.email, user.name, rawToken, identifier)
+      .catch(err => logger.error('email.forgot.deferred.error', String(user._id), String(user.tenantId), err));
 
     logger.log('auth.forgotPassword', String(user._id), String(user.tenantId), { email: user.email });
 
