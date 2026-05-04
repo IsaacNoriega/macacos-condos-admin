@@ -24,7 +24,7 @@ vi.mock('../tenants/service', () => ({
 }));
 
 vi.mock('../../utils/notifications', () => ({
-  sendResetPasswordEmail: vi.fn(),
+  sendResetPasswordEmail: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('bcrypt', () => ({
@@ -95,7 +95,7 @@ describe('auth controller', () => {
 
   describe('forgotPassword', () => {
     it('generates reset token and sends email', async () => {
-      const save = vi.fn();
+      const save = vi.fn().mockResolvedValue(true);
       const user = {
         _id: 'user-1',
         tenantId: 'tenant-1',
@@ -104,16 +104,17 @@ describe('auth controller', () => {
         save,
       } as any;
 
-      vi.mocked(findTenantById).mockResolvedValue({ _id: 'tenant-1', identifier: 'mac-1' } as any);
+      vi.mocked(findTenantByIdentifier).mockResolvedValue({ _id: 'tenant-1', identifier: 'mac-1' } as any);
       vi.mocked(findUserByEmailInTenant).mockResolvedValue(user);
 
-      const req = mockRequest({ body: { email: 'john@example.com', tenantId: 'tenant-1' } });
+      const req = mockRequest({ body: { email: 'john@example.com', tenantIdentifier: 'mac-1' } });
       const res = mockResponse();
       const next = mockNext();
 
       await forgotPassword(req, res, next);
 
-      expect(findTenantById).toHaveBeenCalledWith('tenant-1');
+      expect(findTenantByIdentifier).toHaveBeenCalledWith('mac-1');
+      expect(findUserByEmailInTenant).toHaveBeenCalledWith('john@example.com', 'tenant-1');
       expect(save).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
       expect(next).not.toHaveBeenCalled();

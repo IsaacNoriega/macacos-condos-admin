@@ -74,14 +74,15 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 
     if (tenantIdentifier) {
       const tenant = await findTenantByIdentifier(tenantIdentifier);
-      if (!tenant) {
-        throw new AppError('Condominio no encontrado', 404);
+      if (tenant) {
+        targetTenantId = String(tenant._id);
+        identifier = tenant.identifier;
       }
-      targetTenantId = String(tenant._id);
-      identifier = tenant.identifier;
     } else if (tenantId) {
       const tenant = await findTenantById(tenantId);
-      identifier = tenant?.identifier || 'condominio';
+      if (tenant) {
+        identifier = tenant.identifier;
+      }
     }
 
     if (!targetTenantId) {
@@ -101,8 +102,14 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = expiresAt;
     await user.save();
 
-    sendResetPasswordEmail(user.email, user.name, rawToken, identifier)
-      .catch(err => logger.error('email.forgot.deferred.error', String(user._id), String(user.tenantId), err));
+    // Enviar correo de bienvenida (background) sin bloquear
+    (async () => {
+      try {
+        await sendResetPasswordEmail(user.email, user.name, rawToken, identifier);
+      } catch (err) {
+        logger.error('email.forgot.deferred.error', String(user._id), String(user.tenantId), err as Error);
+      }
+    })();
 
     logger.log('auth.forgotPassword', String(user._id), String(user.tenantId), { email: user.email });
 
