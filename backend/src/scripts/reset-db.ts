@@ -47,6 +47,7 @@ async function reset() {
     console.log('Database reset successfully!');
     console.log('---------------------------');
     console.log('Credentials:');
+    console.log(`Condo ID: ${tenant.identifier}`);
     console.log('Email: admin@admin.com');
     console.log('Password: admin123');
     console.log('---------------------------');
