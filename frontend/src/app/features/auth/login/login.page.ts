@@ -24,6 +24,7 @@ export class LoginPage {
   readonly showPassword = signal(false);
 
   readonly loginForm = this.fb.group({
+    tenantIdentifier: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
@@ -61,8 +62,8 @@ export class LoginPage {
 
     this.loading.set(true);
     this.error.set(null);
-    const { email, password } = this.loginForm.getRawValue();
-    this.auth.login(String(email), String(password)).subscribe({
+    const { email, password, tenantIdentifier } = this.loginForm.getRawValue();
+    this.auth.login(String(email), String(password), String(tenantIdentifier)).subscribe({
       next: () => {
         this.loading.set(false);
         this.router.navigate(['/dashboard']);

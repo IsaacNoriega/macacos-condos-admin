@@ -19,6 +19,7 @@ router.post(
 // Login
 router.post(
 	'/login',
+	body('tenantIdentifier').notEmpty().withMessage('Identificador de condominio requerido'),
 	body('email').isEmail().withMessage('Email invalido'),
 	body('password').notEmpty().withMessage('La contraseña es obligatoria'),
 	validateRequest,

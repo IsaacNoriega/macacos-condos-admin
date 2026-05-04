@@ -52,6 +52,20 @@
 
         <form [formGroup]="loginForm" (ngSubmit)="login()" class="mcs-stack">
           <div class="mcs-field">
+            <label class="mcs-field-label">Identificador del condominio</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon"><mac-icon name="building" [size]="15"/></span>
+              <input class="mcs-input with-icon mono" type="text" formControlName="tenantIdentifier" placeholder="Ej: mac-centro"/>
+            </div>
+            @if (loginForm.get('tenantIdentifier')?.invalid && (loginForm.get('tenantIdentifier')?.dirty || loginForm.get('tenantIdentifier')?.touched)) {
+              <div class="mcs-field-error">
+                <mac-icon name="alert" [size]="12"/>
+                <span>Ingrese el identificador de su condominio.</span>
+              </div>
+            }
+          </div>
+
+          <div class="mcs-field">
             <label class="mcs-field-label">Correo electrónico</label>
             <div class="mcs-input-wrap">
               <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>

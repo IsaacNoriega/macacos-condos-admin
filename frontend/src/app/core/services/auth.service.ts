@@ -23,8 +23,8 @@ export class AuthService {
 
   constructor(private readonly api: ApiService) {}
 
-  login(email: string, password: string): Observable<LoginResponse> {
-    return this.api.post<LoginResponse>('/auth/login', { email, password }).pipe(
+  login(email: string, password: string, tenantIdentifier: string): Observable<LoginResponse> {
+    return this.api.post<LoginResponse>('/auth/login', { email, password, tenantIdentifier }).pipe(
       tap((response) => {
         this.tokenSignal.set(response.token);
         this.userSignal.set(response.user);
