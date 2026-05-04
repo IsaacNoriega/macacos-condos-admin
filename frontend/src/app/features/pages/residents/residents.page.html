@@ -255,6 +255,12 @@
           <label class="mcs-field-label">Usuario residente / familiar</label>
           <app-fancy-select formControlName="email" [placeholder]="'Selecciona un usuario'" [options]="userOptions()"
             (selectionChange)="onEmailChange($event)" />
+          @if (userOptions().length === 0 && (form.get('tenantId')?.value || !isSuperadmin())) {
+            <div style="margin-top: 6px; font-size: 12px; color: var(--primary-600); background: var(--primary-50); padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--primary-200);">
+              <mac-icon name="info" [size]="12" style="margin-right: 4px;"/>
+              No hay usuarios disponibles. Primero debes crear un usuario con rol <strong>Residente</strong> o <strong>Familiar</strong>.
+            </div>
+          }
         </div>
 
         <div class="mcs-field">

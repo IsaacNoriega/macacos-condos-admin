@@ -27,16 +27,20 @@ export interface FancySelectOption {
 
       @if (isOpen()) {
       <ul class="fancy-menu" role="listbox">
-        @for (option of options; track option.value) {
-        <li>
-          <button
-            type="button"
-            class="fancy-option"
-            [class.active]="option.value === value"
-            (click)="choose(option.value)">
-            {{ option.label }}
-          </button>
-        </li>
+        @if (options.length === 0) {
+          <li class="no-options">No hay opciones disponibles</li>
+        } @else {
+          @for (option of options; track option.value) {
+          <li>
+            <button
+              type="button"
+              class="fancy-option"
+              [class.active]="option.value === value"
+              (click)="choose(option.value)">
+              {{ option.label }}
+            </button>
+          </li>
+          }
         }
       </ul>
       }
@@ -129,6 +133,14 @@ export interface FancySelectOption {
       .fancy-option.active {
         background: linear-gradient(135deg, #0ea5e9, #0284c7);
         color: #ffffff;
+      }
+
+      .no-options {
+        padding: 1.2rem;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        font-style: italic;
       }
     `,
   ],
