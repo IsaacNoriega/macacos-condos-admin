@@ -7,6 +7,8 @@ import logger from './logger';
 const AZURE_CONNECTION_STRING = process.env.AZURE_COMMUNICATION_CONNECTION_STRING || '';
 const AZURE_SENDER = process.env.AZURE_SENDER_EMAIL || 'donotreply@macacos.com';
 
+const PROD_URL = 'https://delightful-bay-02eed360f.2.azurestaticapps.net';
+
 const sendMailInternal = async (to: string, subject: string, html: string) => {
   if (!AZURE_CONNECTION_STRING) {
     logger.error('email.azure.config_missing', 'system', 'global', new Error('Azure Communication connection string is missing'));
@@ -37,7 +39,7 @@ export const sendResetPasswordEmail = async (
   token: string,
   tenantIdentifier: string
 ) => {
-  const resetUrl = `https://delightful-bay-02eed360f.2.azurestaticapps.net/reset-password?token=${token}`; 
+  const resetUrl = `${PROD_URL}/reset-password?token=${token}`; 
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #333;">Hola, ${name}</h2>
@@ -65,7 +67,7 @@ export const sendWelcomeEmail = async (
   name: string,
   tenantIdentifier: string
 ) => {
-  const loginUrl = `https://delightful-bay-02eed360f.2.azurestaticapps.net/login`;
+  const loginUrl = `${PROD_URL}/login`;
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #333;">¡Bienvenido, ${name}!</h2>
