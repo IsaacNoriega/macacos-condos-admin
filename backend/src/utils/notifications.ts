@@ -42,7 +42,7 @@ const getPremiumTemplate = (title: string, content: string, buttonText: string, 
       <!-- Header -->
       <tr>
         <td style="padding: 40px 40px 20px 40px; text-align: center;">
-          <img src="${PROD_URL}/assets/logo.png" alt="Macacos" width="60" style="margin-bottom: 20px;">
+          <img src="${PROD_URL}/logo.png" alt="Macacos" width="60" style="margin-bottom: 20px;">
           <h1 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.02em;">${title}</h1>
         </td>
       </tr>
