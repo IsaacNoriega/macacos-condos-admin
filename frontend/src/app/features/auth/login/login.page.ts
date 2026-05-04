@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { MacIconComponent } from '../../shared/mac-icon/mac-icon.component';
 
@@ -39,13 +39,13 @@ export class LoginPage {
     newPassword: ['', [Validators.required, Validators.minLength(6)]],
   });
 
-  private readonly route = inject(import('@angular/router').ActivatedRoute);
+  private readonly route = inject(ActivatedRoute);
 
   constructor(
     private readonly auth: AuthService,
     private readonly router: Router
   ) {
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params: any) => {
       if (params['panel'] === 'reset') {
         this.activePanel.set('reset');
       }
