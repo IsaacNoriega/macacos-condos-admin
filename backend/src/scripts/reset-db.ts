@@ -44,9 +44,21 @@ async function reset() {
     });
     console.log('Superadmin created:', superadmin.email);
 
+    console.log('Creating sample resident user...');
+    await User.create({
+      tenantId: tenant._id,
+      name: 'Isaac Residente',
+      email: 'residente@ejemplo.com',
+      password: hashedPassword,
+      role: 'residente',
+      isActive: true
+    });
+    console.log('Sample resident created: residente@ejemplo.com');
+
     console.log('Database reset successfully!');
     console.log('---------------------------');
     console.log('Credentials:');
+    console.log(`Condo ID: ${tenant.identifier}`);
     console.log('Email: admin@admin.com');
     console.log('Password: admin123');
     console.log('---------------------------');
