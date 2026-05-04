@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+
 import { EmailClient } from '@azure/communication-email';
 import { SmsClient } from '@azure/communication-sms';
 import logger from './logger';
@@ -7,59 +7,26 @@ import logger from './logger';
 const AZURE_CONNECTION_STRING = process.env.AZURE_COMMUNICATION_CONNECTION_STRING || '';
 const AZURE_SENDER = process.env.AZURE_SENDER_EMAIL || 'donotreply@macacos.com';
 
-// 2. Configuración de Nodemailer (Fallback para desarrollo local)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-  },
-  connectionTimeout: 5000,
-  greetingTimeout: 5000,
-});
-
-/**
- * Envía un correo usando Azure Communication Services o Nodemailer como fallback.
- */
 const sendMailInternal = async (to: string, subject: string, html: string) => {
-  // Si tenemos Azure configurado, lo usamos
-  if (AZURE_CONNECTION_STRING) {
-    try {
-      const emailClient = new EmailClient(AZURE_CONNECTION_STRING);
-      const message = {
-        senderAddress: AZURE_SENDER,
-        content: { subject, html },
-        recipients: { to: [{ address: to }] },
-      };
-
-      const poller = await emailClient.beginSend(message);
-      const result = await poller.pollUntilDone();
-      logger.log('email.azure.sent', 'system', 'global', { messageId: result.id, to });
-      return true;
-    } catch (error) {
-      logger.error('email.azure.error', 'system', 'global', error as Error);
-      // No retornamos false aquí, intentamos el fallback si es posible
-    }
+  if (!AZURE_CONNECTION_STRING) {
+    logger.error('email.azure.config_missing', 'system', 'global', new Error('Azure Communication connection string is missing'));
+    return false;
   }
 
-  // Fallback a Nodemailer
   try {
-    const info = await transporter.sendMail({
-      from: `"Macacos Condos" <${process.env.SMTP_USER || 'noreply@macacos.com'}>`,
-      to,
-      subject,
-      html,
-    });
-    logger.log('email.nodemailer.sent', 'system', 'global', { messageId: info.messageId, to });
-    
-    if (process.env.SMTP_HOST === 'smtp.ethereal.email') {
-      console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-    }
+    const emailClient = new EmailClient(AZURE_CONNECTION_STRING);
+    const message = {
+      senderAddress: AZURE_SENDER,
+      content: { subject, html },
+      recipients: { to: [{ address: to }] },
+    };
+
+    const poller = await emailClient.beginSend(message);
+    const result = await poller.pollUntilDone();
+    logger.log('email.azure.sent', 'system', 'global', { messageId: result.id, to });
     return true;
   } catch (error) {
-    logger.error('email.nodemailer.error', 'system', 'global', error as Error);
+    logger.error('email.azure.error', 'system', 'global', error as Error);
     return false;
   }
 };
@@ -70,20 +37,23 @@ export const sendResetPasswordEmail = async (
   token: string,
   tenantIdentifier: string
 ) => {
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/reset-password?token=${token}`;
+  const resetUrl = `https://delightful-bay-02eed360f.2.azurestaticapps.net/login`; // Redirigimos al login donde está tu vista
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #333;">Hola, ${name}</h2>
       <p>Has solicitado restablecer tu contraseña para el condominio <strong>${tenantIdentifier}</strong>.</p>
-      <p>Haz clic en el siguiente botón para elegir una nueva contraseña:</p>
-      <div style="text-align: center; margin: 30px 0;">
-        <a href="${resetUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Restablecer Contraseña</a>
+      
+      <div style="background: #f4f4f4; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+        <p style="margin-bottom: 10px; font-weight: bold; color: #555;">Tu token de recuperación es:</p>
+        <code style="font-size: 18px; color: #0284c7; font-weight: bold; letter-spacing: 1px;">${token}</code>
       </div>
-      <p>O copia y pega este enlace en tu navegador:</p>
-      <p style="color: #666; font-size: 12px;">${resetUrl}</p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+
+      <p>Haz clic en el siguiente botón para ir a la plataforma y pegar tu token:</p>
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetUrl}" style="background-color: #0284c7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ir a la plataforma</a>
+      </div>
+      
       <p style="font-size: 12px; color: #999;">Si no solicitaste este cambio, puedes ignorar este correo.</p>
-      <p style="font-size: 12px; color: #999;">Tu identificador de condominio es: <strong>${tenantIdentifier}</strong></p>
     </div>
   `;
 
