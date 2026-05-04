@@ -31,18 +31,21 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password } = req.body;
-    const users = await findUsersByEmail(email);
+    const { email, password, tenantIdentifier } = req.body;
 
-    if (!users.length) {
-      throw new AppError('Credenciales inválidas', 401);
+    if (!tenantIdentifier) {
+      throw new AppError('Se requiere el identificador del condominio', 400);
     }
 
-    if (users.length > 1) {
-      throw new AppError('Existe más de una cuenta con ese email en distintos condominios. Contacta al administrador.', 400);
+    const tenant = await findTenantByIdentifier(tenantIdentifier);
+    if (!tenant) {
+      throw new AppError('Condominio no encontrado', 404);
     }
 
-    const user = users[0];
+    const user = await findUserByEmailInTenant(email, String(tenant._id));
+    if (!user) {
+      throw new AppError('Usuario no encontrado en este condominio', 401);
+    }
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
