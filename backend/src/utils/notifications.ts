@@ -65,23 +65,37 @@ export const sendResetPasswordEmail = async (
 export const sendWelcomeEmail = async (
   email: string,
   name: string,
-  tenantIdentifier: string
+  tenantIdentifier: string,
+  token?: string
 ) => {
-  const loginUrl = `${PROD_URL}/login`;
+  const activationUrl = token 
+    ? `${PROD_URL}/reset-password?token=${token}`
+    : `${PROD_URL}/login`;
+    
+  const buttonText = token ? 'Activar mi cuenta' : 'Acceder a la plataforma';
+  const instructionText = token 
+    ? 'Para comenzar, es necesario que actives tu cuenta y configures tu contraseña de acceso:'
+    : 'Ya puedes acceder a la plataforma para gestionar tus pagos, reportes de mantenimiento y reservaciones.';
+
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #333;">¡Bienvenido, ${name}!</h2>
       <p>Has sido registrado como residente en el condominio <strong>${tenantIdentifier}</strong>.</p>
-      <p>Ya puedes acceder a la plataforma para gestionar tus pagos, reportes de mantenimiento y reservaciones.</p>
+      <p>${instructionText}</p>
+      
       <div style="text-align: center; margin: 30px 0;">
-        <a href="${loginUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Acceder a la plataforma</a>
+        <a href="${activationUrl}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">${buttonText}</a>
       </div>
-      <p>Para ingresar, necesitarás:</p>
+
+      <p>Tus datos de acceso son:</p>
       <ul>
         <li><strong>Identificador de condominio:</strong> ${tenantIdentifier}</li>
         <li><strong>Tu correo electrónico:</strong> ${email}</li>
       </ul>
-      <p>Si olvidaste tu contraseña, puedes usar la opción "¿Olvidó su contraseña?" en la pantalla de inicio de sesión.</p>
+      
+      ${token ? `<p style="font-size: 13px; color: #666;">Tu token de activación temporal es: <strong>${token}</strong></p>` : ''}
+      
+      <p>Una vez configurada tu contraseña, podrás gestionar tus pagos, reportes y reservaciones desde cualquier lugar.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
       <p style="font-size: 12px; color: #999;">Este es un correo automático, por favor no respondas a este mensaje.</p>
     </div>

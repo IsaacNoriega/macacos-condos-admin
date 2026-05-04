@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import crypto from 'crypto';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as residentsService from './service';
@@ -100,15 +101,25 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
 
     const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
     
-    // Enviar correo de bienvenida (background)
+    // Generar token de activación para el usuario (background)
     (async () => {
       try {
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+        
+        // Expiración más larga para bienvenida (24 horas)
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        linkedUser.resetPasswordToken = tokenHash;
+        linkedUser.resetPasswordExpires = expiresAt;
+        await linkedUser.save();
+
         const tenant = await findTenantById(targetTenantId);
         if (tenant) {
-          await sendWelcomeEmail(String(email), linkedUser.name, tenant.identifier);
+          await sendWelcomeEmail(String(email), linkedUser.name, tenant.identifier, rawToken);
         }
       } catch (err) {
-        logger.error('email.welcome.deferred.error', String(linkedUser._id), targetTenantId, err as Error);
+        logger.error('email.welcome.activation.error', String(linkedUser._id), targetTenantId, err as Error);
       }
     })();
 
