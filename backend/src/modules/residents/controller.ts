@@ -101,12 +101,16 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
     const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
     
     // Enviar correo de bienvenida (background)
-    findTenantById(targetTenantId).then(tenant => {
-      if (tenant) {
-        sendWelcomeEmail(String(email), linkedUser.name, tenant.identifier)
-          .catch(err => logger.error('email.welcome.deferred.error', String(linkedUser._id), targetTenantId, err));
+    (async () => {
+      try {
+        const tenant = await findTenantById(targetTenantId);
+        if (tenant) {
+          await sendWelcomeEmail(String(email), linkedUser.name, tenant.identifier);
+        }
+      } catch (err) {
+        logger.error('email.welcome.deferred.error', String(linkedUser._id), targetTenantId, err as Error);
       }
-    });
+    })();
 
     logger.log('residents.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { residentId: String(resident._id), unitId });
     res.status(201).json({ success: true, resident });
