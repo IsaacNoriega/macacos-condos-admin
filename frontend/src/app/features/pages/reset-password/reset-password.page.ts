@@ -21,6 +21,7 @@ export class ResetPasswordPage implements OnInit {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
   readonly success = signal(false);
+  readonly hasTokenInUrl = signal(false);
 
   readonly resetForm = this.fb.group({
     token: ['', [Validators.required]],
@@ -32,6 +33,7 @@ export class ResetPasswordPage implements OnInit {
     const token = this.route.snapshot.queryParamMap.get('token');
     if (token) {
       this.resetForm.patchValue({ token });
+      this.hasTokenInUrl.set(true);
     }
   }
 

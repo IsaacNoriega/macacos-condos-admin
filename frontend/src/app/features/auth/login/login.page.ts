@@ -98,11 +98,7 @@ export class LoginPage {
     this.auth.forgotPassword(String(email), String(tenantIdentifier)).subscribe({
       next: (response) => {
         this.loading.set(false);
-        this.info.set(
-          response.resetToken
-            ? `Token de prueba: ${response.resetToken}`
-            : response.message || 'Si el usuario existe, se envió recuperación.'
-        );
+        this.info.set(response.message || 'Si el usuario existe, se envió recuperación.');
       },
       error: (err) => {
         this.loading.set(false);
