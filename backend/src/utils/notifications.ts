@@ -65,7 +65,7 @@ export const sendWelcomeEmail = async (
   name: string,
   tenantIdentifier: string
 ) => {
-  const loginUrl = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/login`;
+  const loginUrl = `https://delightful-bay-02eed360f.2.azurestaticapps.net/login`;
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
       <h2 style="color: #333;">¡Bienvenido, ${name}!</h2>
