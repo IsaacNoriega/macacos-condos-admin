@@ -1,5 +1,5 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { AfterViewInit, Component, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ChangeDetectionStrategy, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
@@ -38,6 +38,7 @@ interface SummaryCard {
 
 @Component({
   selector: 'app-reservations-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, FancySelectComponent, FullCalendarModule, MacIconComponent, DrawerComponent, ConfirmModalComponent],
   templateUrl: './reservations.page.html',

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { UserRole } from '../../core/api.models';
@@ -105,6 +105,7 @@ const KPI_ICONS: { icon: MacIconName; tone: 'navy' | 'amber' | 'ok' | 'warn' }[]
 
 @Component({
   selector: 'app-dashboard-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [CommonModule, MacIconComponent],
   templateUrl: './dashboard.page.html',

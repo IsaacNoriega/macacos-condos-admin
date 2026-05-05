@@ -86,17 +86,19 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
       throw new AppError('No se pudo determinar el tenant destino', 400);
     }
 
-    const validUnit = await residentsService.validateUnitInTenant(unitId, targetTenantId);
+    const [validUnit, currentResidents, linkedUser] = await Promise.all([
+      residentsService.validateUnitInTenant(unitId, targetTenantId),
+      residentsService.countResidentsInUnit(targetTenantId, unitId),
+      ensureLinkedResidentUser(String(email), targetTenantId)
+    ]);
+
     if (!validUnit) {
       throw new AppError('La unidad no pertenece al tenant actual', 400);
     }
 
-    const currentResidents = await residentsService.countResidentsInUnit(targetTenantId, unitId);
     if (currentResidents >= MAX_RESIDENTS_PER_UNIT) {
       throw new AppError(`La unidad ya tiene el maximo permitido de ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);
     }
-
-    const linkedUser = await ensureLinkedResidentUser(String(email), targetTenantId);
     ensureRelationshipMatchesRole(String(linkedUser.role), String(relationship));
 
     const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
@@ -152,12 +154,14 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
     }
 
     if (req.body.unitId && req.body.unitId !== currentResident.unitId.toString()) {
-      const validUnit = await residentsService.validateUnitInTenant(req.body.unitId, tenantScope);
+      const [validUnit, residentsInTargetUnit] = await Promise.all([
+        residentsService.validateUnitInTenant(req.body.unitId, tenantScope),
+        residentsService.countResidentsInUnit(tenantScope, req.body.unitId)
+      ]);
+
       if (!validUnit) {
         throw new AppError('La unidad no pertenece al tenant actual', 400);
       }
-
-      const residentsInTargetUnit = await residentsService.countResidentsInUnit(tenantScope, req.body.unitId);
 
       if (residentsInTargetUnit >= MAX_RESIDENTS_PER_UNIT) {
         throw new AppError(`La unidad destino ya tiene ${MAX_RESIDENTS_PER_UNIT} residentes`, 400);

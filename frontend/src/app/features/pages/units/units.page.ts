@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { Tenant, Unit } from '../../../core/api.models';
@@ -49,6 +49,7 @@ const TYPE_VISUALS: Record<UnitType, TypeVisual> = {
 
 @Component({
   selector: 'app-units-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,

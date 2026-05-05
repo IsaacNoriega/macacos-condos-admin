@@ -11,7 +11,7 @@ export const findChargesByTenant = (tenantId?: string) => {
 };
 
 export const findChargeByIdInTenant = (chargeId: string, tenantId?: string) => {
-  return Charge.findOne({ _id: chargeId, tenantId });
+  return Charge.findOne({ _id: chargeId, tenantId }).lean();
 };
 
 export const createChargeInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {
@@ -26,7 +26,7 @@ export const updateChargeInTenant = (chargeId: string, tenantId: string | undefi
   return Charge.findOneAndUpdate(
     filter,
     payload,
-    { new: true }
+    { new: true, lean: true }
   );
 };
 

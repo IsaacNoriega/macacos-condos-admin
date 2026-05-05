@@ -230,106 +230,110 @@
   }
 
   <!-- Drawers -->
-  <mac-drawer
-    [open]="editorOpen()"
-    title="Registrar pago manual"
-    subtitle="Ingrese los detalles del pago recibido"
-    [width]="500"
-    (closed)="closeEditor()">
-    
-    <ng-container body>
-      <form [formGroup]="paymentForm" class="mcs-stack">
-        @if (isSuperadmin()) {
+  @defer (when editorOpen()) {
+    <mac-drawer
+      [open]="editorOpen()"
+      title="Registrar pago manual"
+      subtitle="Ingrese los detalles del pago recibido"
+      [width]="500"
+      (closed)="closeEditor()">
+      
+      <ng-container body>
+        <form [formGroup]="paymentForm" class="mcs-stack">
+          @if (isSuperadmin()) {
+            <div class="mcs-field">
+              <label class="mcs-field-label">Tenant *</label>
+              <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona...'" [options]="tenantOptions()" (selectionChange)="onTenantChange()" />
+            </div>
+          }
           <div class="mcs-field">
-            <label class="mcs-field-label">Tenant *</label>
-            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona...'" [options]="tenantOptions()" (selectionChange)="onTenantChange()" />
+            <label class="mcs-field-label">Unidad *</label>
+            <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona...'" [options]="unitOptions()" (selectionChange)="onUserOrUnitChange()" />
           </div>
-        }
-        <div class="mcs-field">
-          <label class="mcs-field-label">Unidad *</label>
-          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona...'" [options]="unitOptions()" (selectionChange)="onUserOrUnitChange()" />
-        </div>
-        <div class="mcs-field">
-          <label class="mcs-field-label">Usuario *</label>
-          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona...'" [options]="userOptions()" (selectionChange)="onUserOrUnitChange()" />
-        </div>
-        <div class="mcs-field">
-          <label class="mcs-field-label">Cargo *</label>
-          <app-fancy-select formControlName="chargeId" [placeholder]="'Selecciona...'" [options]="chargeOptions()" (selectionChange)="onChargeSelected()" />
-        </div>
-        <div class="mcs-field">
-          <label class="mcs-field-label">Monto *</label>
-          <div class="mcs-input-wrap">
-            <span class="mcs-input-icon">$</span>
-            <input class="mcs-input with-icon" type="number" formControlName="amount" readonly />
+          <div class="mcs-field">
+            <label class="mcs-field-label">Usuario *</label>
+            <app-fancy-select formControlName="userId" [placeholder]="'Selecciona...'" [options]="userOptions()" (selectionChange)="onUserOrUnitChange()" />
           </div>
-        </div>
-        <div class="mcs-field">
-          <label class="mcs-field-label">Comprobante de pago (opcional)</label>
-          <div class="file-upload-wrap">
-            <input type="file" id="staffFile" class="mcs-hidden" (change)="onFileSelected($event)" hidden />
-            <label for="staffFile" class="mcs-file-drop">
-              <mac-icon name="upload" [size]="20"/>
-              <span>{{ selectedFile() ? selectedFile()!.name : 'Arrastra o haz click aquí para subir' }}</span>
-            </label>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Cargo *</label>
+            <app-fancy-select formControlName="chargeId" [placeholder]="'Selecciona...'" [options]="chargeOptions()" (selectionChange)="onChargeSelected()" />
           </div>
-        </div>
-        
-        <div class="mcs-separator-modern">
-          <span>O BIEN</span>
-        </div>
-        
-        <div class="mcs-info-card">
-          <mac-icon name="info" [size]="18"/>
-          <div class="mcs-info-content">
-            <p>Para pagos en línea inmediatos, el residente puede utilizar <strong>Stripe</strong> desde su portal.</p>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Monto *</label>
+            <div class="mcs-input-wrap">
+              <span class="mcs-input-icon">$</span>
+              <input class="mcs-input with-icon" type="number" formControlName="amount" readonly />
+            </div>
           </div>
-        </div>
-      </form>
-    </ng-container>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Comprobante de pago (opcional)</label>
+            <div class="file-upload-wrap">
+              <input type="file" id="staffFile" class="mcs-hidden" (change)="onFileSelected($event)" hidden />
+              <label for="staffFile" class="mcs-file-drop">
+                <mac-icon name="upload" [size]="20"/>
+                <span>{{ selectedFile() ? selectedFile()!.name : 'Arrastra o haz click aquí para subir' }}</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="mcs-separator-modern">
+            <span>O BIEN</span>
+          </div>
+          
+          <div class="mcs-info-card">
+            <mac-icon name="info" [size]="18"/>
+            <div class="mcs-info-content">
+              <p>Para pagos en línea inmediatos, el residente puede utilizar <strong>Stripe</strong> desde su portal.</p>
+            </div>
+          </div>
+        </form>
+      </ng-container>
 
-    <ng-container footer>
-      <button class="mcs-btn" (click)="closeEditor()">Cancelar</button>
-      <button class="mcs-btn primary" (click)="registerPaymentWithProof()" [disabled]="loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span> }
-        <span>Registrar pago</span>
-      </button>
-    </ng-container>
-  </mac-drawer>
+      <ng-container footer>
+        <button class="mcs-btn" (click)="closeEditor()">Cancelar</button>
+        <button class="mcs-btn primary" (click)="registerPaymentWithProof()" [disabled]="loading()">
+          @if (loading()) { <span class="mcs-btn-spin"></span> }
+          <span>Registrar pago</span>
+        </button>
+      </ng-container>
+    </mac-drawer>
+  }
 
-  <mac-drawer
-    [open]="proofDrawerOpen()"
-    title="Subir comprobante"
-    subtitle="Envíe una imagen de su ticket para validación manual"
-    [width]="440"
-    (closed)="closeProofDrawer()">
-    
-    <ng-container body>
-      <div class="mcs-stack">
-        <div class="mcs-alert info mcs-mb">
-          <mac-icon name="info" [size]="16"/>
-          <p class="text-sm">Si ya realizó el pago por transferencia o efectivo, suba su ticket aquí.</p>
-        </div>
+  @defer (when proofDrawerOpen()) {
+    <mac-drawer
+      [open]="proofDrawerOpen()"
+      title="Subir comprobante"
+      subtitle="Envíe una imagen de su ticket para validación manual"
+      [width]="440"
+      (closed)="closeProofDrawer()">
+      
+      <ng-container body>
+        <div class="mcs-stack">
+          <div class="mcs-alert info mcs-mb">
+            <mac-icon name="info" [size]="16"/>
+            <p class="text-sm">Si ya realizó el pago por transferencia o efectivo, suba su ticket aquí.</p>
+          </div>
 
-        <div class="mcs-field">
-          <div class="file-upload-wrap">
-            <input type="file" id="proofFile" class="mcs-hidden" (change)="onFileSelected($event)" hidden />
-            <label for="proofFile" class="mcs-file-drop large">
-              <mac-icon name="upload" [size]="32"/>
-              <p>{{ selectedFile() ? selectedFile()!.name : 'Haga clic para seleccionar archivo' }}</p>
-              <span class="text-xs text-muted">JPG, PNG o PDF</span>
-            </label>
+          <div class="mcs-field">
+            <div class="file-upload-wrap">
+              <input type="file" id="proofFile" class="mcs-hidden" (change)="onFileSelected($event)" hidden />
+              <label for="proofFile" class="mcs-file-drop large">
+                <mac-icon name="upload" [size]="32"/>
+                <p>{{ selectedFile() ? selectedFile()!.name : 'Haga clic para seleccionar archivo' }}</p>
+                <span class="text-xs text-muted">JPG, PNG o PDF</span>
+              </label>
+            </div>
           </div>
         </div>
-      </div>
-    </ng-container>
+      </ng-container>
 
-    <ng-container footer>
-      <button class="mcs-btn" (click)="closeProofDrawer()">Cancelar</button>
-      <button class="mcs-btn primary" (click)="submitProofForSelectedCharge()" [disabled]="!selectedFile() || loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span> }
-        <span>Enviar a revisión</span>
-      </button>
-    </ng-container>
-  </mac-drawer>
+      <ng-container footer>
+        <button class="mcs-btn" (click)="closeProofDrawer()">Cancelar</button>
+        <button class="mcs-btn primary" (click)="submitProofForSelectedCharge()" [disabled]="!selectedFile() || loading()">
+          @if (loading()) { <span class="mcs-btn-spin"></span> }
+          <span>Enviar a revisión</span>
+        </button>
+      </ng-container>
+    </mac-drawer>
+  }
 </section>

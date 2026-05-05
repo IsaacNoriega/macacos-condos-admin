@@ -1,5 +1,5 @@
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom, finalize, forkJoin } from 'rxjs';
 import { Payment, PaymentProofUploadResponse, StripeCheckoutResponse, Tenant, Unit, User as ApiUser, Charge as ApiCharge } from '../../../core/api.models';
@@ -29,6 +29,7 @@ interface PaymentCharge {
 
 @Component({
   selector: 'app-payments-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,

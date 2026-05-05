@@ -4,16 +4,16 @@ import Unit from '../units/model';
 
 export const findResidentsByTenant = (tenantId?: string) => {
   const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
-  return Resident.find(filter);
+  return Resident.find(filter).lean();
 };
 
 export const findResidentByIdInTenant = (residentId: string, tenantId?: string) => {
-  return Resident.findOne({ _id: residentId, tenantId });
+  return Resident.findOne({ _id: residentId, tenantId }).lean();
 };
 
 export const validateUnitInTenant = async (unitId: string, tenantId?: string) => {
   if (!tenantId) return false;
-  const unit = await Unit.findOne({ _id: unitId, tenantId });
+  const unit = await Unit.findOne({ _id: unitId, tenantId }).lean();
   return Boolean(unit);
 };
 
@@ -31,7 +31,7 @@ export const updateResidentInTenant = (residentId: string, tenantId: string | un
   return Resident.findOneAndUpdate(
     { _id: residentId, tenantId },
     payload,
-    { new: true }
+    { new: true, lean: true }
   );
 };
 

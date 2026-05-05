@@ -49,12 +49,16 @@ export const createReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('La fecha de inicio debe ser menor que la fecha de fin', 400);
     }
 
-    if (await findReservationConflict(targetTenantId, amenity, startDate, endDate)) {
+    const [conflict, amenityDoc] = await Promise.all([
+      findReservationConflict(targetTenantId, amenity, startDate, endDate),
+      Amenity.findOne({ name: amenity, tenantId: targetTenantId }).lean()
+    ]);
+
+    if (conflict) {
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
     // Validar duración máxima si está configurada en la amenidad
-    const amenityDoc = await Amenity.findOne({ name: amenity, tenantId: targetTenantId });
     if (amenityDoc && amenityDoc.maxDurationHours) {
       const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
       if (durationHours > amenityDoc.maxDurationHours) {
@@ -112,12 +116,16 @@ export const updateReservation = async (req: Request, res: Response, next: NextF
       throw new AppError('La fecha de inicio debe ser menor que la fecha de fin', 400);
     }
 
-    if (await findReservationConflict(tenantScope ? String(tenantScope) : undefined, nextAmenity, nextStart, nextEnd, String(req.params.id))) {
+    const [conflict, amenityDoc] = await Promise.all([
+      findReservationConflict(tenantScope ? String(tenantScope) : undefined, nextAmenity, nextStart, nextEnd, String(req.params.id)),
+      Amenity.findOne({ name: nextAmenity, tenantId: tenantScope || currentReservation.tenantId }).lean()
+    ]);
+
+    if (conflict) {
       throw new AppError('Conflicto de reservación: la amenidad ya está reservada en ese horario', 409);
     }
 
     // Validar duración máxima si está configurada en la amenidad
-    const amenityDoc = await Amenity.findOne({ name: nextAmenity, tenantId: tenantScope || currentReservation.tenantId });
     if (amenityDoc && amenityDoc.maxDurationHours) {
       const durationHours = (nextEnd.getTime() - nextStart.getTime()) / (1000 * 60 * 60);
       if (durationHours > amenityDoc.maxDurationHours) {

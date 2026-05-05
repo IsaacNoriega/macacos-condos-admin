@@ -2,21 +2,21 @@ import { Types } from 'mongoose';
 import Payment from './model';
 
 export const findAllPayments = () => {
-  return Payment.find({}).populate('userId', 'name email');
+  return Payment.find({}).populate('userId', 'name email').lean();
 };
 
 export const findPaymentsByTenant = (tenantId?: string) => {
   const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
-  return Payment.find(filter).populate('userId', 'name email');
+  return Payment.find(filter).populate('userId', 'name email').lean();
 };
 
 
 export const findPaymentByIdInTenant = (paymentId: string, tenantId?: string) => {
-  return Payment.findOne({ _id: paymentId, tenantId });
+  return Payment.findOne({ _id: paymentId, tenantId }).lean();
 };
 
 export const findPaymentById = (paymentId: string) => {
-  return Payment.findById(paymentId);
+  return Payment.findById(paymentId).lean();
 };
 
 export const createPaymentInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {
@@ -26,14 +26,14 @@ export const createPaymentInTenant = async (payload: Record<string, unknown>, te
 };
 
 export const findPaymentByStripeSessionId = (sessionId: string) => {
-  return Payment.findOne({ stripeSessionId: sessionId });
+  return Payment.findOne({ stripeSessionId: sessionId }).lean();
 };
 
 export const updatePaymentInTenant = (paymentId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
   return Payment.findOneAndUpdate(
     { _id: paymentId, tenantId },
     payload,
-    { new: true }
+    { new: true, lean: true }
   );
 };
 
@@ -41,7 +41,7 @@ export const upsertPaymentByStripeSessionId = (sessionId: string, payload: Recor
   return Payment.findOneAndUpdate(
     { stripeSessionId: sessionId },
     payload,
-    { new: true, upsert: true, setDefaultsOnInsert: true }
+    { new: true, upsert: true, setDefaultsOnInsert: true, lean: true }
   );
 };
 

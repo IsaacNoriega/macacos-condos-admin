@@ -40,7 +40,8 @@ describe('users service', () => {
   });
 
   it('findUsersByTenant applies tenant filter and hides password', () => {
-    const select = vi.fn();
+    const lean = vi.fn();
+    const select = vi.fn().mockReturnValue({ lean });
     UserMock.find.mockReturnValue({ select });
 
     findUsersByTenant('tenant-1');

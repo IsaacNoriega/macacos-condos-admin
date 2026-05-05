@@ -123,11 +123,12 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
         email = u?.email;
       }
       
-      const userUnits = await residentsService.findUnitsByUserEmail(email || '', req.tenantId);
+      const [userUnits, tenantPayments] = await Promise.all([
+        residentsService.findUnitsByUserEmail(email || '', req.tenantId),
+        paymentsService.findPaymentsByTenant(req.tenantId)
+      ]);
       const unitIds = userUnits.map(u => String(u.unitId));
       const callerId = req.user?.id ? String(req.user.id) : '';
-      
-      const tenantPayments = await paymentsService.findPaymentsByTenant(req.tenantId);
       payments = tenantPayments.filter((payment) => 
         String(payment.userId?._id || payment.userId) === callerId || (payment.unitId && unitIds.includes(String(payment.unitId)))
       );

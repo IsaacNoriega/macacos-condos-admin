@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { Resident as ApiResident, Tenant, Unit, User as ApiUser } from '../../../core/api.models';
@@ -51,6 +51,7 @@ const RELATIONSHIP_OPTIONS = [
 
 @Component({
   selector: 'app-residents-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
