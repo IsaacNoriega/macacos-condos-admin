@@ -47,7 +47,9 @@ describe('ChargesPage config by role', () => {
       providers: [{ provide: AuthService, useValue: authMock }],
     }).createComponent(ChargesPage);
 
-    const paymentStatusField = fixture.componentInstance.config.fields.find((field) => field.key === 'paymentStatus');
+    const paymentStatusField = fixture.componentInstance.config.fields.find(
+      (field) => field.key === 'paymentStatus',
+    );
     expect(paymentStatusField).toBeTruthy();
     expect(paymentStatusField?.tableOnly).toBe(true);
   });

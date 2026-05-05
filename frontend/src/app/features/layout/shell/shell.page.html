@@ -2,13 +2,18 @@
   <aside class="sidebar" [class.collapsed]="sidebarCollapsed()" [class.open]="menuOpen()">
     <!-- Brand -->
     <div class="sidebar-brand">
-      <img src="logo.png" class="logo-img" alt="Macacos Logo">
+      <img src="logo.png" class="logo-img" alt="Macacos Logo" />
       <div class="wordmark-wrap">
         <div class="wordmark">Macacos</div>
         <span class="wordmark-sub">Condos · Admin</span>
       </div>
-      <button class="collapse-toggle" type="button" (click)="toggleSidebar()" [attr.aria-label]="sidebarCollapsed() ? 'Expandir sidebar' : 'Contraer sidebar'">
-        <mac-icon name="panelLeft" [size]="15"/>
+      <button
+        class="collapse-toggle"
+        type="button"
+        (click)="toggleSidebar()"
+        [attr.aria-label]="sidebarCollapsed() ? 'Expandir sidebar' : 'Contraer sidebar'"
+      >
+        <mac-icon name="panelLeft" [size]="15" />
       </button>
     </div>
 
@@ -18,9 +23,15 @@
         <div class="nav-group">
           <div class="nav-group-label">{{ section.title }}</div>
           @for (item of section.items; track item.route) {
-            <a [routerLink]="item.route" routerLinkActive="active" class="nav-item" (click)="closeMenu()" [title]="sidebarCollapsed() ? item.label : null">
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="active"
+              class="nav-item"
+              (click)="closeMenu()"
+              [title]="sidebarCollapsed() ? item.label : null"
+            >
               <span class="ni-icon">
-                <mac-icon [name]="item.icon" [size]="18"/>
+                <mac-icon [name]="item.icon" [size]="18" />
               </span>
               <span class="ni-label">{{ item.label }}</span>
               @if (item.badge) {
@@ -41,7 +52,7 @@
           <div class="uc-role">{{ roleLabel() }}</div>
         </div>
         <span class="uc-caret">
-          <mac-icon [name]="userMenuOpen() ? 'chevronDown' : 'chevronUp'" [size]="14"/>
+          <mac-icon [name]="userMenuOpen() ? 'chevronDown' : 'chevronUp'" [size]="14" />
         </span>
       </button>
 
@@ -53,12 +64,12 @@
           </div>
           <div class="dd-divider"></div>
           <button type="button" class="dd-item" (click)="toggleTheme()">
-            <mac-icon [name]="darkMode() ? 'sun' : 'moon'" [size]="15"/>
+            <mac-icon [name]="darkMode() ? 'sun' : 'moon'" [size]="15" />
             <span>{{ darkMode() ? 'Tema claro' : 'Tema oscuro' }}</span>
           </button>
           <div class="dd-divider"></div>
           <button type="button" class="dd-item danger" (click)="logout()">
-            <mac-icon name="logOut" [size]="15"/>
+            <mac-icon name="logOut" [size]="15" />
             <span>Cerrar sesión</span>
           </button>
         </div>
@@ -66,13 +77,24 @@
     </footer>
   </aside>
 
-  <button class="sidebar-backdrop" type="button" [class.visible]="menuOpen()" (click)="closeMenu()" aria-label="Cerrar menú"></button>
+  <button
+    class="sidebar-backdrop"
+    type="button"
+    [class.visible]="menuOpen()"
+    (click)="closeMenu()"
+    aria-label="Cerrar menú"
+  ></button>
 
   <main class="main">
-    <button class="menu-toggle mcs-btn ghost sm" type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()">
-      <mac-icon name="panelLeft" [size]="16"/>
+    <button
+      class="menu-toggle mcs-btn ghost sm"
+      type="button"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+    >
+      <mac-icon name="panelLeft" [size]="16" />
       <span>Menú</span>
     </button>
-    <router-outlet/>
+    <router-outlet />
   </main>
 </div>

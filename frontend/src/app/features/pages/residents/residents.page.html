@@ -9,14 +9,18 @@
     </div>
     <div class="mcs-row mcs-gap-sm">
       @if (isSuperadmin()) {
-      <div class="mcs-field" style="margin: 0; min-width: 240px;">
-        <select class="mcs-input" [value]="viewTenantId()" (change)="onTenantFilterChange($event)">
-          <option value="">Todos los condominios</option>
-          @for (t of tenants(); track t._id) {
-          <option [value]="t._id">{{ t.name }}</option>
-          }
-        </select>
-      </div>
+        <div class="mcs-field" style="margin: 0; min-width: 240px">
+          <select
+            class="mcs-input"
+            [value]="viewTenantId()"
+            (change)="onTenantFilterChange($event)"
+          >
+            <option value="">Todos los condominios</option>
+            @for (t of tenants(); track t._id) {
+              <option [value]="t._id">{{ t.name }}</option>
+            }
+          </select>
+        </div>
       }
       <div class="mcs-seg">
         <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
@@ -35,237 +39,352 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
+    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1">
       <span class="mcs-input-icon"><mac-icon name="search" [size]="14" /></span>
-      <input class="mcs-input with-icon" type="search" placeholder="Buscar por nombre, correo o unidad..."
-        [value]="searchTerm()" (input)="setSearch($any($event.target).value)" />
+      <input
+        class="mcs-input with-icon"
+        type="search"
+        placeholder="Buscar por nombre, correo o unidad..."
+        [value]="searchTerm()"
+        (input)="setSearch($any($event.target).value)"
+      />
     </div>
     <div class="filter-chips">
       @for (f of filters; track f.value) {
-      <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
-        {{ f.label }}
-      </button>
+        <button
+          type="button"
+          class="mcs-chip"
+          [class.on]="activeFilter() === f.value"
+          (click)="setFilter(f.value)"
+        >
+          {{ f.label }}
+        </button>
       }
     </div>
   </div>
 
   <!-- Content -->
   @if (loading() && residents().length === 0) {
-  <div class="mcs-loader-wrap" style="padding: 100px 0;">
-    <span class="mcs-loader"></span>
-    <p>Cargando residentes...</p>
-  </div>
+    <div class="mcs-loader-wrap" style="padding: 100px 0">
+      <span class="mcs-loader"></span>
+      <p>Cargando residentes...</p>
+    </div>
   } @else if (pagedResidents().length === 0) {
-  <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
-    <mac-icon name="user" [size]="48" style="opacity: 0.3;" />
-    <h3>Sin residentes</h3>
-    <p>No se encontraron residentes que coincidan con los filtros.</p>
-    <button class="mcs-btn primary" type="button" (click)="openCreate()">
-      <mac-icon name="plus" [size]="14" />
-      <span>Crear residente</span>
-    </button>
-  </div>
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px">
+      <mac-icon name="user" [size]="48" style="opacity: 0.3" />
+      <h3>Sin residentes</h3>
+      <p>No se encontraron residentes que coincidan con los filtros.</p>
+      <button class="mcs-btn primary" type="button" (click)="openCreate()">
+        <mac-icon name="plus" [size]="14" />
+        <span>Crear residente</span>
+      </button>
+    </div>
   } @else if (view() === 'grid') {
-  <div class="mcs-grid cols-3">
-    @for (r of pagedResidents(); track trackById($index, r)) {
-    <article class="mcs-card hoverable resident-card" (click)="openDetail(r)">
-      <div class="mcs-row mcs-gap">
-        <div class="mcs-avatar lg">{{ initials(r.name) }}</div>
-        <div class="mcs-grow" style="min-width:0;">
-          <div class="resident-name">{{ r.name }}</div>
-          <div class="mcs-row mcs-gap-sm" style="margin-top:3px; flex-wrap:wrap;">
-            <span class="mcs-badge navy">{{ relationshipLabel(r.relationship) }}</span>
-            <span class="resident-email">{{ r.email }}</span>
+    <div class="mcs-grid cols-3">
+      @for (r of pagedResidents(); track trackById($index, r)) {
+        <article class="mcs-card hoverable resident-card" (click)="openDetail(r)">
+          <div class="mcs-row mcs-gap">
+            <div class="mcs-avatar lg">{{ initials(r.name) }}</div>
+            <div class="mcs-grow" style="min-width: 0">
+              <div class="resident-name">{{ r.name }}</div>
+              <div class="mcs-row mcs-gap-sm" style="margin-top: 3px; flex-wrap: wrap">
+                <span class="mcs-badge navy">{{ relationshipLabel(r.relationship) }}</span>
+                <span class="resident-email">{{ r.email }}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="mcs-switch"
+              [class.on]="r.isActive"
+              (click)="toggleActive(r, $event)"
+              [attr.aria-label]="r.isActive ? 'Desactivar residente' : 'Activar residente'"
+            ></button>
+          </div>
+
+          <div class="resident-info">
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="building" [size]="13" />
+              <span>Unidad</span>
+              <strong class="mono" style="margin-left: auto">{{ r.unitCode }}</strong>
+            </div>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="phone" [size]="13" />
+              <span>{{ r.phone || 'Sin teléfono' }}</span>
+            </div>
+            <div class="mcs-row mcs-gap-sm">
+              <mac-icon name="clock" [size]="13" />
+              <span>{{ relativeTime(r.createdAt) }}</span>
+            </div>
+          </div>
+
+          <div class="resident-actions">
+            <button
+              type="button"
+              class="mcs-btn sm mcs-grow"
+              (click)="openEdit(r); $event.stopPropagation()"
+            >
+              <mac-icon name="edit" [size]="13" />
+              <span>Editar</span>
+            </button>
+            <button
+              type="button"
+              class="mcs-btn sm danger-soft icon-only"
+              (click)="askDelete(r, $event)"
+              aria-label="Eliminar"
+            >
+              <mac-icon name="trash" [size]="13" />
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="previousPage()"
+          [disabled]="page() === 1"
+          aria-label="Anterior"
+        >
+          <mac-icon name="chevronLeft" [size]="14" />
+        </button>
+        @for (n of pageNumbers(); track n) {
+          <button
+            class="mcs-btn sm page-num"
+            type="button"
+            [class.primary]="page() === n"
+            (click)="goToPage(n)"
+          >
+            {{ n }}
+          </button>
+        }
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="nextPage()"
+          [disabled]="page() === totalPages()"
+          aria-label="Siguiente"
+        >
+          <mac-icon name="chevronRight" [size]="14" />
+        </button>
+      </footer>
+    }
+  } @else {
+    <div class="mcs-card">
+      @for (r of pagedResidents(); track trackById($index, r); let i = $index) {
+        <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(r)">
+          <div class="mcs-avatar" [class]="r.isActive ? 'ok' : 'surface-muted'">
+            {{ initials(r.name) }}
+          </div>
+          <div class="mcs-grow">
+            <div style="font-weight: 600">{{ r.name }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new)">{{ r.email }}</div>
+          </div>
+          <div style="width: 120px">
+            <div class="mcs-badge navy">{{ r.unitCode }}</div>
+          </div>
+          <div style="width: 120px">
+            <span class="mcs-badge" [class]="r.isActive ? 'ok' : 'bad'">{{ r.status }}</span>
+          </div>
+          <div style="width: 120px; font-size: 13px; color: var(--text-soft)">
+            {{ relationshipLabel(r.relationship) }}
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <button
+              class="mcs-btn sm icon-only"
+              type="button"
+              (click)="$event.stopPropagation(); openEdit(r)"
+            >
+              <mac-icon name="edit" [size]="13" />
+            </button>
+            <button
+              class="mcs-btn sm danger-soft icon-only"
+              type="button"
+              (click)="askDelete(r, $event)"
+            >
+              <mac-icon name="trash" [size]="13" />
+            </button>
           </div>
         </div>
-        <button type="button" class="mcs-switch" [class.on]="r.isActive" (click)="toggleActive(r, $event)"
-          [attr.aria-label]="r.isActive ? 'Desactivar residente' : 'Activar residente'">
-        </button>
-      </div>
-
-      <div class="resident-info">
-        <div class="mcs-row mcs-gap-sm">
-          <mac-icon name="building" [size]="13" />
-          <span>Unidad</span>
-          <strong class="mono" style="margin-left:auto;">{{ r.unitCode }}</strong>
-        </div>
-        <div class="mcs-row mcs-gap-sm">
-          <mac-icon name="phone" [size]="13" />
-          <span>{{ r.phone || 'Sin teléfono' }}</span>
-        </div>
-        <div class="mcs-row mcs-gap-sm">
-          <mac-icon name="clock" [size]="13" />
-          <span>{{ relativeTime(r.createdAt) }}</span>
-        </div>
-      </div>
-
-      <div class="resident-actions">
-        <button type="button" class="mcs-btn sm mcs-grow" (click)="openEdit(r); $event.stopPropagation()">
-          <mac-icon name="edit" [size]="13" />
-          <span>Editar</span>
-        </button>
-        <button type="button" class="mcs-btn sm danger-soft icon-only" (click)="askDelete(r, $event)"
-          aria-label="Eliminar">
-          <mac-icon name="trash" [size]="13" />
-        </button>
-      </div>
-    </article>
-    }
-  </div>
-
-  <!-- Pagination -->
-  @if (totalPages() > 1) {
-  <footer class="pagination">
-    <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1"
-      aria-label="Anterior">
-      <mac-icon name="chevronLeft" [size]="14" />
-    </button>
-    @for (n of pageNumbers(); track n) {
-    <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n
-      }}</button>
-    }
-    <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()"
-      aria-label="Siguiente">
-      <mac-icon name="chevronRight" [size]="14" />
-    </button>
-  </footer>
-  }
-  } @else {
-  <div class="mcs-card">
-    @for (r of pagedResidents(); track trackById($index, r); let i = $index) {
-    <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openDetail(r)">
-      <div class="mcs-avatar" [class]="r.isActive ? 'ok' : 'surface-muted'">
-        {{ initials(r.name) }}
-      </div>
-      <div class="mcs-grow">
-        <div style="font-weight: 600;">{{ r.name }}</div>
-        <div style="font-size: 12px; color: var(--text-muted-new);">{{ r.email }}</div>
-      </div>
-      <div style="width: 120px;">
-        <div class="mcs-badge navy">{{ r.unitCode }}</div>
-      </div>
-      <div style="width: 120px;">
-        <span class="mcs-badge" [class]="r.isActive ? 'ok' : 'bad'">{{ r.status }}</span>
-      </div>
-      <div style="width: 120px; font-size: 13px; color: var(--text-soft);">
-        {{ relationshipLabel(r.relationship) }}
-      </div>
-      <div class="mcs-row mcs-gap-sm">
-        <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(r)">
-          <mac-icon name="edit" [size]="13" />
-        </button>
-        <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(r, $event)">
-          <mac-icon name="trash" [size]="13" />
-        </button>
-      </div>
+      }
     </div>
-    }
-  </div>
 
-  <!-- Pagination -->
-  @if (totalPages() > 1) {
-  <footer class="pagination">
-    <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1"
-      aria-label="Anterior">
-      <mac-icon name="chevronLeft" [size]="14" />
-    </button>
-    @for (n of pageNumbers(); track n) {
-    <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n
-      }}</button>
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <footer class="pagination">
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="previousPage()"
+          [disabled]="page() === 1"
+          aria-label="Anterior"
+        >
+          <mac-icon name="chevronLeft" [size]="14" />
+        </button>
+        @for (n of pageNumbers(); track n) {
+          <button
+            class="mcs-btn sm page-num"
+            type="button"
+            [class.primary]="page() === n"
+            (click)="goToPage(n)"
+          >
+            {{ n }}
+          </button>
+        }
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="nextPage()"
+          [disabled]="page() === totalPages()"
+          aria-label="Siguiente"
+        >
+          <mac-icon name="chevronRight" [size]="14" />
+        </button>
+      </footer>
     }
-    <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()"
-      aria-label="Siguiente">
-      <mac-icon name="chevronRight" [size]="14" />
-    </button>
-  </footer>
-  }
   }
 
   <!-- ─── Drawer: Detail ─── -->
-  <mac-drawer [open]="detail() !== null" [title]="detail()?.name || ''"
-    [subtitle]="detail() ? (relationshipLabel(detail()!.relationship) + ' · ' + detail()!.unitCode) : null"
-    [width]="480" (closed)="closeDetail()">
-
+  <mac-drawer
+    [open]="detail() !== null"
+    [title]="detail()?.name || ''"
+    [subtitle]="
+      detail() ? relationshipLabel(detail()!.relationship) + ' · ' + detail()!.unitCode : null
+    "
+    [width]="480"
+    (closed)="closeDetail()"
+  >
     <ng-container body>
       @if (detail(); as r) {
-      <div class="mcs-row mcs-gap" style="margin-bottom:18px;">
-        <div class="mcs-avatar lg" style="width:72px; height:72px; font-size:26px;">{{ initials(r.name) }}</div>
-        <div class="mcs-grow">
-          <div class="mcs-row mcs-gap-sm" style="margin-bottom:6px; flex-wrap:wrap;">
-            <span class="mcs-badge" [class.ok]="r.isActive">
-              <span class="mcs-badge-dot"></span>{{ r.isActive ? 'Activo' : 'Inactivo' }}
-            </span>
-            <span class="mcs-badge info">
-              <span class="mcs-badge-dot"></span>{{ relationshipLabel(r.relationship) }}
-            </span>
+        <div class="mcs-row mcs-gap" style="margin-bottom: 18px">
+          <div class="mcs-avatar lg" style="width: 72px; height: 72px; font-size: 26px">
+            {{ initials(r.name) }}
           </div>
-          <div style="font-size:13px; color:var(--text-muted-new);">{{ linkedRoleLabel(r.linkedRole) }}</div>
+          <div class="mcs-grow">
+            <div class="mcs-row mcs-gap-sm" style="margin-bottom: 6px; flex-wrap: wrap">
+              <span class="mcs-badge" [class.ok]="r.isActive">
+                <span class="mcs-badge-dot"></span>{{ r.isActive ? 'Activo' : 'Inactivo' }}
+              </span>
+              <span class="mcs-badge info">
+                <span class="mcs-badge-dot"></span>{{ relationshipLabel(r.relationship) }}
+              </span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted-new)">
+              {{ linkedRoleLabel(r.linkedRole) }}
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="mcs-section-title">Contacto</div>
-      <div class="mcs-stack-sm" style="font-size:13px;">
-        <div class="mcs-row mcs-gap-sm"><mac-icon name="mail" [size]="14" /><span>{{ r.email }}</span></div>
-        <div class="mcs-row mcs-gap-sm"><mac-icon name="phone" [size]="14" /><span>{{ r.phone || 'Sin teléfono'
-            }}</span></div>
-        <div class="mcs-row mcs-gap-sm"><mac-icon name="home" [size]="14" /><span class="mono">{{ r.unitCode }}</span>
+        <div class="mcs-section-title">Contacto</div>
+        <div class="mcs-stack-sm" style="font-size: 13px">
+          <div class="mcs-row mcs-gap-sm">
+            <mac-icon name="mail" [size]="14" /><span>{{ r.email }}</span>
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <mac-icon name="phone" [size]="14" /><span>{{ r.phone || 'Sin teléfono' }}</span>
+          </div>
+          <div class="mcs-row mcs-gap-sm">
+            <mac-icon name="home" [size]="14" /><span class="mono">{{ r.unitCode }}</span>
+          </div>
         </div>
-      </div>
 
-      <div class="mcs-section-title" style="margin-top:22px;">Registro</div>
-      <div
-        style="padding:14px; background:var(--surface-muted); border-radius:10px; font-size:13px; color:var(--text-soft);">
-        Miembro {{ relativeTime(r.createdAt) }} · Tenant <strong>{{ r.tenant }}</strong>
-      </div>
+        <div class="mcs-section-title" style="margin-top: 22px">Registro</div>
+        <div
+          style="
+            padding: 14px;
+            background: var(--surface-muted);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-soft);
+          "
+        >
+          Miembro {{ relativeTime(r.createdAt) }} · Tenant <strong>{{ r.tenant }}</strong>
+        </div>
       }
     </ng-container>
 
     <ng-container footer>
       <button class="mcs-btn" type="button" (click)="closeDetail()">Cerrar</button>
       @if (detail()) {
-      <button class="mcs-btn primary" type="button" (click)="openEdit(detail()!)">
-        <mac-icon name="edit" [size]="13" /><span>Editar</span>
-      </button>
+        <button class="mcs-btn primary" type="button" (click)="openEdit(detail()!)">
+          <mac-icon name="edit" [size]="13" /><span>Editar</span>
+        </button>
       }
     </ng-container>
   </mac-drawer>
 
   <!-- ─── Drawer: Create / Edit ─── -->
-  <mac-drawer [open]="editorOpen()" [title]="editorMode() === 'create' ? 'Nuevo residente' : 'Editar residente'"
-    [subtitle]="editorMode() === 'create' ? 'Registre un nuevo habitante del condominio' : (editingResident()?.name ?? null)"
-    [width]="520" (closed)="closeEditor()">
-
+  <mac-drawer
+    [open]="editorOpen()"
+    [title]="editorMode() === 'create' ? 'Nuevo residente' : 'Editar residente'"
+    [subtitle]="
+      editorMode() === 'create'
+        ? 'Registre un nuevo habitante del condominio'
+        : (editingResident()?.name ?? null)
+    "
+    [width]="520"
+    (closed)="closeEditor()"
+  >
     <ng-container body>
       <form [formGroup]="form" (ngSubmit)="saveResident()" class="mcs-stack">
         @if (isSuperadmin()) {
-        <div class="mcs-field">
-          <label class="mcs-field-label">Tenant</label>
-          <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un tenant'"
-            [options]="tenantOptions()" />
-        </div>
+          <div class="mcs-field">
+            <label class="mcs-field-label">Tenant</label>
+            <app-fancy-select
+              formControlName="tenantId"
+              [placeholder]="'Selecciona un tenant'"
+              [options]="tenantOptions()"
+            />
+          </div>
         }
 
         <div class="mcs-field">
           <label class="mcs-field-label">Unidad</label>
-          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona una unidad'"
-            [options]="unitOptions()" />
+          <app-fancy-select
+            formControlName="unitId"
+            [placeholder]="'Selecciona una unidad'"
+            [options]="unitOptions()"
+          />
         </div>
 
         <div class="mcs-field">
           <label class="mcs-field-label">Usuario residente / familiar</label>
-          <app-fancy-select formControlName="email" [placeholder]="'Selecciona un usuario'" [options]="userOptions()"
-            (selectionChange)="onEmailChange($event)" />
+          <app-fancy-select
+            formControlName="email"
+            [placeholder]="'Selecciona un usuario'"
+            [options]="userOptions()"
+            (selectionChange)="onEmailChange($event)"
+          />
           @if (userOptions().length === 0 && (form.get('tenantId')?.value || !isSuperadmin())) {
-            <div style="margin-top: 6px; font-size: 12px; color: var(--primary-600); background: var(--primary-50); padding: 8px 12px; border-radius: 8px; border: 1px dashed var(--primary-200);">
-              <mac-icon name="info" [size]="12" style="margin-right: 4px;"/>
-              No hay usuarios disponibles. Primero debes crear un usuario con rol <strong>Residente</strong> o <strong>Familiar</strong>.
+            <div
+              style="
+                margin-top: 6px;
+                font-size: 12px;
+                color: var(--primary-600);
+                background: var(--primary-50);
+                padding: 8px 12px;
+                border-radius: 8px;
+                border: 1px dashed var(--primary-200);
+              "
+            >
+              <mac-icon name="info" [size]="12" style="margin-right: 4px" />
+              No hay usuarios disponibles. Primero debes crear un usuario con rol
+              <strong>Residente</strong> o <strong>Familiar</strong>.
             </div>
           }
         </div>
 
         <div class="mcs-field">
           <label class="mcs-field-label">Nombre</label>
-          <input class="mcs-input" type="text" formControlName="name" placeholder="Nombre completo" />
+          <input
+            class="mcs-input"
+            type="text"
+            formControlName="name"
+            placeholder="Nombre completo"
+          />
         </div>
 
         <div class="mcs-field">
@@ -279,13 +398,18 @@
         </div>
 
         <div class="mcs-field">
-          <div style="padding:12px; background:var(--surface-muted); border-radius:10px;">
-            <label class="mcs-row mcs-gap-sm" style="cursor:pointer;">
-              <input type="checkbox" formControlName="isActive" style="accent-color: var(--primary-new);" />
+          <div style="padding: 12px; background: var(--surface-muted); border-radius: 10px">
+            <label class="mcs-row mcs-gap-sm" style="cursor: pointer">
+              <input
+                type="checkbox"
+                formControlName="isActive"
+                style="accent-color: var(--primary-new)"
+              />
               <div class="mcs-grow">
-                <div style="font-size:13.5px; font-weight:600;">Activo</div>
-                <div style="font-size:12px; color:var(--text-muted-new);">Un residente activo puede iniciar sesión y
-                  recibir notificaciones.</div>
+                <div style="font-size: 13.5px; font-weight: 600">Activo</div>
+                <div style="font-size: 12px; color: var(--text-muted-new)">
+                  Un residente activo puede iniciar sesión y recibir notificaciones.
+                </div>
               </div>
             </label>
           </div>
@@ -296,16 +420,36 @@
     <ng-container footer>
       <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
       <button class="mcs-btn primary" type="button" (click)="saveResident()" [disabled]="loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
-        @else { <mac-icon name="check" [size]="13" /><span>{{ editorMode() === 'create' ? 'Crear residente' : 'Guardar
-          cambios' }}</span> }
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span><span>Guardando...</span>
+        } @else {
+          <mac-icon name="check" [size]="13" /><span>{{
+            editorMode() === 'create'
+              ? 'Crear residente'
+              : 'Guardar
+          cambios'
+          }}</span>
+        }
       </button>
     </ng-container>
   </mac-drawer>
 
   <!-- ─── Confirm delete ─── -->
-  <mac-confirm-modal [open]="toDelete() !== null" title="¿Eliminar residente?"
-    [message]="toDelete() ? 'Se eliminará a ' + toDelete()!.name + ' (' + toDelete()!.unitCode + '). Esta acción no se puede deshacer.' : ''"
-    confirmLabel="Eliminar" (cancelled)="cancelDelete()" (confirmed)="confirmDelete()">
+  <mac-confirm-modal
+    [open]="toDelete() !== null"
+    title="¿Eliminar residente?"
+    [message]="
+      toDelete()
+        ? 'Se eliminará a ' +
+          toDelete()!.name +
+          ' (' +
+          toDelete()!.unitCode +
+          '). Esta acción no se puede deshacer.'
+        : ''
+    "
+    confirmLabel="Eliminar"
+    (cancelled)="cancelDelete()"
+    (confirmed)="confirmDelete()"
+  >
   </mac-confirm-modal>
 </section>

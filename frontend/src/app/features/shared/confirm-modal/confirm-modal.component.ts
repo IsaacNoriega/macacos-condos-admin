@@ -25,7 +25,7 @@ import { MacIconComponent } from '../mac-icon/mac-icon.component';
         <div class="mcs-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
           <div class="mcs-modal-head">
             <div class="mcs-modal-icon">
-              <mac-icon [name]="danger() ? 'alert' : 'info'" [size]="20"/>
+              <mac-icon [name]="danger() ? 'alert' : 'info'" [size]="20" />
             </div>
             <div style="flex:1;">
               <div class="mcs-modal-body" style="padding:0;">
@@ -35,8 +35,14 @@ import { MacIconComponent } from '../mac-icon/mac-icon.component';
             </div>
           </div>
           <div class="mcs-modal-foot">
-            <button type="button" class="mcs-btn" (click)="cancelled.emit()">{{ cancelLabel() }}</button>
-            <button type="button" [class]="'mcs-btn ' + (danger() ? 'danger' : 'primary')" (click)="confirmed.emit()">
+            <button type="button" class="mcs-btn" (click)="cancelled.emit()">
+              {{ cancelLabel() }}
+            </button>
+            <button
+              type="button"
+              [class]="'mcs-btn ' + (danger() ? 'danger' : 'primary')"
+              (click)="confirmed.emit()"
+            >
               {{ confirmLabel() }}
             </button>
           </div>

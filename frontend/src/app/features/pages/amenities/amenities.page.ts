@@ -60,7 +60,7 @@ const AVATAR_BACKGROUNDS = [
     FancySelectComponent,
     MacIconComponent,
     DrawerComponent,
-    ConfirmModalComponent
+    ConfirmModalComponent,
   ],
   templateUrl: './amenities.page.html',
   styleUrl: './amenities.page.css',
@@ -84,20 +84,29 @@ export class AmenitiesPage implements OnInit {
   readonly toDelete = signal<AmenityCard | null>(null);
   readonly editorOpen = signal(false);
   readonly viewTenantId = signal<string>('');
-  
+
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
-  readonly tenantOptions = computed(() => this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })));
-  
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((tenant) => ({ label: tenant.name, value: tenant._id })),
+  );
+
   readonly form: FormGroup;
-  readonly selectedAmenity = computed(() => this.amenities().find((amenity) => amenity.id === this.selectedAmenityId()) ?? null);
+  readonly selectedAmenity = computed(
+    () => this.amenities().find((amenity) => amenity.id === this.selectedAmenityId()) ?? null,
+  );
 
   readonly filteredAmenities = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
     const activeFilter = this.activeFilter();
 
     return this.amenities().filter((amenity) => {
-      const searchable = [amenity.name, amenity.description || '', amenity.tenant, amenity.isActive ? 'activa' : 'inactiva']
+      const searchable = [
+        amenity.name,
+        amenity.description || '',
+        amenity.tenant,
+        amenity.isActive ? 'activa' : 'inactiva',
+      ]
         .join(' ')
         .toLowerCase();
 
@@ -117,7 +126,9 @@ export class AmenitiesPage implements OnInit {
     return this.filteredAmenities().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredAmenities().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredAmenities().length / this.pageSize)),
+  );
   readonly pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
 
   constructor() {
@@ -132,23 +143,29 @@ export class AmenitiesPage implements OnInit {
     effect(() => {
       const selected = this.selectedAmenity();
       if (!selected) {
-        this.form.reset({
-          tenantId: '',
-          name: '',
-          description: '',
-          maxDurationHours: 1,
-          isActive: true,
-        }, { emitEvent: false });
+        this.form.reset(
+          {
+            tenantId: '',
+            name: '',
+            description: '',
+            maxDurationHours: 1,
+            isActive: true,
+          },
+          { emitEvent: false },
+        );
         return;
       }
-      
-      this.form.patchValue({
-        tenantId: selected.tenantId,
-        name: selected.name,
-        description: selected.description || '',
-        maxDurationHours: selected.maxDurationHours,
-        isActive: selected.isActive,
-      }, { emitEvent: false });
+
+      this.form.patchValue(
+        {
+          tenantId: selected.tenantId,
+          name: selected.name,
+          description: selected.description || '',
+          maxDurationHours: selected.maxDurationHours,
+          isActive: selected.isActive,
+        },
+        { emitEvent: false },
+      );
     });
   }
 
@@ -156,9 +173,17 @@ export class AmenitiesPage implements OnInit {
     this.loadTenantsAndAmenities();
   }
 
-  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
-  setFilter(val: AmenityFilter): void { this.activeFilter.set(val); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setSearch(val: string): void {
+    this.searchTerm.set(val);
+    this.page.set(1);
+  }
+  setFilter(val: AmenityFilter): void {
+    this.activeFilter.set(val);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
 
   selectAmenity(amenity: AmenityCard): void {
     this.selectedAmenityId.set(amenity.id);
@@ -167,13 +192,16 @@ export class AmenitiesPage implements OnInit {
 
   openCreate(): void {
     this.selectedAmenityId.set(null);
-    this.form.reset({
-      tenantId: '',
-      name: '',
-      description: '',
-      maxDurationHours: 1,
-      isActive: true,
-    }, { emitEvent: false });
+    this.form.reset(
+      {
+        tenantId: '',
+        name: '',
+        description: '',
+        maxDurationHours: 1,
+        isActive: true,
+      },
+      { emitEvent: false },
+    );
     this.editorOpen.set(true);
   }
 
@@ -194,7 +222,9 @@ export class AmenitiesPage implements OnInit {
     const payload = this.form.getRawValue();
     const selected = this.selectedAmenity();
     const currentUserTenantId = this.auth.user()?.tenantId || '';
-    const targetTenantId = this.isSuperadmin() ? String(payload.tenantId || '').trim() : currentUserTenantId;
+    const targetTenantId = this.isSuperadmin()
+      ? String(payload.tenantId || '').trim()
+      : currentUserTenantId;
 
     if (this.isSuperadmin() && !targetTenantId) {
       this.form.get('tenantId')?.setErrors({ required: true });
@@ -252,7 +282,9 @@ export class AmenitiesPage implements OnInit {
     this.loading.set(true);
     this.toDelete.set(null);
 
-    const tenantQuery = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(amenity.tenantId)}` : '';
+    const tenantQuery = this.isSuperadmin()
+      ? `?tenantId=${encodeURIComponent(amenity.tenantId)}`
+      : '';
 
     this.api
       .delete<{ success: boolean; message?: string }>(`/amenities/${amenity.id}${tenantQuery}`)
@@ -292,7 +324,12 @@ export class AmenitiesPage implements OnInit {
   initials(name: string): string {
     const trimmed = name.trim();
     if (!trimmed) return 'AM';
-    return trimmed.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
+    return trimmed
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
   }
 
   relativeTime(value: Date): string {

@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UserRole } from '../../../core/api.models';
 import { AuthService } from '../../../core/services/auth.service';
@@ -38,40 +47,71 @@ export class ShellPage implements OnInit {
     {
       title: 'Principal',
       items: [
-        { label: 'Dashboard', icon: 'dashboard', route: '/dashboard', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
-        { label: 'Residentes', icon: 'users',    route: '/residents', roles: ['superadmin', 'admin'] },
-        { label: 'Unidades',   icon: 'building', route: '/units',     roles: ['superadmin', 'admin', 'residente'] },
-        { label: 'Avisos',     icon: 'panelLeft', route: '/notices',  roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+        {
+          label: 'Dashboard',
+          icon: 'dashboard',
+          route: '/dashboard',
+          roles: ['superadmin', 'admin', 'residente', 'familiar'],
+        },
+        { label: 'Residentes', icon: 'users', route: '/residents', roles: ['superadmin', 'admin'] },
+        {
+          label: 'Unidades',
+          icon: 'building',
+          route: '/units',
+          roles: ['superadmin', 'admin', 'residente'],
+        },
+        {
+          label: 'Avisos',
+          icon: 'panelLeft',
+          route: '/notices',
+          roles: ['superadmin', 'admin', 'residente', 'familiar'],
+        },
       ],
     },
     {
       title: 'Finanzas',
       items: [
-        { label: 'Cargos', icon: 'receipt', route: '/charges',  roles: ['superadmin', 'admin'] },
-        { label: 'Pagos',  icon: 'card',    route: '/payments', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+        { label: 'Cargos', icon: 'receipt', route: '/charges', roles: ['superadmin', 'admin'] },
+        {
+          label: 'Pagos',
+          icon: 'card',
+          route: '/payments',
+          roles: ['superadmin', 'admin', 'residente', 'familiar'],
+        },
       ],
     },
     {
       title: 'Operación',
       items: [
-        { label: 'Mantenimiento', icon: 'wrench',   route: '/maintenance',  roles: ['superadmin', 'admin', 'residente', 'familiar'] },
-        { label: 'Reservaciones', icon: 'calendar', route: '/reservations', roles: ['superadmin', 'admin', 'residente', 'familiar'] },
-        { label: 'Amenidades',    icon: 'sparkle',  route: '/amenities',    roles: ['superadmin', 'admin'] },
+        {
+          label: 'Mantenimiento',
+          icon: 'wrench',
+          route: '/maintenance',
+          roles: ['superadmin', 'admin', 'residente', 'familiar'],
+        },
+        {
+          label: 'Reservaciones',
+          icon: 'calendar',
+          route: '/reservations',
+          roles: ['superadmin', 'admin', 'residente', 'familiar'],
+        },
+        {
+          label: 'Amenidades',
+          icon: 'sparkle',
+          route: '/amenities',
+          roles: ['superadmin', 'admin'],
+        },
       ],
     },
     {
       title: 'Administración',
       roles: ['superadmin'],
-      items: [
-        { label: 'Condominios', icon: 'shield', route: '/tenants', roles: ['superadmin'] },
-      ],
+      items: [{ label: 'Condominios', icon: 'shield', route: '/tenants', roles: ['superadmin'] }],
     },
     {
       title: 'Sistema',
       roles: ['superadmin', 'admin'],
-      items: [
-        { label: 'Usuarios', icon: 'user', route: '/users', roles: ['superadmin', 'admin'] },
-      ],
+      items: [{ label: 'Usuarios', icon: 'user', route: '/users', roles: ['superadmin', 'admin'] }],
     },
   ];
 
@@ -91,7 +131,10 @@ export class ShellPage implements OnInit {
     const name = this.auth.user()?.name?.trim() || '';
     if (!name) return 'AD';
     const parts = name.split(/\s+/).filter(Boolean);
-    const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
+    const initials = parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
     return initials || name.slice(0, 2).toUpperCase();
   });
 
@@ -109,7 +152,7 @@ export class ShellPage implements OnInit {
 
   constructor(
     readonly auth: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {

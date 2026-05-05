@@ -49,7 +49,7 @@ const ROLE_OPTIONS = [
     FancySelectComponent,
     MacIconComponent,
     DrawerComponent,
-    ConfirmModalComponent
+    ConfirmModalComponent,
   ],
   templateUrl: './users.page.html',
   styleUrl: './users.page.css',
@@ -77,16 +77,20 @@ export class UsersPage implements OnInit {
   readonly viewTenantId = signal<string>('');
 
   readonly isSuperadmin = computed(() => this.auth.role() === 'superadmin');
-  readonly tenantOptions = computed(() => this.tenants().map(t => ({ label: t.name, value: t._id })));
-  
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((t) => ({ label: t.name, value: t._id })),
+  );
+
   readonly form: FormGroup;
-  readonly selectedUser = computed(() => this.users().find(u => u.id === this.selectedUserId()) || null);
+  readonly selectedUser = computed(
+    () => this.users().find((u) => u.id === this.selectedUserId()) || null,
+  );
 
   readonly filteredUsers = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
     const filter = this.activeFilter();
 
-    return this.users().filter(u => {
+    return this.users().filter((u) => {
       const searchable = [u.name, u.email, u.tenantName, u.role].join(' ').toLowerCase();
       const matchesQuery = !query || searchable.includes(query);
       const matchesFilter = filter === 'all' || u.role === filter;
@@ -99,7 +103,9 @@ export class UsersPage implements OnInit {
     return this.filteredUsers().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredUsers().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredUsers().length / this.pageSize)),
+  );
   readonly pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
 
   constructor() {
@@ -115,25 +121,31 @@ export class UsersPage implements OnInit {
     effect(() => {
       const selected = this.selectedUser();
       if (!selected) {
-        this.form.reset({
-          name: '',
-          email: '',
-          password: '',
-          role: 'admin',
-          tenantId: '',
-          isActive: true,
-        }, { emitEvent: false });
+        this.form.reset(
+          {
+            name: '',
+            email: '',
+            password: '',
+            role: 'admin',
+            tenantId: '',
+            isActive: true,
+          },
+          { emitEvent: false },
+        );
         return;
       }
 
-      this.form.patchValue({
-        name: selected.name,
-        email: selected.email,
-        password: '',
-        role: selected.role,
-        tenantId: selected.tenantId,
-        isActive: selected.isActive,
-      }, { emitEvent: false });
+      this.form.patchValue(
+        {
+          name: selected.name,
+          email: selected.email,
+          password: '',
+          role: selected.role,
+          tenantId: selected.tenantId,
+          isActive: selected.isActive,
+        },
+        { emitEvent: false },
+      );
     });
   }
 
@@ -141,9 +153,17 @@ export class UsersPage implements OnInit {
     this.loadInitialData();
   }
 
-  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
-  setFilter(val: UserRoleFilter): void { this.activeFilter.set(val); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setSearch(val: string): void {
+    this.searchTerm.set(val);
+    this.page.set(1);
+  }
+  setFilter(val: UserRoleFilter): void {
+    this.activeFilter.set(val);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
 
   openCreate(): void {
     this.selectedUserId.set(null);
@@ -177,7 +197,7 @@ export class UsersPage implements OnInit {
 
     const val = this.form.getRawValue();
     const isEditing = !!this.selectedUserId();
-    
+
     if (!isEditing && !val.password) {
       this.toast.bad('La contraseña es obligatoria al crear un usuario');
       return;
@@ -192,17 +212,20 @@ export class UsersPage implements OnInit {
       name: val.name.trim(),
       email: val.email.trim(),
       role: val.role,
-      isActive: val.isActive
+      isActive: val.isActive,
     };
 
     if (val.password) payload.password = val.password.trim();
     if (this.isSuperadmin()) payload.tenantId = val.tenantId;
 
     const endpoint = isEditing ? `/users/${this.selectedUserId()}` : '/users';
-    const query = isEditing && this.isSuperadmin() ? `?tenantId=${this.selectedUser()?.tenantId}` : '';
-    
+    const query =
+      isEditing && this.isSuperadmin() ? `?tenantId=${this.selectedUser()?.tenantId}` : '';
+
     this.loading.set(true);
-    const req$ = isEditing ? this.api.put(endpoint + query, payload) : this.api.post(endpoint, payload);
+    const req$ = isEditing
+      ? this.api.put(endpoint + query, payload)
+      : this.api.post(endpoint, payload);
 
     req$.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
@@ -210,21 +233,27 @@ export class UsersPage implements OnInit {
         this.closeEditor();
         this.loadUsers();
       },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar usuario')
+      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar usuario'),
     });
   }
 
   toggleActive(user: UserCardView, ev: Event): void {
     ev.stopPropagation();
     const newState = !user.isActive;
-    
-    this.api.put(`/users/${user.id}${this.isSuperadmin() ? `?tenantId=${user.tenantId}` : ''}`, { isActive: newState }).subscribe({
-      next: () => {
-        this.toast.ok(newState ? 'Usuario activado' : 'Usuario desactivado');
-        this.users.update(list => list.map(u => u.id === user.id ? { ...u, isActive: newState } : u));
-      },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al cambiar estado')
-    });
+
+    this.api
+      .put(`/users/${user.id}${this.isSuperadmin() ? `?tenantId=${user.tenantId}` : ''}`, {
+        isActive: newState,
+      })
+      .subscribe({
+        next: () => {
+          this.toast.ok(newState ? 'Usuario activado' : 'Usuario desactivado');
+          this.users.update((list) =>
+            list.map((u) => (u.id === user.id ? { ...u, isActive: newState } : u)),
+          );
+        },
+        error: (err) => this.toast.bad(err?.error?.message || 'Error al cambiar estado'),
+      });
   }
 
   askDelete(user: UserCardView, ev: Event): void {
@@ -238,14 +267,17 @@ export class UsersPage implements OnInit {
 
     const query = this.isSuperadmin() ? `?tenantId=${user.tenantId}` : '';
     this.loading.set(true);
-    this.api.delete(`/users/${user.id}${query}`).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.toast.ok('Usuario eliminado');
-        this.toDelete.set(null);
-        this.loadUsers();
-      },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al eliminar')
-    });
+    this.api
+      .delete(`/users/${user.id}${query}`)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => {
+          this.toast.ok('Usuario eliminado');
+          this.toDelete.set(null);
+          this.loadUsers();
+        },
+        error: (err) => this.toast.bad(err?.error?.message || 'Error al eliminar'),
+      });
   }
 
   onTenantFilterChange(ev: any): void {
@@ -256,7 +288,9 @@ export class UsersPage implements OnInit {
 
   private loadInitialData(): void {
     if (this.isSuperadmin()) {
-      this.api.get<{ tenants: Tenant[] }>('/tenants').subscribe(res => this.tenants.set(res.tenants || []));
+      this.api
+        .get<{ tenants: Tenant[] }>('/tenants')
+        .subscribe((res) => this.tenants.set(res.tenants || []));
     }
     this.loadUsers();
   }
@@ -268,43 +302,56 @@ export class UsersPage implements OnInit {
       url += `?tenantId=${encodeURIComponent(this.viewTenantId())}`;
     }
 
-    this.api.get<{ users: ApiUser[] }>(url)
+    this.api
+      .get<{ users: ApiUser[] }>(url)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (res) => {
           const raw = res.users || [];
-          this.users.set(raw.map(u => ({
-            id: u._id,
-            tenantId: u.tenantId,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            tenantName: this.resolveTenantName(u.tenantId),
-            isActive: u.isActive !== false,
-            createdAt: u.createdAt ? new Date(u.createdAt) : new Date(),
-            initials: this.getInitials(u.name)
-          })));
+          this.users.set(
+            raw.map((u) => ({
+              id: u._id,
+              tenantId: u.tenantId,
+              name: u.name,
+              email: u.email,
+              role: u.role,
+              tenantName: this.resolveTenantName(u.tenantId),
+              isActive: u.isActive !== false,
+              createdAt: u.createdAt ? new Date(u.createdAt) : new Date(),
+              initials: this.getInitials(u.name),
+            })),
+          );
         },
-        error: (err) => this.toast.bad(err?.error?.message || 'Error al cargar usuarios')
+        error: (err) => this.toast.bad(err?.error?.message || 'Error al cargar usuarios'),
       });
   }
 
   private resolveTenantName(id: string): string {
-    const t = this.tenants().find(t => t._id === id);
+    const t = this.tenants().find((t) => t._id === id);
     return t ? t.name : 'Condominio';
   }
 
   private getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   }
 
   getRoleColor(role: string): string {
     switch (role) {
-      case 'superadmin': return 'danger';
-      case 'admin': return 'primary';
-      case 'residente': return 'ok';
-      case 'familiar': return 'info';
-      default: return 'warn';
+      case 'superadmin':
+        return 'danger';
+      case 'admin':
+        return 'primary';
+      case 'residente':
+        return 'ok';
+      case 'familiar':
+        return 'info';
+      default:
+        return 'warn';
     }
   }
 
@@ -317,11 +364,11 @@ export class UsersPage implements OnInit {
   }
 
   previousPage(): void {
-    if (this.page() > 1) this.page.update(p => p - 1);
+    if (this.page() > 1) this.page.update((p) => p - 1);
   }
 
   nextPage(): void {
-    if (this.page() < this.totalPages()) this.page.update(p => p + 1);
+    if (this.page() < this.totalPages()) this.page.update((p) => p + 1);
   }
 
   goToPage(n: number): void {

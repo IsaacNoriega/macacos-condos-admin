@@ -55,12 +55,14 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   readonly canCreate = computed(() => this.config.allowCreate !== false);
   readonly canEdit = computed(() => this.config.allowEdit !== false);
   readonly canDelete = computed(() => this.config.allowDelete !== false);
-  readonly hasRowActions = computed(() => this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)));
+  readonly hasRowActions = computed(() =>
+    this.filteredItems().some((item) => this.canEditItem(item) || this.canDeleteItem(item)),
+  );
   readonly formFields = computed(() => this.config.fields.filter((field) => !field.tableOnly));
   readonly tableFields = computed(() => this.config.fields);
 
   readonly isResidentsFormSkin = computed(() =>
-    ['/reservations', '/tenants', '/charges', '/maintenance'].includes(this.config.endpoint)
+    ['/reservations', '/tenants', '/charges', '/maintenance'].includes(this.config.endpoint),
   );
 
   readonly createCardTitle = computed(() => {
@@ -95,7 +97,9 @@ export class CrudPageComponent implements OnInit, OnDestroy {
     this.errorMessage.set(null);
 
     const tenantId = this.selectedTenantIdForFiltering();
-    const endpoint = tenantId ? `${this.config.endpoint}?tenantId=${tenantId}` : this.config.endpoint;
+    const endpoint = tenantId
+      ? `${this.config.endpoint}?tenantId=${tenantId}`
+      : this.config.endpoint;
 
     this.api
       .get<Record<string, unknown[]>>(endpoint)
@@ -139,7 +143,8 @@ export class CrudPageComponent implements OnInit, OnDestroy {
       next: () => {
         this.successMessage.set(editingId ? 'Registro actualizado.' : 'Registro creado.');
         const tenantIdControl = this.form.get('tenantId');
-        const selectedTenant = typeof tenantIdControl?.value === 'string' ? tenantIdControl.value : '';
+        const selectedTenant =
+          typeof tenantIdControl?.value === 'string' ? tenantIdControl.value : '';
 
         this.editingId.set(null);
         this.form.reset(this.emptyFormValues());
@@ -251,7 +256,9 @@ export class CrudPageComponent implements OnInit, OnDestroy {
       }
 
       if (selectedRole === 'residente') {
-        return baseOptions.filter((option) => option.value === 'propietario' || option.value === 'inquilino');
+        return baseOptions.filter(
+          (option) => option.value === 'propietario' || option.value === 'inquilino',
+        );
       }
 
       return baseOptions;
@@ -359,7 +366,9 @@ export class CrudPageComponent implements OnInit, OnDestroy {
     if (field?.type === 'select') {
       const directOptions = field.options || [];
       const dynamicOptions = this.dynamicOptions()[field.key] || [];
-      const matchedOption = [...dynamicOptions, ...directOptions].find((option) => option.value === String(value));
+      const matchedOption = [...dynamicOptions, ...directOptions].find(
+        (option) => option.value === String(value),
+      );
 
       if (matchedOption) {
         return matchedOption.label;
@@ -432,7 +441,9 @@ export class CrudPageComponent implements OnInit, OnDestroy {
   }
 
   private loadSelectOptions(): void {
-    const fieldsWithSource = this.formFields().filter((field) => field.type === 'select' && !!field.optionsSource);
+    const fieldsWithSource = this.formFields().filter(
+      (field) => field.type === 'select' && !!field.optionsSource,
+    );
 
     if (!fieldsWithSource.length) {
       this.loadItems();
@@ -442,9 +453,10 @@ export class CrudPageComponent implements OnInit, OnDestroy {
     const selectedTenantId = this.selectedTenantIdForFiltering();
     const requests = fieldsWithSource.map((field) => {
       const source = field.optionsSource!;
-      const endpoint = selectedTenantId && source.dependsOnTenant
-        ? `${source.endpoint}?tenantId=${selectedTenantId}`
-        : source.endpoint;
+      const endpoint =
+        selectedTenantId && source.dependsOnTenant
+          ? `${source.endpoint}?tenantId=${selectedTenantId}`
+          : source.endpoint;
       return this.api.get<Record<string, unknown[]>>(endpoint);
     });
 
@@ -457,9 +469,13 @@ export class CrudPageComponent implements OnInit, OnDestroy {
           const source = field.optionsSource!;
           const response = responses[index];
           const recordsRaw = response[source.listKey];
-          const records = Array.isArray(recordsRaw) ? (recordsRaw as Record<string, unknown>[]) : [];
+          const records = Array.isArray(recordsRaw)
+            ? (recordsRaw as Record<string, unknown>[])
+            : [];
           const filteredRecords = source.filterBy
-            ? records.filter((item) => source.filterBy!.values.includes(String(item[source.filterBy!.key] ?? '')))
+            ? records.filter((item) =>
+                source.filterBy!.values.includes(String(item[source.filterBy!.key] ?? '')),
+              )
             : records;
 
           const options: CrudFieldOption[] = [];
@@ -474,8 +490,12 @@ export class CrudPageComponent implements OnInit, OnDestroy {
 
             const optionValue = String(value);
             const primaryLabel = String(label);
-            const secondaryLabel = source.labelSecondaryKey ? item[source.labelSecondaryKey] : undefined;
-            const optionLabel = secondaryLabel ? `${primaryLabel} (${String(secondaryLabel)})` : primaryLabel;
+            const secondaryLabel = source.labelSecondaryKey
+              ? item[source.labelSecondaryKey]
+              : undefined;
+            const optionLabel = secondaryLabel
+              ? `${primaryLabel} (${String(secondaryLabel)})`
+              : primaryLabel;
 
             options.push({ label: optionLabel, value: optionValue });
             optionsMap.set(optionValue, item);
@@ -490,7 +510,9 @@ export class CrudPageComponent implements OnInit, OnDestroy {
         this.loadItems();
       },
       error: (error) => {
-        this.errorMessage.set(error?.error?.message || 'No se pudieron cargar opciones del formulario.');
+        this.errorMessage.set(
+          error?.error?.message || 'No se pudieron cargar opciones del formulario.',
+        );
         this.loadingOptions.set(false);
         this.loadItems();
       },

@@ -35,7 +35,7 @@ const FILTERS: Array<{ label: string; value: MaintenanceFilter }> = [
     FancySelectComponent,
     MacIconComponent,
     DrawerComponent,
-    ConfirmModalComponent
+    ConfirmModalComponent,
   ],
   templateUrl: './maintenance.page.html',
   styleUrl: './maintenance.page.css',
@@ -65,8 +65,12 @@ export class MaintenancePage implements OnInit {
   readonly isAdmin = computed(() => this.currentRole() === 'admin');
   readonly canManage = computed(() => this.isSuperadmin() || this.isAdmin());
 
-  readonly tenantOptions = computed(() => this.tenants().map(t => ({ label: t.name, value: t._id })));
-  readonly userOptions = computed(() => this.users().map(u => ({ label: `${u.name} (${u.email})`, value: u._id })));
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((t) => ({ label: t.name, value: t._id })),
+  );
+  readonly userOptions = computed(() =>
+    this.users().map((u) => ({ label: `${u.name} (${u.email})`, value: u._id })),
+  );
   readonly statusOptions = [
     { label: 'Pendiente', value: 'pendiente' },
     { label: 'En progreso', value: 'en progreso' },
@@ -74,14 +78,18 @@ export class MaintenancePage implements OnInit {
   ];
 
   readonly form: FormGroup;
-  readonly selectedReport = computed(() => this.reports().find(r => r._id === this.selectedReportId()) || null);
+  readonly selectedReport = computed(
+    () => this.reports().find((r) => r._id === this.selectedReportId()) || null,
+  );
 
   readonly filteredReports = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
     const filter = this.activeFilter();
 
-    return this.reports().filter(r => {
-      const searchable = [r.description, r.userName, r.tenantName, r.status].join(' ').toLowerCase();
+    return this.reports().filter((r) => {
+      const searchable = [r.description, r.userName, r.tenantName, r.status]
+        .join(' ')
+        .toLowerCase();
       const matchesQuery = !query || searchable.includes(query);
       const matchesFilter = filter === 'all' || r.status === filter;
       return matchesQuery && matchesFilter;
@@ -93,7 +101,9 @@ export class MaintenancePage implements OnInit {
     return this.filteredReports().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredReports().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredReports().length / this.pageSize)),
+  );
 
   constructor() {
     this.form = this.fb.group({
@@ -107,26 +117,40 @@ export class MaintenancePage implements OnInit {
     effect(() => {
       const selected = this.selectedReport();
       if (!selected) {
-        this.form.reset({
-          tenantId: '',
-          userId: this.auth.user()?._id || '',
-          description: '',
-          status: 'pendiente',
-          assignedTo: '',
-        }, { emitEvent: false });
+        this.form.reset(
+          {
+            tenantId: '',
+            userId: this.auth.user()?._id || '',
+            description: '',
+            status: 'pendiente',
+            assignedTo: '',
+          },
+          { emitEvent: false },
+        );
         return;
       }
 
-      const tid = selected.tenantId ? (typeof selected.tenantId === 'string' ? selected.tenantId : selected.tenantId._id) : '';
-      const uid = selected.userId ? (typeof selected.userId === 'string' ? selected.userId : selected.userId._id) : '';
+      const tid = selected.tenantId
+        ? typeof selected.tenantId === 'string'
+          ? selected.tenantId
+          : selected.tenantId._id
+        : '';
+      const uid = selected.userId
+        ? typeof selected.userId === 'string'
+          ? selected.userId
+          : selected.userId._id
+        : '';
 
-      this.form.patchValue({
-        tenantId: tid,
-        userId: uid,
-        description: selected.description,
-        status: selected.status,
-        assignedTo: selected.assignedTo || '',
-      }, { emitEvent: false });
+      this.form.patchValue(
+        {
+          tenantId: tid,
+          userId: uid,
+          description: selected.description,
+          status: selected.status,
+          assignedTo: selected.assignedTo || '',
+        },
+        { emitEvent: false },
+      );
     });
   }
 
@@ -141,9 +165,17 @@ export class MaintenancePage implements OnInit {
     if (this.refreshIntervalId) clearInterval(this.refreshIntervalId);
   }
 
-  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
-  setFilter(val: MaintenanceFilter): void { this.activeFilter.set(val); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setSearch(val: string): void {
+    this.searchTerm.set(val);
+    this.page.set(1);
+  }
+  setFilter(val: MaintenanceFilter): void {
+    this.activeFilter.set(val);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
 
   openCreate(): void {
     this.selectedReportId.set(null);
@@ -167,17 +199,17 @@ export class MaintenancePage implements OnInit {
 
     const val = this.form.getRawValue();
     // Clean empty strings
-    Object.keys(val).forEach(key => {
+    Object.keys(val).forEach((key) => {
       if (val[key] === '') delete val[key];
     });
-    
+
     const isEditing = !!this.selectedReportId();
     let endpoint = isEditing ? `/maintenance/${this.selectedReportId()}` : '/maintenance';
 
     if (isEditing && this.isSuperadmin() && val.tenantId) {
       endpoint += `?tenantId=${encodeURIComponent(val.tenantId)}`;
     }
-    
+
     this.loading.set(true);
     const req$ = isEditing ? this.api.put(endpoint, val) : this.api.post(endpoint, val);
 
@@ -187,7 +219,7 @@ export class MaintenancePage implements OnInit {
         this.closeEditor();
         this.loadReports();
       },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar reporte')
+      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar reporte'),
     });
   }
 
@@ -203,48 +235,56 @@ export class MaintenancePage implements OnInit {
     this.loading.set(true);
     const tid = typeof report.tenantId === 'string' ? report.tenantId : report.tenantId._id;
     const query = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(tid)}` : '';
-    this.api.delete(`/maintenance/${report._id}${query}`).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.toast.ok('Reporte eliminado');
-        this.toDelete.set(null);
-        this.loadReports();
-      },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al eliminar')
-    });
+    this.api
+      .delete(`/maintenance/${report._id}${query}`)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => {
+          this.toast.ok('Reporte eliminado');
+          this.toDelete.set(null);
+          this.loadReports();
+        },
+        error: (err) => this.toast.bad(err?.error?.message || 'Error al eliminar'),
+      });
   }
 
   private loadInitialData(): void {
     if (this.isSuperadmin()) {
-      this.api.get<{ tenants: Tenant[] }>('/tenants').subscribe(res => this.tenants.set(res.tenants || []));
+      this.api
+        .get<{ tenants: Tenant[] }>('/tenants')
+        .subscribe((res) => this.tenants.set(res.tenants || []));
     }
     if (this.canManage()) {
-      this.api.get<{ users: User[] }>('/users').subscribe(res => this.users.set(res.users || []));
+      this.api.get<{ users: User[] }>('/users').subscribe((res) => this.users.set(res.users || []));
     }
     this.loadReports();
   }
 
   private loadReports(): void {
     this.loading.set(true);
-    this.api.get<{ reports: MaintenanceReport[] }>('/maintenance')
+    this.api
+      .get<{ reports: MaintenanceReport[] }>('/maintenance')
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (res) => {
           const raw = res.reports || [];
-          this.reports.set(raw.map(r => ({
-            ...r,
-            userName: this.resolveUserName(r.userId),
-            tenantName: this.resolveTenantName(r.tenantId),
-            createdAtDate: r.createdAt ? new Date(r.createdAt) : new Date(),
-          })));
+          this.reports.set(
+            raw.map((r) => ({
+              ...r,
+              userName: this.resolveUserName(r.userId),
+              tenantName: this.resolveTenantName(r.tenantId),
+              createdAtDate: r.createdAt ? new Date(r.createdAt) : new Date(),
+            })),
+          );
         },
-        error: (err) => this.toast.bad(err?.error?.message || 'Error al cargar reportes')
+        error: (err) => this.toast.bad(err?.error?.message || 'Error al cargar reportes'),
       });
   }
 
   private resolveUserName(val: any): string {
     if (val && typeof val === 'object' && val.name) return val.name;
     if (typeof val === 'string') {
-      const u = this.users().find(u => u._id === val);
+      const u = this.users().find((u) => u._id === val);
       if (u) return u.name;
     }
     return 'Usuario';
@@ -253,7 +293,7 @@ export class MaintenancePage implements OnInit {
   private resolveTenantName(val: any): string {
     if (val && typeof val === 'object' && val.name) return val.name;
     if (typeof val === 'string') {
-      const t = this.tenants().find(t => t._id === val);
+      const t = this.tenants().find((t) => t._id === val);
       if (t) return t.name;
     }
     return 'Condominio';
@@ -261,9 +301,12 @@ export class MaintenancePage implements OnInit {
 
   getStatusColor(status: string): string {
     switch (status) {
-      case 'resuelto': return 'ok';
-      case 'en progreso': return 'info';
-      default: return 'warn';
+      case 'resuelto':
+        return 'ok';
+      case 'en progreso':
+        return 'info';
+      default:
+        return 'warn';
     }
   }
 

@@ -10,19 +10,24 @@
     <div class="mcs-row mcs-gap-sm">
       <div class="mcs-seg">
         <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
-          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+          <mac-icon name="grid" [size]="13" /><span>Grid</span>
         </button>
         <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
-          <mac-icon name="list" [size]="13"/><span>Lista</span>
+          <mac-icon name="list" [size]="13" /><span>Lista</span>
         </button>
       </div>
-      <button class="mcs-btn secondary-soft" type="button" (click)="loadPayments()" [disabled]="loading()">
-        <mac-icon name="refresh" [size]="14"/>
+      <button
+        class="mcs-btn secondary-soft"
+        type="button"
+        (click)="loadPayments()"
+        [disabled]="loading()"
+      >
+        <mac-icon name="refresh" [size]="14" />
         <span>Actualizar</span>
       </button>
       @if (isStaff()) {
         <button class="mcs-btn primary" type="button" (click)="openRegister()">
-          <mac-icon name="plus" [size]="15"/>
+          <mac-icon name="plus" [size]="15" />
           <span>Registrar pago</span>
         </button>
       }
@@ -31,18 +36,24 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="mcs-input-wrap" style="max-width: 320px; flex: 1;">
-      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+    <div class="mcs-input-wrap" style="max-width: 320px; flex: 1">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14" /></span>
       <input
         class="mcs-input with-icon"
         type="search"
         placeholder="Buscar por usuario o unidad..."
         [value]="searchTerm()"
-        (input)="setSearch($any($event.target).value)"/>
+        (input)="setSearch($any($event.target).value)"
+      />
     </div>
     <div class="filter-chips">
       @for (f of filters; track f.value) {
-        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+        <button
+          type="button"
+          class="mcs-chip"
+          [class.on]="activeFilter() === f.value"
+          (click)="setFilter(f.value)"
+        >
           {{ f.label }}
         </button>
       }
@@ -51,47 +62,47 @@
 
   @if (error()) {
     <div class="mcs-alert danger mcs-mb">
-      <mac-icon name="alert" [size]="16"/>
+      <mac-icon name="alert" [size]="16" />
       <span>{{ error() }}</span>
     </div>
   }
 
   @if (message()) {
     <div class="mcs-alert success mcs-mb">
-      <mac-icon name="checkCircle" [size]="16"/>
+      <mac-icon name="checkCircle" [size]="16" />
       <span>{{ message() }}</span>
     </div>
   }
 
   <!-- Pending Charges (Residents) -->
   @if (!isStaff() && residentCharges().length > 0) {
-    <div class="mcs-section-title" style="margin-bottom: 12px;">Cargos por pagar</div>
+    <div class="mcs-section-title" style="margin-bottom: 12px">Cargos por pagar</div>
     <div class="mcs-grid cols-3 mcs-mb-lg">
       @for (charge of residentCharges(); track charge._id) {
         <article class="mcs-card hoverable charge-card-pattern">
           <div class="mcs-row mcs-between mcs-mb-sm">
             <div class="mcs-i-round info">
-              <mac-icon name="receipt" [size]="16"/>
+              <mac-icon name="receipt" [size]="16" />
             </div>
             <span class="mcs-badge warn">Pendiente</span>
           </div>
           <div class="charge-title">{{ charge.description }}</div>
-          <div class="charge-amount">{{ getChargeTotalAmount(charge) | currency:'USD' }}</div>
+          <div class="charge-amount">{{ getChargeTotalAmount(charge) | currency: 'USD' }}</div>
           <div class="charge-info-row">
-            <mac-icon name="building" [size]="12"/>
+            <mac-icon name="building" [size]="12" />
             <span>Unidad: {{ getUnitLabel(charge.unitId) }}</span>
           </div>
           <div class="charge-info-row">
-            <mac-icon name="calendar" [size]="12"/>
-            <span>Vence: {{ charge.dueDate | date:'shortDate' }}</span>
+            <mac-icon name="calendar" [size]="12" />
+            <span>Vence: {{ charge.dueDate | date: 'shortDate' }}</span>
           </div>
           <div class="charge-actions-row">
             <button class="mcs-btn sm primary mcs-grow" (click)="payChargeWithStripe(charge)">
-              <mac-icon name="card" [size]="14"/>
+              <mac-icon name="card" [size]="14" />
               <span>Pagar con Stripe</span>
             </button>
             <button class="mcs-btn sm secondary-soft" (click)="openProofDrawer(charge._id)">
-              <mac-icon name="upload" [size]="14"/>
+              <mac-icon name="upload" [size]="14" />
               <span>Comprobante</span>
             </button>
           </div>
@@ -102,27 +113,32 @@
 
   <!-- Payments Content -->
   @if (loading() && !filteredPayments().length && !residentCharges().length) {
-    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+    <div class="mcs-loader-wrap" style="padding: 100px 0">
       <span class="mcs-loader"></span>
       <p>Procesando información de pago...</p>
     </div>
   } @else if (filteredPayments().length === 0) {
-    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
-      <mac-icon name="card" [size]="36" style="opacity: 0.3;"/>
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px">
+      <mac-icon name="card" [size]="36" style="opacity: 0.3" />
       <h3>Sin registros</h3>
       <p>No se encontraron pagos con los filtros actuales.</p>
     </div>
   } @else if (view() === 'grid') {
-    <div class="mcs-section-title" style="margin-bottom: 12px;">Historial de transacciones</div>
+    <div class="mcs-section-title" style="margin-bottom: 12px">Historial de transacciones</div>
     <div class="mcs-grid cols-3">
       @for (p of pagedPayments(); track p._id) {
         <article class="mcs-card hoverable payment-card-pattern">
           <div class="mcs-row mcs-between mcs-mb-sm">
             <div class="mcs-row mcs-gap-sm">
-              <div class="mcs-i-round" [class.ok]="p.status === 'completed'" [class.info]="p.status === 'in_review'" [class.error]="p.status === 'failed'">
-                <mac-icon [name]="p.provider === 'stripe' ? 'card' : 'receipt'" [size]="16"/>
+              <div
+                class="mcs-i-round"
+                [class.ok]="p.status === 'completed'"
+                [class.info]="p.status === 'in_review'"
+                [class.error]="p.status === 'failed'"
+              >
+                <mac-icon [name]="p.provider === 'stripe' ? 'card' : 'receipt'" [size]="16" />
               </div>
-              <div style="min-width: 0;">
+              <div style="min-width: 0">
                 <div class="p-user text-truncate">{{ getUserLabel(p.userId) }}</div>
                 <div class="p-unit mono">{{ getUnitLabel(p.unitId) }}</div>
               </div>
@@ -131,16 +147,18 @@
               {{ getStatusLabel(p.status) }}
             </span>
           </div>
-          
-          <div class="mcs-row mcs-between mcs-mb-sm" style="align-items: flex-end;">
-            <div class="p-amount">{{ p.amount | currency : (p.currency || 'MXN').toUpperCase() }}</div>
-            <div class="p-date">{{ p.paymentDate | date:'shortDate' }}</div>
+
+          <div class="mcs-row mcs-between mcs-mb-sm" style="align-items: flex-end">
+            <div class="p-amount">
+              {{ p.amount | currency: (p.currency || 'MXN').toUpperCase() }}
+            </div>
+            <div class="p-date">{{ p.paymentDate | date: 'shortDate' }}</div>
           </div>
 
           <div class="p-footer">
             @if (p.proofOfPaymentUrl) {
               <button class="mcs-btn sm secondary-soft mcs-grow" (click)="openPaymentProof(p)">
-                <mac-icon name="externalLink" [size]="13"/>
+                <mac-icon name="externalLink" [size]="13" />
                 <span>Ver comprobante</span>
               </button>
             } @else {
@@ -148,8 +166,10 @@
             }
 
             @if (isStaff() && p.status === 'in_review') {
-              <div class="mcs-row mcs-gap-xs" style="margin-top: 8px;">
-                <button class="mcs-btn sm success-soft mcs-grow" (click)="approvePayment(p._id)">Aprobar</button>
+              <div class="mcs-row mcs-gap-xs" style="margin-top: 8px">
+                <button class="mcs-btn sm success-soft mcs-grow" (click)="approvePayment(p._id)">
+                  Aprobar
+                </button>
                 <button class="mcs-btn sm danger-soft" (click)="rejectPayment(p._id)">✕</button>
               </div>
             }
@@ -161,49 +181,71 @@
     <!-- Pagination (Grid) -->
     @if (totalPages() > 1) {
       <footer class="pagination mcs-row mcs-between mcs-mt-lg">
-        <div class="mcs-text-muted text-sm">
-          Página {{ page() }} de {{ totalPages() }}
-        </div>
+        <div class="mcs-text-muted text-sm">Página {{ page() }} de {{ totalPages() }}</div>
         <div class="mcs-row mcs-gap">
-          <button class="mcs-btn sm secondary-soft" [disabled]="page() === 1" (click)="page.set(page() - 1)">
-            <mac-icon name="chevronLeft" [size]="14"/>
+          <button
+            class="mcs-btn sm secondary-soft"
+            [disabled]="page() === 1"
+            (click)="page.set(page() - 1)"
+          >
+            <mac-icon name="chevronLeft" [size]="14" />
           </button>
-          <button class="mcs-btn sm secondary-soft" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
-            <mac-icon name="chevronRight" [size]="14"/>
+          <button
+            class="mcs-btn sm secondary-soft"
+            [disabled]="page() >= totalPages()"
+            (click)="page.set(page() + 1)"
+          >
+            <mac-icon name="chevronRight" [size]="14" />
           </button>
         </div>
       </footer>
     }
   } @else {
-    <div class="mcs-section-title" style="margin-bottom: 12px;">Historial de transacciones</div>
+    <div class="mcs-section-title" style="margin-bottom: 12px">Historial de transacciones</div>
     <div class="mcs-card">
       @for (p of pagedPayments(); track p._id; let i = $index) {
         <div class="mcs-list-row" [class.has-border]="i > 0">
           <div class="mcs-i-round" [class]="getStatusColor(p.status)">
-            <mac-icon [name]="p.provider === 'stripe' ? 'card' : 'receipt'" [size]="16"/>
+            <mac-icon [name]="p.provider === 'stripe' ? 'card' : 'receipt'" [size]="16" />
           </div>
           <div class="mcs-grow">
-            <div style="font-weight: 600;">{{ getUserLabel(p.userId) }}</div>
-            <div style="font-size: 12px; color: var(--text-muted-new);">{{ getUnitLabel(p.unitId) }} · {{ p.paymentDate | date:'mediumDate' }}</div>
+            <div style="font-weight: 600">{{ getUserLabel(p.userId) }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new)">
+              {{ getUnitLabel(p.unitId) }} · {{ p.paymentDate | date: 'mediumDate' }}
+            </div>
           </div>
-          <div style="width: 140px; font-weight: 700; font-family: var(--font-mono);">
-            {{ p.amount | currency : (p.currency || 'MXN').toUpperCase() }}
+          <div style="width: 140px; font-weight: 700; font-family: var(--font-mono)">
+            {{ p.amount | currency: (p.currency || 'MXN').toUpperCase() }}
           </div>
-          <div style="width: 130px;">
-            <span class="mcs-badge" [class]="'status-' + getStatusColor(p.status)">{{ getStatusLabel(p.status) }}</span>
+          <div style="width: 130px">
+            <span class="mcs-badge" [class]="'status-' + getStatusColor(p.status)">{{
+              getStatusLabel(p.status)
+            }}</span>
           </div>
           <div class="mcs-row mcs-gap-sm">
             @if (p.proofOfPaymentUrl) {
-              <button class="mcs-btn sm icon-only secondary-soft" (click)="openPaymentProof(p)" title="Ver comprobante">
-                <mac-icon name="eye" [size]="13"/>
+              <button
+                class="mcs-btn sm icon-only secondary-soft"
+                (click)="openPaymentProof(p)"
+                title="Ver comprobante"
+              >
+                <mac-icon name="eye" [size]="13" />
               </button>
             }
             @if (isStaff() && p.status === 'in_review') {
-              <button class="mcs-btn sm ok icon-only" (click)="approvePayment(p._id)" title="Aprobar">
-                <mac-icon name="check" [size]="13"/>
+              <button
+                class="mcs-btn sm ok icon-only"
+                (click)="approvePayment(p._id)"
+                title="Aprobar"
+              >
+                <mac-icon name="check" [size]="13" />
               </button>
-              <button class="mcs-btn sm danger icon-only" (click)="rejectPayment(p._id)" title="Rechazar">
-                <mac-icon name="trash" [size]="13"/>
+              <button
+                class="mcs-btn sm danger icon-only"
+                (click)="rejectPayment(p._id)"
+                title="Rechazar"
+              >
+                <mac-icon name="trash" [size]="13" />
               </button>
             }
           </div>
@@ -214,15 +256,21 @@
     <!-- Pagination (List) -->
     @if (totalPages() > 1) {
       <footer class="pagination mcs-row mcs-between mcs-mt-lg">
-        <div class="mcs-text-muted text-sm">
-          Página {{ page() }} de {{ totalPages() }}
-        </div>
+        <div class="mcs-text-muted text-sm">Página {{ page() }} de {{ totalPages() }}</div>
         <div class="mcs-row mcs-gap">
-          <button class="mcs-btn sm secondary-soft" [disabled]="page() === 1" (click)="page.set(page() - 1)">
-            <mac-icon name="chevronLeft" [size]="14"/>
+          <button
+            class="mcs-btn sm secondary-soft"
+            [disabled]="page() === 1"
+            (click)="page.set(page() - 1)"
+          >
+            <mac-icon name="chevronLeft" [size]="14" />
           </button>
-          <button class="mcs-btn sm secondary-soft" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
-            <mac-icon name="chevronRight" [size]="14"/>
+          <button
+            class="mcs-btn sm secondary-soft"
+            [disabled]="page() >= totalPages()"
+            (click)="page.set(page() + 1)"
+          >
+            <mac-icon name="chevronRight" [size]="14" />
           </button>
         </div>
       </footer>
@@ -235,27 +283,47 @@
     title="Registrar pago manual"
     subtitle="Ingrese los detalles del pago recibido"
     [width]="500"
-    (closed)="closeEditor()">
-    
+    (closed)="closeEditor()"
+  >
     <ng-container body>
       <form [formGroup]="paymentForm" class="mcs-stack">
         @if (isSuperadmin()) {
           <div class="mcs-field">
             <label class="mcs-field-label">Tenant *</label>
-            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona...'" [options]="tenantOptions()" (selectionChange)="onTenantChange()" />
+            <app-fancy-select
+              formControlName="tenantId"
+              [placeholder]="'Selecciona...'"
+              [options]="tenantOptions()"
+              (selectionChange)="onTenantChange()"
+            />
           </div>
         }
         <div class="mcs-field">
           <label class="mcs-field-label">Unidad *</label>
-          <app-fancy-select formControlName="unitId" [placeholder]="'Selecciona...'" [options]="unitOptions()" (selectionChange)="onUserOrUnitChange()" />
+          <app-fancy-select
+            formControlName="unitId"
+            [placeholder]="'Selecciona...'"
+            [options]="unitOptions()"
+            (selectionChange)="onUserOrUnitChange()"
+          />
         </div>
         <div class="mcs-field">
           <label class="mcs-field-label">Usuario *</label>
-          <app-fancy-select formControlName="userId" [placeholder]="'Selecciona...'" [options]="userOptions()" (selectionChange)="onUserOrUnitChange()" />
+          <app-fancy-select
+            formControlName="userId"
+            [placeholder]="'Selecciona...'"
+            [options]="userOptions()"
+            (selectionChange)="onUserOrUnitChange()"
+          />
         </div>
         <div class="mcs-field">
           <label class="mcs-field-label">Cargo *</label>
-          <app-fancy-select formControlName="chargeId" [placeholder]="'Selecciona...'" [options]="chargeOptions()" (selectionChange)="onChargeSelected()" />
+          <app-fancy-select
+            formControlName="chargeId"
+            [placeholder]="'Selecciona...'"
+            [options]="chargeOptions()"
+            (selectionChange)="onChargeSelected()"
+          />
         </div>
         <div class="mcs-field">
           <label class="mcs-field-label">Monto *</label>
@@ -267,22 +335,33 @@
         <div class="mcs-field">
           <label class="mcs-field-label">Comprobante de pago (opcional)</label>
           <div class="file-upload-wrap">
-            <input type="file" id="staffFile" class="mcs-hidden" (change)="onFileSelected($event)" hidden />
+            <input
+              type="file"
+              id="staffFile"
+              class="mcs-hidden"
+              (change)="onFileSelected($event)"
+              hidden
+            />
             <label for="staffFile" class="mcs-file-drop">
-              <mac-icon name="upload" [size]="20"/>
-              <span>{{ selectedFile() ? selectedFile()!.name : 'Arrastra o haz click aquí para subir' }}</span>
+              <mac-icon name="upload" [size]="20" />
+              <span>{{
+                selectedFile() ? selectedFile()!.name : 'Arrastra o haz click aquí para subir'
+              }}</span>
             </label>
           </div>
         </div>
-        
+
         <div class="mcs-separator-modern">
           <span>O BIEN</span>
         </div>
-        
+
         <div class="mcs-info-card">
-          <mac-icon name="info" [size]="18"/>
+          <mac-icon name="info" [size]="18" />
           <div class="mcs-info-content">
-            <p>Para pagos en línea inmediatos, el residente puede utilizar <strong>Stripe</strong> desde su portal.</p>
+            <p>
+              Para pagos en línea inmediatos, el residente puede utilizar
+              <strong>Stripe</strong> desde su portal.
+            </p>
           </div>
         </div>
       </form>
@@ -291,7 +370,9 @@
     <ng-container footer>
       <button class="mcs-btn" (click)="closeEditor()">Cancelar</button>
       <button class="mcs-btn primary" (click)="registerPaymentWithProof()" [disabled]="loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span> }
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span>
+        }
         <span>Registrar pago</span>
       </button>
     </ng-container>
@@ -302,21 +383,31 @@
     title="Subir comprobante"
     subtitle="Envíe una imagen de su ticket para validación manual"
     [width]="440"
-    (closed)="closeProofDrawer()">
-    
+    (closed)="closeProofDrawer()"
+  >
     <ng-container body>
       <div class="mcs-stack">
         <div class="mcs-alert info mcs-mb">
-          <mac-icon name="info" [size]="16"/>
-          <p class="text-sm">Si ya realizó el pago por transferencia o efectivo, suba su ticket aquí.</p>
+          <mac-icon name="info" [size]="16" />
+          <p class="text-sm">
+            Si ya realizó el pago por transferencia o efectivo, suba su ticket aquí.
+          </p>
         </div>
 
         <div class="mcs-field">
           <div class="file-upload-wrap">
-            <input type="file" id="proofFile" class="mcs-hidden" (change)="onFileSelected($event)" hidden />
+            <input
+              type="file"
+              id="proofFile"
+              class="mcs-hidden"
+              (change)="onFileSelected($event)"
+              hidden
+            />
             <label for="proofFile" class="mcs-file-drop large">
-              <mac-icon name="upload" [size]="32"/>
-              <p>{{ selectedFile() ? selectedFile()!.name : 'Haga clic para seleccionar archivo' }}</p>
+              <mac-icon name="upload" [size]="32" />
+              <p>
+                {{ selectedFile() ? selectedFile()!.name : 'Haga clic para seleccionar archivo' }}
+              </p>
               <span class="text-xs text-muted">JPG, PNG o PDF</span>
             </label>
           </div>
@@ -326,8 +417,14 @@
 
     <ng-container footer>
       <button class="mcs-btn" (click)="closeProofDrawer()">Cancelar</button>
-      <button class="mcs-btn primary" (click)="submitProofForSelectedCharge()" [disabled]="!selectedFile() || loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span> }
+      <button
+        class="mcs-btn primary"
+        (click)="submitProofForSelectedCharge()"
+        [disabled]="!selectedFile() || loading()"
+      >
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span>
+        }
         <span>Enviar a revisión</span>
       </button>
     </ng-container>

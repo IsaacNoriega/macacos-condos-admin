@@ -10,14 +10,14 @@
     <div class="mcs-row mcs-gap-sm">
       <div class="mcs-seg">
         <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
-          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+          <mac-icon name="grid" [size]="13" /><span>Grid</span>
         </button>
         <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
-          <mac-icon name="list" [size]="13"/><span>Lista</span>
+          <mac-icon name="list" [size]="13" /><span>Lista</span>
         </button>
       </div>
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
-        <mac-icon name="plus" [size]="15"/>
+        <mac-icon name="plus" [size]="15" />
         <span>Nuevo reporte</span>
       </button>
     </div>
@@ -25,18 +25,24 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
-      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14" /></span>
       <input
         class="mcs-input with-icon"
         type="search"
         placeholder="Buscar en descripción, usuario..."
         [value]="searchTerm()"
-        (input)="setSearch($any($event.target).value)"/>
+        (input)="setSearch($any($event.target).value)"
+      />
     </div>
     <div class="filter-chips">
       @for (f of filters; track f.value) {
-        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+        <button
+          type="button"
+          class="mcs-chip"
+          [class.on]="activeFilter() === f.value"
+          (click)="setFilter(f.value)"
+        >
           {{ f.label }}
         </button>
       }
@@ -45,17 +51,17 @@
 
   <!-- Content Section -->
   @if (loading() && reports().length === 0) {
-    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+    <div class="mcs-loader-wrap" style="padding: 100px 0">
       <span class="mcs-loader"></span>
       <p>Cargando reportes...</p>
     </div>
   } @else if (filteredReports().length === 0) {
-    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
-      <mac-icon name="wrench" [size]="48" style="opacity: 0.3;"/>
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px">
+      <mac-icon name="wrench" [size]="48" style="opacity: 0.3" />
       <h3>Sin reportes</h3>
       <p>No se encontraron solicitudes de mantenimiento.</p>
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
-        <mac-icon name="plus" [size]="14"/>
+        <mac-icon name="plus" [size]="14" />
         <span>Crear reporte</span>
       </button>
     </div>
@@ -65,11 +71,13 @@
         <article class="mcs-card hoverable report-card" (click)="openEdit(r)">
           <header class="card-head">
             <div class="mcs-avatar" [class]="getStatusColor(r.status)">
-              <mac-icon [name]="r.status === 'resuelto' ? 'check' : 'wrench'" [size]="16"/>
+              <mac-icon [name]="r.status === 'resuelto' ? 'check' : 'wrench'" [size]="16" />
             </div>
             <div class="mcs-grow">
               <div class="report-status">
-                <span class="mcs-badge" [class]="getStatusColor(r.status)">{{ r.status | titlecase }}</span>
+                <span class="mcs-badge" [class]="getStatusColor(r.status)">{{
+                  r.status | titlecase
+                }}</span>
                 <span class="report-date">{{ relativeTime(r.createdAtDate) }}</span>
               </div>
               <h3 class="report-user">{{ r.userName }}</h3>
@@ -80,7 +88,7 @@
             <p class="report-desc">{{ r.description }}</p>
             @if (isSuperadmin()) {
               <div class="report-tenant">
-                <mac-icon name="building" [size]="12"/>
+                <mac-icon name="building" [size]="12" />
                 <span>{{ r.tenantName }}</span>
               </div>
             }
@@ -89,11 +97,15 @@
           <footer class="card-foot">
             @if (canManage()) {
               <button class="mcs-btn sm secondary-soft mcs-grow" type="button">
-                <mac-icon name="edit" [size]="13"/>
+                <mac-icon name="edit" [size]="13" />
                 <span>Gestionar</span>
               </button>
-              <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(r, $event)">
-                <mac-icon name="trash" [size]="13"/>
+              <button
+                class="mcs-btn sm danger-soft icon-only"
+                type="button"
+                (click)="askDelete(r, $event)"
+              >
+                <mac-icon name="trash" [size]="13" />
               </button>
             } @else {
               <div class="report-info">Solo lectura</div>
@@ -107,25 +119,37 @@
       @for (r of pagedReports(); track r._id; let i = $index) {
         <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openEdit(r)">
           <div class="mcs-avatar" [class]="getStatusColor(r.status)">
-            <mac-icon [name]="r.status === 'resuelto' ? 'check' : 'wrench'" [size]="14"/>
+            <mac-icon [name]="r.status === 'resuelto' ? 'check' : 'wrench'" [size]="14" />
           </div>
           <div class="mcs-grow">
-            <div style="font-weight: 600;">{{ r.userName }}</div>
-            <div style="font-size: 12px; color: var(--text-muted-new);">{{ r.description | slice:0:60 }}{{ r.description.length > 60 ? '...' : '' }}</div>
+            <div style="font-weight: 600">{{ r.userName }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new)">
+              {{ r.description | slice: 0 : 60 }}{{ r.description.length > 60 ? '...' : '' }}
+            </div>
           </div>
-          <div style="width: 130px;">
-            <span class="mcs-badge" [class]="getStatusColor(r.status)">{{ r.status | titlecase }}</span>
+          <div style="width: 130px">
+            <span class="mcs-badge" [class]="getStatusColor(r.status)">{{
+              r.status | titlecase
+            }}</span>
           </div>
-          <div style="width: 120px; font-size: 13px; color: var(--text-soft);">
+          <div style="width: 120px; font-size: 13px; color: var(--text-soft)">
             {{ relativeTime(r.createdAtDate) }}
           </div>
           <div class="mcs-row mcs-gap-sm">
-            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(r)">
-              <mac-icon name="edit" [size]="13"/>
+            <button
+              class="mcs-btn sm icon-only"
+              type="button"
+              (click)="$event.stopPropagation(); openEdit(r)"
+            >
+              <mac-icon name="edit" [size]="13" />
             </button>
             @if (canManage()) {
-              <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(r, $event)">
-                <mac-icon name="trash" [size]="13"/>
+              <button
+                class="mcs-btn sm danger-soft icon-only"
+                type="button"
+                (click)="askDelete(r, $event)"
+              >
+                <mac-icon name="trash" [size]="13" />
               </button>
             }
           </div>
@@ -137,15 +161,21 @@
   <!-- Pagination -->
   @if (totalPages() > 1) {
     <footer class="pagination mcs-row mcs-between mcs-mt-lg">
-      <div class="mcs-text-muted text-sm">
-        Página {{ page() }} de {{ totalPages() }}
-      </div>
+      <div class="mcs-text-muted text-sm">Página {{ page() }} de {{ totalPages() }}</div>
       <div class="mcs-row mcs-gap">
-        <button class="mcs-btn sm secondary-soft" [disabled]="page() === 1" (click)="page.set(page() - 1)">
-          <mac-icon name="chevronLeft" [size]="14"/>
+        <button
+          class="mcs-btn sm secondary-soft"
+          [disabled]="page() === 1"
+          (click)="page.set(page() - 1)"
+        >
+          <mac-icon name="chevronLeft" [size]="14" />
         </button>
-        <button class="mcs-btn sm secondary-soft" [disabled]="page() >= totalPages()" (click)="page.set(page() + 1)">
-          <mac-icon name="chevronRight" [size]="14"/>
+        <button
+          class="mcs-btn sm secondary-soft"
+          [disabled]="page() >= totalPages()"
+          (click)="page.set(page() + 1)"
+        >
+          <mac-icon name="chevronRight" [size]="14" />
         </button>
       </div>
     </footer>
@@ -155,29 +185,46 @@
   <mac-drawer
     [open]="editorOpen()"
     [title]="selectedReportId() ? 'Gestionar reporte' : 'Nuevo reporte de mantenimiento'"
-    [subtitle]="selectedReportId() ? 'Actualice el estado o detalles del reporte' : 'Describa el problema detectado'"
+    [subtitle]="
+      selectedReportId()
+        ? 'Actualice el estado o detalles del reporte'
+        : 'Describa el problema detectado'
+    "
     [width]="520"
-    (closed)="closeEditor()">
-    
+    (closed)="closeEditor()"
+  >
     <ng-container body>
       <form [formGroup]="form" (ngSubmit)="saveReport()" class="mcs-stack">
         @if (isSuperadmin()) {
           <div class="mcs-field">
             <label class="mcs-field-label">Tenant *</label>
-            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un condominio'" [options]="tenantOptions()" />
+            <app-fancy-select
+              formControlName="tenantId"
+              [placeholder]="'Selecciona un condominio'"
+              [options]="tenantOptions()"
+            />
           </div>
         }
 
         @if (canManage()) {
           <div class="mcs-field">
             <label class="mcs-field-label">Usuario *</label>
-            <app-fancy-select formControlName="userId" [placeholder]="'Reportado por...'" [options]="userOptions()" />
+            <app-fancy-select
+              formControlName="userId"
+              [placeholder]="'Reportado por...'"
+              [options]="userOptions()"
+            />
           </div>
         }
 
         <div class="mcs-field">
           <label class="mcs-field-label">Descripción del problema *</label>
-          <textarea class="mcs-textarea" formControlName="description" rows="4" placeholder="Ej: Fuga de agua en el pasillo del piso 3..."></textarea>
+          <textarea
+            class="mcs-textarea"
+            formControlName="description"
+            rows="4"
+            placeholder="Ej: Fuga de agua en el pasillo del piso 3..."
+          ></textarea>
         </div>
 
         @if (canManage()) {
@@ -188,7 +235,12 @@
 
           <div class="mcs-field">
             <label class="mcs-field-label">Asignado a (opcional)</label>
-            <input class="mcs-input" type="text" formControlName="assignedTo" placeholder="Nombre del técnico o empresa"/>
+            <input
+              class="mcs-input"
+              type="text"
+              formControlName="assignedTo"
+              placeholder="Nombre del técnico o empresa"
+            />
           </div>
         }
       </form>
@@ -197,8 +249,13 @@
     <ng-container footer>
       <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
       <button class="mcs-btn primary" type="button" (click)="saveReport()" [disabled]="loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
-        @else { <mac-icon name="check" [size]="13"/><span>{{ selectedReportId() ? 'Guardar cambios' : 'Crear reporte' }}</span> }
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span><span>Guardando...</span>
+        } @else {
+          <mac-icon name="check" [size]="13" /><span>{{
+            selectedReportId() ? 'Guardar cambios' : 'Crear reporte'
+          }}</span>
+        }
       </button>
     </ng-container>
   </mac-drawer>
@@ -207,9 +264,16 @@
   <mac-confirm-modal
     [open]="toDelete() !== null"
     title="¿Eliminar reporte?"
-    [message]="toDelete() ? 'Se eliminará el reporte de \'' + toDelete()!.userName + '\'. Esta acción no se puede deshacer.' : ''"
+    [message]="
+      toDelete()
+        ? 'Se eliminará el reporte de \'' +
+          toDelete()!.userName +
+          '\'. Esta acción no se puede deshacer.'
+        : ''
+    "
     confirmLabel="Eliminar"
     (cancelled)="toDelete.set(null)"
-    (confirmed)="confirmDelete()">
+    (confirmed)="confirmDelete()"
+  >
   </mac-confirm-modal>
 </section>

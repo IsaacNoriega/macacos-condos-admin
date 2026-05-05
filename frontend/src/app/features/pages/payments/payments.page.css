@@ -96,17 +96,35 @@
 }
 
 /* Badge colors override (ensuring parity) */
-.mcs-badge.status-ok { background: var(--success-50); color: var(--success-700); border: 1px solid var(--success-100); }
-.mcs-badge.status-info { background: var(--primary-50); color: var(--primary-700); border: 1px solid var(--primary-100); }
-.mcs-badge.status-warn { background: var(--warning-50); color: var(--warning-700); border: 1px solid var(--warning-100); }
-.mcs-badge.status-error { background: var(--danger-50); color: var(--danger-700); border: 1px solid var(--danger-100); }
+.mcs-badge.status-ok {
+  background: var(--success-50);
+  color: var(--success-700);
+  border: 1px solid var(--success-100);
+}
+.mcs-badge.status-info {
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid var(--primary-100);
+}
+.mcs-badge.status-warn {
+  background: var(--warning-50);
+  color: var(--warning-700);
+  border: 1px solid var(--warning-100);
+}
+.mcs-badge.status-error {
+  background: var(--danger-50);
+  color: var(--danger-700);
+  border: 1px solid var(--danger-100);
+}
 
 .mcs-hidden {
   display: none !important;
 }
 
 /* File Drop Enhancement */
-.file-upload-wrap { position: relative; }
+.file-upload-wrap {
+  position: relative;
+}
 .mcs-file-drop {
   display: flex;
   flex-direction: column;

@@ -66,7 +66,7 @@ describe('UsersPage form submission', () => {
       of({
         success: true,
         tenants: [{ _id: 'tenant-2', name: 'Condo 2', address: 'X', contactEmail: 'x@x.com' }],
-      })
+      }),
     );
 
     const fixture = TestBed.createComponent(UsersPage);
