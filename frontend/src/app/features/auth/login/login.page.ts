@@ -43,7 +43,7 @@ export class LoginPage {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {
     this.route.queryParams.subscribe((params: any) => {
       if (params['panel'] === 'reset') {

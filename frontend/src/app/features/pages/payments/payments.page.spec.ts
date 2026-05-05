@@ -45,7 +45,9 @@ describe('PaymentsPage operations', () => {
     });
 
     apiMock.post.mockReturnValue(of({ success: true, checkoutUrl: '' }));
-    apiMock.postFormData.mockReturnValue(of({ success: true, proofOfPaymentUrl: 'x', blobName: 'b' }));
+    apiMock.postFormData.mockReturnValue(
+      of({ success: true, proofOfPaymentUrl: 'x', blobName: 'b' }),
+    );
 
     TestBed.configureTestingModule({
       imports: [PaymentsPage],

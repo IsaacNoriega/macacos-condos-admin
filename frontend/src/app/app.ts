@@ -8,5 +8,4 @@ import { ToastContainerComponent } from './features/shared/toast/toast-container
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App {
-}
+export class App {}

@@ -26,16 +26,16 @@ interface UnitCard {
 }
 
 const FILTERS: Array<{ label: string; value: UnitFilter }> = [
-  { label: 'Todas',         value: 'all' },
+  { label: 'Todas', value: 'all' },
   { label: 'Departamentos', value: 'departamento' },
-  { label: 'Casas',         value: 'casa' },
-  { label: 'Disponible',    value: 'disponible' },
-  { label: 'Ocupada',       value: 'ocupada' },
+  { label: 'Casas', value: 'casa' },
+  { label: 'Disponible', value: 'disponible' },
+  { label: 'Ocupada', value: 'ocupada' },
 ];
 
 const UNIT_TYPE_OPTIONS = [
   { label: 'Departamento', value: 'departamento' },
-  { label: 'Casa',         value: 'casa' },
+  { label: 'Casa', value: 'casa' },
 ];
 
 interface TypeVisual {
@@ -44,7 +44,7 @@ interface TypeVisual {
 }
 const TYPE_VISUALS: Record<UnitType, TypeVisual> = {
   departamento: { color: 'var(--info-500)', icon: 'building' },
-  casa:         { color: 'var(--ok-500)',   icon: 'home' },
+  casa: { color: 'var(--ok-500)', icon: 'home' },
 };
 
 @Component({
@@ -84,17 +84,27 @@ export class UnitsPage {
 
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
-  readonly tenantOptions = computed(() => this.tenants().map((t) => ({ label: t.name, value: t._id })));
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((t) => ({ label: t.name, value: t._id })),
+  );
   readonly unitTypeOptions = UNIT_TYPE_OPTIONS;
 
   readonly form: FormGroup;
-  readonly editingUnit = computed(() => this.units().find((u) => u.id === this.editingId()) ?? null);
+  readonly editingUnit = computed(
+    () => this.units().find((u) => u.id === this.editingId()) ?? null,
+  );
 
   readonly filteredUnits = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
     const filter = this.activeFilter();
     return this.units().filter((u) => {
-      const searchable = [u.code, u.type, u.description || '', u.tenant, u.isActive ? 'disponible' : 'ocupada']
+      const searchable = [
+        u.code,
+        u.type,
+        u.description || '',
+        u.tenant,
+        u.isActive ? 'disponible' : 'ocupada',
+      ]
         .join(' ')
         .toLowerCase();
       const matchesQuery = !query || searchable.includes(query);
@@ -113,7 +123,9 @@ export class UnitsPage {
     return this.filteredUnits().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredUnits().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredUnits().length / this.pageSize)),
+  );
   readonly pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
   readonly occupiedCount = computed(() => this.units().filter((u) => !u.isActive).length);
 
@@ -121,7 +133,7 @@ export class UnitsPage {
     private readonly auth: AuthService,
     private readonly fb: FormBuilder,
     private readonly api: ApiService,
-    private readonly toast: ToastService
+    private readonly toast: ToastService,
   ) {
     this.form = this.fb.group({
       tenantId: [''],
@@ -135,8 +147,14 @@ export class UnitsPage {
       const selected = this.editingUnit();
       if (!selected) return;
       this.form.patchValue(
-        { tenantId: selected.tenantId, code: selected.code, type: selected.type, description: selected.description || '', isActive: selected.isActive },
-        { emitEvent: false }
+        {
+          tenantId: selected.tenantId,
+          code: selected.code,
+          type: selected.type,
+          description: selected.description || '',
+          isActive: selected.isActive,
+        },
+        { emitEvent: false },
       );
     });
 
@@ -154,7 +172,7 @@ export class UnitsPage {
     this.editorMode.set('create');
     this.form.reset(
       { tenantId: '', code: '', type: 'departamento', description: '', isActive: true },
-      { emitEvent: false }
+      { emitEvent: false },
     );
     this.editorOpen.set(true);
   }
@@ -167,11 +185,23 @@ export class UnitsPage {
     this.editorOpen.set(true);
   }
 
-  openDetail(unit: UnitCard): void { this.detail.set(unit); }
-  closeEditor(): void { this.editorOpen.set(false); this.editingId.set(null); }
-  closeDetail(): void { this.detail.set(null); }
-  askDelete(unit: UnitCard, event?: Event): void { event?.stopPropagation(); this.toDelete.set(unit); }
-  cancelDelete(): void { this.toDelete.set(null); }
+  openDetail(unit: UnitCard): void {
+    this.detail.set(unit);
+  }
+  closeEditor(): void {
+    this.editorOpen.set(false);
+    this.editingId.set(null);
+  }
+  closeDetail(): void {
+    this.detail.set(null);
+  }
+  askDelete(unit: UnitCard, event?: Event): void {
+    event?.stopPropagation();
+    this.toDelete.set(unit);
+  }
+  cancelDelete(): void {
+    this.toDelete.set(null);
+  }
   confirmDelete(): void {
     const u = this.toDelete();
     if (!u) return;
@@ -180,11 +210,23 @@ export class UnitsPage {
   }
 
   // ─── Toolbar ────────────────────────────────────────────────────────────
-  setSearch(value: string): void { this.searchTerm.set(value); this.page.set(1); }
-  setFilter(value: UnitFilter): void { this.activeFilter.set(value); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
-  setType(type: UnitType): void { this.form.patchValue({ type }); }
-  refresh(): void { this.loadUnits(); }
+  setSearch(value: string): void {
+    this.searchTerm.set(value);
+    this.page.set(1);
+  }
+  setFilter(value: UnitFilter): void {
+    this.activeFilter.set(value);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
+  setType(type: UnitType): void {
+    this.form.patchValue({ type });
+  }
+  refresh(): void {
+    this.loadUnits();
+  }
 
   // ─── Save / Delete ──────────────────────────────────────────────────────
   saveUnit(): void {
@@ -196,7 +238,9 @@ export class UnitsPage {
     const payload = this.form.getRawValue();
     const editing = this.editingUnit();
     const currentUserTenantId = this.auth.user()?.tenantId || '';
-    const targetTenantId = this.isSuperadmin() ? String(payload.tenantId || '').trim() : currentUserTenantId;
+    const targetTenantId = this.isSuperadmin()
+      ? String(payload.tenantId || '').trim()
+      : currentUserTenantId;
 
     if (this.isSuperadmin() && !targetTenantId) {
       this.form.get('tenantId')?.setErrors({ required: true });
@@ -249,16 +293,26 @@ export class UnitsPage {
   }
 
   // ─── Pagination ─────────────────────────────────────────────────────────
-  previousPage(): void { if (this.page() > 1) this.page.update((c) => c - 1); }
-  nextPage(): void     { if (this.page() < this.totalPages()) this.page.update((c) => c + 1); }
-  goToPage(n: number): void { if (n >= 1 && n <= this.totalPages()) this.page.set(n); }
+  previousPage(): void {
+    if (this.page() > 1) this.page.update((c) => c - 1);
+  }
+  nextPage(): void {
+    if (this.page() < this.totalPages()) this.page.update((c) => c + 1);
+  }
+  goToPage(n: number): void {
+    if (n >= 1 && n <= this.totalPages()) this.page.set(n);
+  }
 
   // ─── Formatters ─────────────────────────────────────────────────────────
   unitTypeLabel(type: UnitType): string {
     return type === 'departamento' ? 'Departamento' : 'Casa';
   }
-  typeVisual(type: UnitType): TypeVisual { return TYPE_VISUALS[type]; }
-  initials(code: string): string { return code.trim().slice(0, 2).toUpperCase(); }
+  typeVisual(type: UnitType): TypeVisual {
+    return TYPE_VISUALS[type];
+  }
+  initials(code: string): string {
+    return code.trim().slice(0, 2).toUpperCase();
+  }
   relativeTime(value: Date): string {
     const minutes = Math.max(1, Math.round((Date.now() - value.getTime()) / 60_000));
     if (minutes < 60) return `hace ${minutes} min`;
@@ -267,7 +321,9 @@ export class UnitsPage {
     const days = Math.round(hours / 24);
     return `hace ${days} d`;
   }
-  trackById(_: number, u: UnitCard): string { return u.id; }
+  trackById(_: number, u: UnitCard): string {
+    return u.id;
+  }
 
   // ─── Data loading ───────────────────────────────────────────────────────
   private loadTenantsAndUnits(): void {
@@ -276,14 +332,21 @@ export class UnitsPage {
       return;
     }
     this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants').subscribe({
-      next: (r) => { this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []); this.loadUnits(); },
-      error: () => { this.tenants.set([]); this.loadUnits(); },
+      next: (r) => {
+        this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []);
+        this.loadUnits();
+      },
+      error: () => {
+        this.tenants.set([]);
+        this.loadUnits();
+      },
     });
   }
 
   private loadUnits(): void {
     this.loading.set(true);
-    this.api.get<{ success: boolean; units: Unit[] }>('/units')
+    this.api
+      .get<{ success: boolean; units: Unit[] }>('/units')
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (r) => {

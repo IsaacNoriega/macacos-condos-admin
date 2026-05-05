@@ -97,7 +97,9 @@ export class ResidentsPage {
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
 
-  readonly tenantOptions = computed(() => this.tenants().map((t) => ({ label: t.name, value: t._id })));
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((t) => ({ label: t.name, value: t._id })),
+  );
 
   readonly eligibleUsers = computed(() => {
     const selectedTenantId = this.formTenantId();
@@ -118,7 +120,7 @@ export class ResidentsPage {
   });
 
   readonly userOptions = computed(() =>
-    this.eligibleUsers().map((u) => ({ value: u.email, label: `${u.name} (${u.email})` }))
+    this.eligibleUsers().map((u) => ({ value: u.email, label: `${u.name} (${u.email})` })),
   );
 
   readonly relationshipOptions = RELATIONSHIP_OPTIONS;
@@ -132,8 +134,8 @@ export class ResidentsPage {
 
   readonly form: FormGroup;
 
-  readonly editingResident = computed(() =>
-    this.residents().find((r) => r.id === this.editingId()) ?? null
+  readonly editingResident = computed(
+    () => this.residents().find((r) => r.id === this.editingId()) ?? null,
   );
 
   readonly filteredResidents = computed(() => {
@@ -141,7 +143,16 @@ export class ResidentsPage {
     const activeFilter = this.activeFilter();
 
     return this.residents().filter((r) => {
-      const searchable = [r.name, r.email, r.phone || '', r.relationship, r.tenant, r.unitCode, r.status, r.linkedRole]
+      const searchable = [
+        r.name,
+        r.email,
+        r.phone || '',
+        r.relationship,
+        r.tenant,
+        r.unitCode,
+        r.status,
+        r.linkedRole,
+      ]
         .join(' ')
         .toLowerCase();
 
@@ -161,7 +172,9 @@ export class ResidentsPage {
     return this.filteredResidents().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredResidents().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredResidents().length / this.pageSize)),
+  );
   readonly pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
 
   readonly activeCount = computed(() => this.residents().filter((r) => r.isActive).length);
@@ -170,7 +183,7 @@ export class ResidentsPage {
     private readonly auth: AuthService,
     private readonly fb: FormBuilder,
     private readonly api: ApiService,
-    private readonly toast: ToastService
+    private readonly toast: ToastService,
   ) {
     this.form = this.fb.group({
       tenantId: [''],
@@ -195,7 +208,7 @@ export class ResidentsPage {
           relationship: selected.relationship,
           isActive: selected.isActive,
         },
-        { emitEvent: false }
+        { emitEvent: false },
       );
     });
 
@@ -228,8 +241,16 @@ export class ResidentsPage {
     this.editingId.set(null);
     this.editorMode.set('create');
     this.form.reset(
-      { tenantId: '', unitId: '', email: '', name: '', phone: '', relationship: 'propietario', isActive: true },
-      { emitEvent: false }
+      {
+        tenantId: '',
+        unitId: '',
+        email: '',
+        name: '',
+        phone: '',
+        relationship: 'propietario',
+        isActive: true,
+      },
+      { emitEvent: false },
     );
     this.editorOpen.set(true);
   }
@@ -271,9 +292,17 @@ export class ResidentsPage {
   }
 
   // ─── Toolbar ────────────────────────────────────────────────────────────
-  setSearch(value: string): void { this.searchTerm.set(value); this.page.set(1); }
-  setFilter(value: ResidentFilter): void { this.activeFilter.set(value); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setSearch(value: string): void {
+    this.searchTerm.set(value);
+    this.page.set(1);
+  }
+  setFilter(value: ResidentFilter): void {
+    this.activeFilter.set(value);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
   onTenantFilterChange(ev: any): void {
     this.viewTenantId.set(ev.target.value);
     this.page.set(1);
@@ -295,7 +324,9 @@ export class ResidentsPage {
     }
   }
 
-  refresh(): void { this.loadResidents(); }
+  refresh(): void {
+    this.loadResidents();
+  }
 
   // ─── Save / Delete ──────────────────────────────────────────────────────
   saveResident(): void {
@@ -307,7 +338,9 @@ export class ResidentsPage {
     const payload = this.form.getRawValue();
     const editing = this.editingResident();
     const currentUserTenantId = this.auth.user()?.tenantId || '';
-    const targetTenantId = this.isSuperadmin() ? String(payload.tenantId || '').trim() : currentUserTenantId;
+    const targetTenantId = this.isSuperadmin()
+      ? String(payload.tenantId || '').trim()
+      : currentUserTenantId;
 
     if (this.isSuperadmin() && !targetTenantId) {
       this.form.get('tenantId')?.setErrors({ required: true });
@@ -351,7 +384,9 @@ export class ResidentsPage {
   toggleActive(resident: ResidentCard, event: Event): void {
     event.stopPropagation();
     const nextActive = !resident.isActive;
-    const tenantQuery = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(resident.tenantId)}` : '';
+    const tenantQuery = this.isSuperadmin()
+      ? `?tenantId=${encodeURIComponent(resident.tenantId)}`
+      : '';
     this.loading.set(true);
     this.api
       .put<{ success: boolean }>(`/residents/${resident.id}${tenantQuery}`, {
@@ -378,7 +413,9 @@ export class ResidentsPage {
 
   private deleteResident(resident: ResidentCard): void {
     this.loading.set(true);
-    const tenantQuery = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(resident.tenantId)}` : '';
+    const tenantQuery = this.isSuperadmin()
+      ? `?tenantId=${encodeURIComponent(resident.tenantId)}`
+      : '';
     this.api
       .delete<{ success: boolean; message?: string }>(`/residents/${resident.id}${tenantQuery}`)
       .pipe(finalize(() => this.loading.set(false)))
@@ -396,20 +433,35 @@ export class ResidentsPage {
   }
 
   // ─── Pagination ─────────────────────────────────────────────────────────
-  previousPage(): void { if (this.page() > 1) this.page.update((c) => c - 1); }
-  nextPage(): void { if (this.page() < this.totalPages()) this.page.update((c) => c + 1); }
-  goToPage(n: number): void { if (n >= 1 && n <= this.totalPages()) this.page.set(n); }
+  previousPage(): void {
+    if (this.page() > 1) this.page.update((c) => c - 1);
+  }
+  nextPage(): void {
+    if (this.page() < this.totalPages()) this.page.update((c) => c + 1);
+  }
+  goToPage(n: number): void {
+    if (n >= 1 && n <= this.totalPages()) this.page.set(n);
+  }
 
   // ─── Formatters ─────────────────────────────────────────────────────────
   relationshipLabel(r: Relationship): string {
-    return { propietario: 'Propietario', familiar: 'Familiar', inquilino: 'Inquilino' }[r] ?? 'Residente';
+    return (
+      { propietario: 'Propietario', familiar: 'Familiar', inquilino: 'Inquilino' }[r] ?? 'Residente'
+    );
   }
   linkedRoleLabel(role: ResidentCard['linkedRole']): string {
-    return { residente: 'Usuario residente', familiar: 'Usuario familiar', desconocido: 'Sin usuario enlazado' }[role];
+    return {
+      residente: 'Usuario residente',
+      familiar: 'Usuario familiar',
+      desconocido: 'Sin usuario enlazado',
+    }[role];
   }
   initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
-    const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
+    const initials = parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
     return initials || name.slice(0, 2).toUpperCase();
   }
   relativeTime(value: Date): string {
@@ -421,7 +473,9 @@ export class ResidentsPage {
     return `hace ${days} d`;
   }
 
-  trackById(_: number, r: ResidentCard): string { return r.id; }
+  trackById(_: number, r: ResidentCard): string {
+    return r.id;
+  }
 
   // ─── Data loading ───────────────────────────────────────────────────────
   private loadInitialData(): void {
@@ -432,33 +486,52 @@ export class ResidentsPage {
       return;
     }
 
-    this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants').pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: (r) => {
-        console.log('[DEBUG] loadInitialData (tenants) response:', r);
-        this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []);
-        this.loadUnitsAndUsersAndResidents();
-      },
-      error: () => { this.tenants.set([]); this.loadUnitsAndUsersAndResidents(); },
-    });
+    this.api
+      .get<{ success: boolean; tenants: Tenant[] }>('/tenants')
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (r) => {
+          this.tenants.set(Array.isArray(r.tenants) ? r.tenants : []);
+          this.loadUnitsAndUsersAndResidents();
+        },
+        error: () => {
+          this.tenants.set([]);
+          this.loadUnitsAndUsersAndResidents();
+        },
+      });
   }
 
   private loadUnitsAndUsersAndResidents(): void {
     this.loading.set(true);
-    this.api.get<{ success: boolean; units: Unit[] }>('/units')
+    this.api
+      .get<{ success: boolean; units: Unit[] }>('/units')
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (r) => { this.units.set(Array.isArray(r.units) ? r.units : []); this.loadUsersAndResidents(); },
-        error: () => { this.units.set([]); this.loadUsersAndResidents(); },
+        next: (r) => {
+          this.units.set(Array.isArray(r.units) ? r.units : []);
+          this.loadUsersAndResidents();
+        },
+        error: () => {
+          this.units.set([]);
+          this.loadUsersAndResidents();
+        },
       });
   }
 
   private loadUsersAndResidents(): void {
     this.loading.set(true);
-    this.api.get<{ success: boolean; users: ApiUser[] }>('/users')
+    this.api
+      .get<{ success: boolean; users: ApiUser[] }>('/users')
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: (r) => { this.users.set(Array.isArray(r.users) ? r.users : []); this.loadResidents(); },
-        error: () => { this.users.set([]); this.loadResidents(); },
+        next: (r) => {
+          this.users.set(Array.isArray(r.users) ? r.users : []);
+          this.loadResidents();
+        },
+        error: () => {
+          this.users.set([]);
+          this.loadResidents();
+        },
       });
   }
 
@@ -468,11 +541,11 @@ export class ResidentsPage {
       this.isSuperadmin() && this.viewTenantId()
         ? `?tenantId=${encodeURIComponent(this.viewTenantId())}`
         : '';
-    this.api.get<{ success: boolean; residents: ResidentRecord[] }>(`/residents${tenantQuery}`)
+    this.api
+      .get<{ success: boolean; residents: ResidentRecord[] }>(`/residents${tenantQuery}`)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (r) => {
-          console.log('[DEBUG] loadResidents response:', r);
           const residents = Array.isArray(r.residents) ? r.residents : [];
           this.residents.set(residents.map((resident) => this.toResidentCard(resident)));
           this.lastSyncedAt.set(new Date());
@@ -496,7 +569,10 @@ export class ResidentsPage {
       isActive,
       tenant: this.resolveTenantName(resident.tenantId),
       unitCode: this.resolveUnitCode(resident.unitId),
-      linkedRole: linkedUser?.role === 'residente' || linkedUser?.role === 'familiar' ? linkedUser.role : 'desconocido',
+      linkedRole:
+        linkedUser?.role === 'residente' || linkedUser?.role === 'familiar'
+          ? linkedUser.role
+          : 'desconocido',
       createdAt: resident.createdAt ? new Date(resident.createdAt) : new Date(),
     };
   }

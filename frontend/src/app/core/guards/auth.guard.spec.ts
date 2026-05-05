@@ -11,10 +11,7 @@ describe('authGuard', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        { provide: AuthService, useValue: authServiceMock },
-      ],
+      providers: [provideRouter([]), { provide: AuthService, useValue: authServiceMock }],
     });
   });
 

@@ -30,15 +30,21 @@ export class AuthService {
         this.userSignal.set(response.user);
         localStorage.setItem(STORAGE_KEYS.token, response.token);
         localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(response.user));
-      })
+      }),
     );
   }
 
   forgotPassword(email: string, tenantIdentifier: string): Observable<ForgotPasswordResponse> {
-    return this.api.post<ForgotPasswordResponse>('/auth/forgot-password', { email, tenantIdentifier });
+    return this.api.post<ForgotPasswordResponse>('/auth/forgot-password', {
+      email,
+      tenantIdentifier,
+    });
   }
 
-  resetPassword(token: string, newPassword: string): Observable<{ success: boolean; message: string }> {
+  resetPassword(
+    token: string,
+    newPassword: string,
+  ): Observable<{ success: boolean; message: string }> {
     return this.api.post<{ success: boolean; message: string }>('/auth/reset-password', {
       token,
       newPassword,

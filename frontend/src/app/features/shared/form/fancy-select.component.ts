@@ -1,5 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, HostListener, Input, Output, forwardRef, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  Output,
+  forwardRef,
+  signal,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export interface FancySelectOption {
@@ -19,30 +28,42 @@ export interface FancySelectOption {
     },
   ],
   template: `
-    <div class="fancy-select" [class.open]="isOpen()" [class.disabled]="isDisabled" [class.empty]="!selectedLabel()">
-      <button type="button" class="fancy-trigger" (click)="toggle($event)" [disabled]="isDisabled" [attr.aria-expanded]="isOpen()">
+    <div
+      class="fancy-select"
+      [class.open]="isOpen()"
+      [class.disabled]="isDisabled"
+      [class.empty]="!selectedLabel()"
+    >
+      <button
+        type="button"
+        class="fancy-trigger"
+        (click)="toggle($event)"
+        [disabled]="isDisabled"
+        [attr.aria-expanded]="isOpen()"
+      >
         <span class="trigger-label">{{ selectedLabel() || placeholder }}</span>
         <span class="trigger-arrow" aria-hidden="true">▾</span>
       </button>
 
       @if (isOpen()) {
-      <ul class="fancy-menu" role="listbox">
-        @if (options.length === 0) {
-          <li class="no-options">No hay opciones disponibles</li>
-        } @else {
-          @for (option of options; track option.value) {
-          <li>
-            <button
-              type="button"
-              class="fancy-option"
-              [class.active]="option.value === value"
-              (click)="choose(option.value)">
-              {{ option.label }}
-            </button>
-          </li>
+        <ul class="fancy-menu" role="listbox">
+          @if (options.length === 0) {
+            <li class="no-options">No hay opciones disponibles</li>
+          } @else {
+            @for (option of options; track option.value) {
+              <li>
+                <button
+                  type="button"
+                  class="fancy-option"
+                  [class.active]="option.value === value"
+                  (click)="choose(option.value)"
+                >
+                  {{ option.label }}
+                </button>
+              </li>
+            }
           }
-        }
-      </ul>
+        </ul>
       }
     </div>
   `,

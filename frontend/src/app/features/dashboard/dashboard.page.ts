@@ -7,7 +7,6 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { MacIconComponent, MacIconName } from '../shared/mac-icon/mac-icon.component';
 
-
 interface DashboardGroup {
   label: string;
   value: number;
@@ -65,7 +64,20 @@ interface DashboardSourceState extends DashboardSourceConfig {
   items: Record<string, unknown>[];
 }
 
-const MONTH_LABELS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTH_LABELS = [
+  'Ene',
+  'Feb',
+  'Mar',
+  'Abr',
+  'May',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dic',
+];
 const DASHBOARD_COLORS = {
   users: '#38bdf8',
   payments: '#60a5fa',
@@ -97,10 +109,10 @@ interface QuickAction {
 }
 
 const KPI_ICONS: { icon: MacIconName; tone: 'navy' | 'amber' | 'ok' | 'warn' }[] = [
-  { icon: 'users',    tone: 'navy'  },
-  { icon: 'card',     tone: 'amber' },
-  { icon: 'calendar', tone: 'ok'    },
-  { icon: 'wrench',   tone: 'warn'  },
+  { icon: 'users', tone: 'navy' },
+  { icon: 'card', tone: 'amber' },
+  { icon: 'calendar', tone: 'ok' },
+  { icon: 'wrench', tone: 'warn' },
 ];
 
 @Component({
@@ -126,10 +138,30 @@ export class DashboardPage implements OnInit, OnDestroy {
     const previousMonth = this.countsByMonth(previousWindow);
 
     const kpiConfigs = [
-      { key: 'users', label: 'Nuevos usuarios', note: 'Altas del mes', color: DASHBOARD_COLORS.users },
-      { key: 'payments', label: 'Pagos confirmados', note: 'Pagos cerrados', color: DASHBOARD_COLORS.payments },
-      { key: 'reservations', label: 'Reservaciones nuevas', note: 'Alta de reservas', color: DASHBOARD_COLORS.reservations },
-      { key: 'maintenance', label: 'Mantenimientos', note: 'Reportes abiertos', color: DASHBOARD_COLORS.maintenance },
+      {
+        key: 'users',
+        label: 'Nuevos usuarios',
+        note: 'Altas del mes',
+        color: DASHBOARD_COLORS.users,
+      },
+      {
+        key: 'payments',
+        label: 'Pagos confirmados',
+        note: 'Pagos cerrados',
+        color: DASHBOARD_COLORS.payments,
+      },
+      {
+        key: 'reservations',
+        label: 'Reservaciones nuevas',
+        note: 'Alta de reservas',
+        color: DASHBOARD_COLORS.reservations,
+      },
+      {
+        key: 'maintenance',
+        label: 'Mantenimientos',
+        note: 'Reportes abiertos',
+        color: DASHBOARD_COLORS.maintenance,
+      },
     ];
 
     return kpiConfigs
@@ -137,7 +169,8 @@ export class DashboardPage implements OnInit, OnDestroy {
         const current = currentMonth.get(config.key) ?? 0;
         const previous = previousMonth.get(config.key) ?? 0;
         const delta = current - previous;
-        const deltaPercent = previous === 0 ? (current === 0 ? 0 : 100) : Math.round((delta / previous) * 100);
+        const deltaPercent =
+          previous === 0 ? (current === 0 ? 0 : 100) : Math.round((delta / previous) * 100);
 
         return {
           label: config.label,
@@ -154,13 +187,27 @@ export class DashboardPage implements OnInit, OnDestroy {
       .filter((card) => this.hasSource(card.sourceKey));
   });
 
-
   readonly chartGroups = computed<DashboardGroup[]>(() => {
     const currentMonth = this.countsByMonth(this.monthWindows()[this.monthWindows().length - 1]);
     const groups = [
-      { label: 'Personas', value: (currentMonth.get('users') ?? 0) + (currentMonth.get('residents') ?? 0), color: DASHBOARD_COLORS.users },
-      { label: 'Operación', value: (currentMonth.get('reservations') ?? 0) + (currentMonth.get('maintenance') ?? 0) + (currentMonth.get('amenities') ?? 0), color: DASHBOARD_COLORS.reservations },
-      { label: 'Finanzas', value: (currentMonth.get('charges') ?? 0) + (currentMonth.get('payments') ?? 0), color: DASHBOARD_COLORS.payments },
+      {
+        label: 'Personas',
+        value: (currentMonth.get('users') ?? 0) + (currentMonth.get('residents') ?? 0),
+        color: DASHBOARD_COLORS.users,
+      },
+      {
+        label: 'Operación',
+        value:
+          (currentMonth.get('reservations') ?? 0) +
+          (currentMonth.get('maintenance') ?? 0) +
+          (currentMonth.get('amenities') ?? 0),
+        color: DASHBOARD_COLORS.reservations,
+      },
+      {
+        label: 'Finanzas',
+        value: (currentMonth.get('charges') ?? 0) + (currentMonth.get('payments') ?? 0),
+        color: DASHBOARD_COLORS.payments,
+      },
     ];
 
     const total = groups.reduce((sum, group) => sum + group.value, 0) || 1;
@@ -184,7 +231,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     return `conic-gradient(${segments.join(', ')})`;
   });
 
-  readonly totalMetrics = computed(() => this.chartGroups().reduce((sum, group) => sum + group.value, 0));
+  readonly totalMetrics = computed(() =>
+    this.chartGroups().reduce((sum, group) => sum + group.value, 0),
+  );
 
   readonly lineSeries = computed<DashboardTrendSeries[]>(() => {
     const windows = this.monthWindows();
@@ -215,7 +264,8 @@ export class DashboardPage implements OnInit, OnDestroy {
         const latest = values.at(-1) ?? 0;
         const previous = values.at(-2) ?? 0;
         const delta = latest - previous;
-        const deltaPercent = previous === 0 ? (latest === 0 ? 0 : 100) : Math.round((delta / previous) * 100);
+        const deltaPercent =
+          previous === 0 ? (latest === 0 ? 0 : 100) : Math.round((delta / previous) * 100);
 
         return {
           label: config.label,
@@ -244,7 +294,7 @@ export class DashboardPage implements OnInit, OnDestroy {
         icon: style.icon,
         tone: style.tone,
       };
-    })
+    }),
   );
 
   readonly greeting = computed(() => {
@@ -271,10 +321,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     const isStaff = role === 'superadmin' || role === 'admin';
     const actions: QuickAction[] = [];
     if (isStaff) {
-      actions.push({ label: 'Cargos pendientes', route: '/charges',  icon: 'receipt' });
+      actions.push({ label: 'Cargos pendientes', route: '/charges', icon: 'receipt' });
       actions.push({ label: 'Pagos por aprobar', route: '/payments', icon: 'card' });
     } else {
-      actions.push({ label: 'Mis pagos',    route: '/payments',    icon: 'card' });
+      actions.push({ label: 'Mis pagos', route: '/payments', icon: 'card' });
       actions.push({ label: 'Reservaciones', route: '/reservations', icon: 'calendar' });
     }
     actions.push({ label: 'Mantenimiento', route: '/maintenance', icon: 'wrench' });
@@ -288,7 +338,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   constructor(
     private readonly api: ApiService,
     readonly auth: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
   ) {}
 
   private refreshIntervalId: any;
@@ -316,7 +366,9 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.error.set(null);
     this.now.set(new Date());
 
-    forkJoin(sourceConfig.map((source) => this.api.get<Record<string, unknown>>(source.endpoint))).subscribe({
+    forkJoin(
+      sourceConfig.map((source) => this.api.get<Record<string, unknown>>(source.endpoint)),
+    ).subscribe({
       next: (responses) => {
         const updated = sourceConfig.map((source, index) => {
           const response = responses[index] as Record<string, unknown>;
@@ -395,7 +447,10 @@ export class DashboardPage implements OnInit, OnDestroy {
     }
 
     const parts = name.split(/\s+/).filter(Boolean);
-    const initials = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? '').join('');
+    const initials = parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
     return initials || name.slice(0, 2).toUpperCase();
   }
 }

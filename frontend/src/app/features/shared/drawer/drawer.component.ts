@@ -47,8 +47,13 @@ import { MacIconComponent } from '../mac-icon/mac-icon.component';
                 <div class="mcs-drawer-subtitle">{{ subtitle() }}</div>
               }
             </div>
-            <button type="button" class="mcs-btn ghost sm icon-only" (click)="closed.emit()" aria-label="Cerrar">
-              <mac-icon name="x" [size]="15"/>
+            <button
+              type="button"
+              class="mcs-btn ghost sm icon-only"
+              (click)="closed.emit()"
+              aria-label="Cerrar"
+            >
+              <mac-icon name="x" [size]="15" />
             </button>
           </header>
           <div class="mcs-drawer-body mcs-scroll-soft">

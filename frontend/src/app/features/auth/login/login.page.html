@@ -13,10 +13,11 @@
 
     <div class="brand-body">
       <h2 class="brand-headline">
-        La administración<br>de su condominio,<br><em>sin complicaciones.</em>
+        La administración<br />de su condominio,<br /><em>sin complicaciones.</em>
       </h2>
       <p class="brand-copy">
-        Cobros, reportes de mantenimiento, reservas de amenidades y comunicación con residentes — todo en un solo lugar.
+        Cobros, reportes de mantenimiento, reservas de amenidades y comunicación con residentes —
+        todo en un solo lugar.
       </p>
     </div>
 
@@ -32,20 +33,19 @@
   <!-- RIGHT FORM PANEL -->
   <div class="form-panel">
     <div class="form-wrap">
-
       @if (activePanel() === 'login') {
         <h1 class="serif form-title">Bienvenido de vuelta</h1>
         <p class="form-lead">Ingrese sus credenciales para acceder al panel.</p>
 
         @if (error()) {
           <div class="form-alert bad">
-            <mac-icon name="xCircle" [size]="15"/>
+            <mac-icon name="xCircle" [size]="15" />
             <span>{{ error() }}</span>
           </div>
         }
         @if (info()) {
           <div class="form-alert info">
-            <mac-icon name="info" [size]="15"/>
+            <mac-icon name="info" [size]="15" />
             <span>{{ info() }}</span>
           </div>
         }
@@ -54,12 +54,21 @@
           <div class="mcs-field">
             <label class="mcs-field-label">Identificador del condominio</label>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="building" [size]="15"/></span>
-              <input class="mcs-input with-icon mono" type="text" formControlName="tenantIdentifier" placeholder="Ej: mac-centro"/>
+              <span class="mcs-input-icon"><mac-icon name="building" [size]="15" /></span>
+              <input
+                class="mcs-input with-icon mono"
+                type="text"
+                formControlName="tenantIdentifier"
+                placeholder="Ej: mac-centro"
+              />
             </div>
-            @if (loginForm.get('tenantIdentifier')?.invalid && (loginForm.get('tenantIdentifier')?.dirty || loginForm.get('tenantIdentifier')?.touched)) {
+            @if (
+              loginForm.get('tenantIdentifier')?.invalid &&
+              (loginForm.get('tenantIdentifier')?.dirty ||
+                loginForm.get('tenantIdentifier')?.touched)
+            ) {
               <div class="mcs-field-error">
-                <mac-icon name="alert" [size]="12"/>
+                <mac-icon name="alert" [size]="12" />
                 <span>Ingrese el identificador de su condominio.</span>
               </div>
             }
@@ -68,12 +77,21 @@
           <div class="mcs-field">
             <label class="mcs-field-label">Correo electrónico</label>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>
-              <input class="mcs-input with-icon" type="email" formControlName="email" autocomplete="email" placeholder="correo@ejemplo.com"/>
+              <span class="mcs-input-icon"><mac-icon name="mail" [size]="15" /></span>
+              <input
+                class="mcs-input with-icon"
+                type="email"
+                formControlName="email"
+                autocomplete="email"
+                placeholder="correo@ejemplo.com"
+              />
             </div>
-            @if (loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)) {
+            @if (
+              loginForm.get('email')?.invalid &&
+              (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)
+            ) {
               <div class="mcs-field-error">
-                <mac-icon name="alert" [size]="12"/>
+                <mac-icon name="alert" [size]="12" />
                 <span>Ingrese un correo electrónico válido.</span>
               </div>
             }
@@ -82,29 +100,45 @@
           <div class="mcs-field">
             <div class="mcs-row mcs-between">
               <label class="mcs-field-label">Contraseña</label>
-              <span class="mcs-link" style="font-size:12px;" (click)="setPanel('forgot')">¿Olvidó su contraseña?</span>
+              <span class="mcs-link" style="font-size: 12px" (click)="setPanel('forgot')"
+                >¿Olvidó su contraseña?</span
+              >
             </div>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="lock" [size]="15"/></span>
-              <input class="mcs-input with-icon" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" style="padding-right:36px;"/>
-              <button type="button" class="pwd-toggle" (click)="togglePassword()" [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
-                <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15"/>
+              <span class="mcs-input-icon"><mac-icon name="lock" [size]="15" /></span>
+              <input
+                class="mcs-input with-icon"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="current-password"
+                style="padding-right: 36px"
+              />
+              <button
+                type="button"
+                class="pwd-toggle"
+                (click)="togglePassword()"
+                [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+              >
+                <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15" />
               </button>
             </div>
           </div>
 
-          <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%; margin-top:4px;">
+          <button
+            type="submit"
+            class="mcs-btn primary lg"
+            [disabled]="loading()"
+            style="width: 100%; margin-top: 4px"
+          >
             @if (loading()) {
               <span class="mcs-btn-spin"></span>
               <span>Ingresando...</span>
             } @else {
               <span>Ingresar</span>
-              <mac-icon name="arrowRight" [size]="15"/>
+              <mac-icon name="arrowRight" [size]="15" />
             }
           </button>
         </form>
-
-
       }
 
       @if (activePanel() === 'forgot') {
@@ -113,13 +147,13 @@
 
         @if (error()) {
           <div class="form-alert bad">
-            <mac-icon name="xCircle" [size]="15"/>
+            <mac-icon name="xCircle" [size]="15" />
             <span>{{ error() }}</span>
           </div>
         }
         @if (info()) {
           <div class="form-alert info">
-            <mac-icon name="info" [size]="15"/>
+            <mac-icon name="info" [size]="15" />
             <span>{{ info() }}</span>
           </div>
         }
@@ -127,33 +161,56 @@
         <form [formGroup]="forgotForm" (ngSubmit)="forgotPassword()" class="mcs-stack">
           <div class="mcs-field">
             <label class="mcs-field-label">Identificador del condominio</label>
-            <input class="mcs-input mono" type="text" formControlName="tenantIdentifier" placeholder="Ej: mac-centro"/>
+            <input
+              class="mcs-input mono"
+              type="text"
+              formControlName="tenantIdentifier"
+              placeholder="Ej: mac-centro"
+            />
           </div>
           <div class="mcs-field">
             <label class="mcs-field-label">Correo electrónico</label>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="mail" [size]="15"/></span>
-              <input class="mcs-input with-icon" type="email" formControlName="email" autocomplete="email"/>
+              <span class="mcs-input-icon"><mac-icon name="mail" [size]="15" /></span>
+              <input
+                class="mcs-input with-icon"
+                type="email"
+                formControlName="email"
+                autocomplete="email"
+              />
             </div>
-            @if (forgotForm.get('email')?.invalid && (forgotForm.get('email')?.dirty || forgotForm.get('email')?.touched)) {
+            @if (
+              forgotForm.get('email')?.invalid &&
+              (forgotForm.get('email')?.dirty || forgotForm.get('email')?.touched)
+            ) {
               <div class="mcs-field-error">
-                <mac-icon name="alert" [size]="12"/>
+                <mac-icon name="alert" [size]="12" />
                 <span>Ingrese un correo electrónico válido.</span>
               </div>
             }
           </div>
 
-          <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%;">
+          <button
+            type="submit"
+            class="mcs-btn primary lg"
+            [disabled]="loading()"
+            style="width: 100%"
+          >
             @if (loading()) {
               <span class="mcs-btn-spin"></span>
               <span>Enviando...</span>
             } @else {
               <span>Enviar enlace</span>
-              <mac-icon name="send" [size]="14"/>
+              <mac-icon name="send" [size]="14" />
             }
           </button>
-          <button type="button" class="mcs-btn ghost" style="width:100%;" (click)="setPanel('login')">
-            <mac-icon name="chevronLeft" [size]="14"/>
+          <button
+            type="button"
+            class="mcs-btn ghost"
+            style="width: 100%"
+            (click)="setPanel('login')"
+          >
+            <mac-icon name="chevronLeft" [size]="14" />
             <span>Volver al inicio de sesión</span>
           </button>
         </form>
@@ -165,13 +222,13 @@
 
         @if (error()) {
           <div class="form-alert bad">
-            <mac-icon name="xCircle" [size]="15"/>
+            <mac-icon name="xCircle" [size]="15" />
             <span>{{ error() }}</span>
           </div>
         }
         @if (info()) {
           <div class="form-alert info">
-            <mac-icon name="info" [size]="15"/>
+            <mac-icon name="info" [size]="15" />
             <span>{{ info() }}</span>
           </div>
         }
@@ -179,20 +236,39 @@
         <form [formGroup]="resetForm" (ngSubmit)="resetPassword()" class="mcs-stack">
           <div class="mcs-field">
             <label class="mcs-field-label">Token</label>
-            <input class="mcs-input mono" type="text" formControlName="token" placeholder="Pegue aquí el token"/>
+            <input
+              class="mcs-input mono"
+              type="text"
+              formControlName="token"
+              placeholder="Pegue aquí el token"
+            />
           </div>
           <div class="mcs-field">
             <label class="mcs-field-label">Nueva contraseña</label>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="lock" [size]="15"/></span>
-              <input class="mcs-input with-icon" [type]="showPassword() ? 'text' : 'password'" formControlName="newPassword" autocomplete="new-password" style="padding-right:36px;"/>
-              <button type="button" class="pwd-toggle" (click)="togglePassword()" aria-label="Mostrar/ocultar contraseña">
-                <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15"/>
+              <span class="mcs-input-icon"><mac-icon name="lock" [size]="15" /></span>
+              <input
+                class="mcs-input with-icon"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="newPassword"
+                autocomplete="new-password"
+                style="padding-right: 36px"
+              />
+              <button
+                type="button"
+                class="pwd-toggle"
+                (click)="togglePassword()"
+                aria-label="Mostrar/ocultar contraseña"
+              >
+                <mac-icon [name]="showPassword() ? 'eyeOff' : 'eye'" [size]="15" />
               </button>
             </div>
-            @if (resetForm.get('newPassword')?.invalid && (resetForm.get('newPassword')?.dirty || resetForm.get('newPassword')?.touched)) {
+            @if (
+              resetForm.get('newPassword')?.invalid &&
+              (resetForm.get('newPassword')?.dirty || resetForm.get('newPassword')?.touched)
+            ) {
               <div class="mcs-field-error">
-                <mac-icon name="alert" [size]="12"/>
+                <mac-icon name="alert" [size]="12" />
                 <span>Mínimo 6 caracteres.</span>
               </div>
             } @else {
@@ -200,22 +276,31 @@
             }
           </div>
 
-          <button type="submit" class="mcs-btn primary lg" [disabled]="loading()" style="width:100%;">
+          <button
+            type="submit"
+            class="mcs-btn primary lg"
+            [disabled]="loading()"
+            style="width: 100%"
+          >
             @if (loading()) {
               <span class="mcs-btn-spin"></span>
               <span>Actualizando...</span>
             } @else {
               <span>Actualizar contraseña</span>
-              <mac-icon name="check" [size]="15"/>
+              <mac-icon name="check" [size]="15" />
             }
           </button>
-          <button type="button" class="mcs-btn ghost" style="width:100%;" (click)="setPanel('login')">
-            <mac-icon name="chevronLeft" [size]="14"/>
+          <button
+            type="button"
+            class="mcs-btn ghost"
+            style="width: 100%"
+            (click)="setPanel('login')"
+          >
+            <mac-icon name="chevronLeft" [size]="14" />
             <span>Volver al inicio de sesión</span>
           </button>
         </form>
       }
-
     </div>
   </div>
 </section>

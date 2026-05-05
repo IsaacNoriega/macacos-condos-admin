@@ -22,7 +22,7 @@ type NoticeCategoryFilter = 'all' | 'info' | 'urgente' | 'evento';
     MacIconComponent,
     DrawerComponent,
     ConfirmModalComponent,
-    FancySelectComponent
+    FancySelectComponent,
   ],
   templateUrl: './notices.page.html',
   styleUrl: './notices.page.css',
@@ -48,7 +48,7 @@ export class NoticesPage implements OnInit {
   readonly isStaff = computed(() => ['superadmin', 'admin'].includes(this.auth.role() ?? ''));
   readonly isSuperadmin = computed(() => this.auth.role() === 'superadmin');
   readonly selectedFilterTenantId = signal<string>('');
-  
+
   readonly filters: Array<{ label: string; value: NoticeCategoryFilter }> = [
     { label: 'Todos', value: 'all' },
     { label: 'Información', value: 'info' },
@@ -67,12 +67,17 @@ export class NoticesPage implements OnInit {
   readonly filteredNotices = computed(() => {
     const query = this.searchTerm().toLowerCase();
     const filter = this.activeFilter();
-    
-    return this.notices().filter(n => {
-      const matchesQuery = !query || n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query);
-      const matchesFilter = filter === 'all' || n.category === filter;
-      return matchesQuery && matchesFilter;
-    }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return this.notices()
+      .filter((n) => {
+        const matchesQuery =
+          !query ||
+          n.title.toLowerCase().includes(query) ||
+          n.content.toLowerCase().includes(query);
+        const matchesFilter = filter === 'all' || n.category === filter;
+        return matchesQuery && matchesFilter;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   });
 
   readonly pagedNotices = computed(() => {
@@ -80,7 +85,9 @@ export class NoticesPage implements OnInit {
     return this.filteredNotices().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredNotices().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredNotices().length / this.pageSize)),
+  );
   readonly pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
 
   constructor() {
@@ -88,25 +95,25 @@ export class NoticesPage implements OnInit {
       title: ['', [Validators.required, Validators.maxLength(100)]],
       content: ['', [Validators.required, Validators.maxLength(1000)]],
       category: ['info', Validators.required],
-      tenantId: ['']
+      tenantId: [''],
     });
 
     effect(() => {
       const id = this.selectedNoticeId();
       if (!id) {
-        this.form.reset({ 
-          category: 'info', 
-          tenantId: this.auth.user()?.tenantId || ''
+        this.form.reset({
+          category: 'info',
+          tenantId: this.auth.user()?.tenantId || '',
         });
         return;
       }
-      const notice = this.notices().find(n => n._id === id);
+      const notice = this.notices().find((n) => n._id === id);
       if (notice) {
         this.form.patchValue({
           title: notice.title,
           content: notice.content,
           category: notice.category,
-          tenantId: notice.tenantId
+          tenantId: notice.tenantId,
         });
       }
     });
@@ -122,7 +129,7 @@ export class NoticesPage implements OnInit {
   loadTenants(): void {
     this.api.get<{ tenants: Tenant[] }>('/tenants').subscribe({
       next: (res) => this.tenants.set(res.tenants || []),
-      error: () => this.toast.bad('Error al cargar condominios')
+      error: () => this.toast.bad('Error al cargar condominios'),
     });
   }
 
@@ -134,12 +141,13 @@ export class NoticesPage implements OnInit {
       url += `?tenantId=${filterTenant}`;
     }
 
-    this.api.get<{ notices: Notice[] }>(url).pipe(
-      finalize(() => this.loading.set(false))
-    ).subscribe({
-      next: (res) => this.notices.set(res.notices || []),
-      error: () => this.toast.bad('Error al cargar avisos')
-    });
+    this.api
+      .get<{ notices: Notice[] }>(url)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (res) => this.notices.set(res.notices || []),
+        error: () => this.toast.bad('Error al cargar avisos'),
+      });
   }
 
   onFilterTenantChange(ev: any): void {
@@ -147,11 +155,19 @@ export class NoticesPage implements OnInit {
     this.loadNotices();
   }
 
-  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
-  
-  setFilter(val: NoticeCategoryFilter): void { this.activeFilter.set(val); this.page.set(1); }
+  setSearch(val: string): void {
+    this.searchTerm.set(val);
+    this.page.set(1);
+  }
 
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setFilter(val: NoticeCategoryFilter): void {
+    this.activeFilter.set(val);
+    this.page.set(1);
+  }
+
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
 
   openCreate(): void {
     this.selectedNoticeId.set(null);
@@ -181,10 +197,8 @@ export class NoticesPage implements OnInit {
     this.loading.set(true);
     const val = this.form.value;
     const id = this.selectedNoticeId();
-    
-    const req$ = id 
-      ? this.api.put(`/notices/${id}`, val)
-      : this.api.post('/notices', val);
+
+    const req$ = id ? this.api.put(`/notices/${id}`, val) : this.api.post('/notices', val);
 
     req$.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
@@ -192,7 +206,7 @@ export class NoticesPage implements OnInit {
         this.closeEditor();
         this.loadNotices();
       },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar aviso')
+      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar aviso'),
     });
   }
 
@@ -206,35 +220,51 @@ export class NoticesPage implements OnInit {
     if (!notice) return;
 
     this.loading.set(true);
-    this.api.delete(`/notices/${notice._id}`).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.toast.ok('Aviso eliminado');
-        this.toDelete.set(null);
-        this.loadNotices();
-      },
-      error: () => this.toast.bad('Error al eliminar aviso')
-    });
+    this.api
+      .delete(`/notices/${notice._id}`)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => {
+          this.toast.ok('Aviso eliminado');
+          this.toDelete.set(null);
+          this.loadNotices();
+        },
+        error: () => this.toast.bad('Error al eliminar aviso'),
+      });
   }
 
   // ─── Pagination ─────────────────────────────────────────────────────────
-  previousPage(): void { if (this.page() > 1) this.page.update((c) => c - 1); }
-  nextPage(): void     { if (this.page() < this.totalPages()) this.page.update((c) => c + 1); }
-  goToPage(n: number): void { if (n >= 1 && n <= this.totalPages()) this.page.set(n); }
+  previousPage(): void {
+    if (this.page() > 1) this.page.update((c) => c - 1);
+  }
+  nextPage(): void {
+    if (this.page() < this.totalPages()) this.page.update((c) => c + 1);
+  }
+  goToPage(n: number): void {
+    if (n >= 1 && n <= this.totalPages()) this.page.set(n);
+  }
 
   getCategoryIcon(cat: string): any {
     switch (cat) {
-      case 'urgente': return 'alert';
-      case 'evento': return 'calendar';
-      default: return 'info';
+      case 'urgente':
+        return 'alert';
+      case 'evento':
+        return 'calendar';
+      default:
+        return 'info';
     }
   }
 
   getCategoryColor(cat: string): string {
     switch (cat) {
-      case 'urgente': return 'danger';
-      case 'evento': return 'primary';
-      case 'info': return 'info';
-      default: return 'navy';
+      case 'urgente':
+        return 'danger';
+      case 'evento':
+        return 'primary';
+      case 'info':
+        return 'info';
+      default:
+        return 'navy';
     }
   }
 

@@ -52,7 +52,6 @@ export const getAllResidents = async (req: Request, res: Response, next: NextFun
       queryTenantId_final = req.query.tenantId ? String(req.query.tenantId) : undefined;
     }
 
-    console.log(`[DEBUG] getAllResidents - req.tenantId: ${req.tenantId}, queryTenantId: ${queryTenantId}, final: ${queryTenantId_final}`);
     let residents = await residentsService.findResidentsByTenant(queryTenantId_final);
     if (unitIdFilter) {
       residents = residents.filter((r) => String(r.unitId) === String(unitIdFilter));

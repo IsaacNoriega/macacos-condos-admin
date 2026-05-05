@@ -10,22 +10,26 @@
     <div class="mcs-row mcs-gap-sm">
       <div class="mcs-row mcs-gap-sm summary-badges mcs-mr">
         @for (card of summaryCards(); track card.label) {
-          <div class="mcs-badge" [style.border-left]="'3px solid ' + card.color" style="padding-left: 10px; background: var(--surface-muted);">
-            <strong style="margin-right: 4px; color: var(--text);">{{ card.value }}</strong> 
-            <span style="color: var(--text-soft); font-size: 11px;">{{ card.label }}</span>
+          <div
+            class="mcs-badge"
+            [style.border-left]="'3px solid ' + card.color"
+            style="padding-left: 10px; background: var(--surface-muted)"
+          >
+            <strong style="margin-right: 4px; color: var(--text)">{{ card.value }}</strong>
+            <span style="color: var(--text-soft); font-size: 11px">{{ card.label }}</span>
           </div>
         }
       </div>
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
-        <mac-icon name="plus" [size]="15"/>
+        <mac-icon name="plus" [size]="15" />
         <span>Nueva reservación</span>
       </button>
       <div class="mcs-seg">
         <button type="button" [class.on]="view() === 'calendar'" (click)="setView('calendar')">
-          <mac-icon name="calendar" [size]="13"/><span>Calendario</span>
+          <mac-icon name="calendar" [size]="13" /><span>Calendario</span>
         </button>
         <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
-          <mac-icon name="list" [size]="13"/><span>Lista</span>
+          <mac-icon name="list" [size]="13" /><span>Lista</span>
         </button>
       </div>
     </div>
@@ -33,34 +37,63 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <form class="mcs-row mcs-gap-sm mcs-grow" [formGroup]="calendarForm" (ngSubmit)="applyCalendarFilters()">
+    <form
+      class="mcs-row mcs-gap-sm mcs-grow"
+      [formGroup]="calendarForm"
+      (ngSubmit)="applyCalendarFilters()"
+    >
       @if (isSuperadmin()) {
-        <div class="mcs-input-wrap" style="width: 200px;">
-          <app-fancy-select formControlName="tenantId" [placeholder]="'Tenant: Todos'" [options]="tenantFilterOptions()" (selectionChange)="applyCalendarFilters()" />
+        <div class="mcs-input-wrap" style="width: 200px">
+          <app-fancy-select
+            formControlName="tenantId"
+            [placeholder]="'Tenant: Todos'"
+            [options]="tenantFilterOptions()"
+            (selectionChange)="applyCalendarFilters()"
+          />
         </div>
       }
-      <div class="mcs-input-wrap" style="width: 220px;">
-        <app-fancy-select formControlName="amenity" [placeholder]="'Amenidad: Todas'" [options]="amenityFilterOptions()" (selectionChange)="applyCalendarFilters()" />
+      <div class="mcs-input-wrap" style="width: 220px">
+        <app-fancy-select
+          formControlName="amenity"
+          [placeholder]="'Amenidad: Todas'"
+          [options]="amenityFilterOptions()"
+          (selectionChange)="applyCalendarFilters()"
+        />
       </div>
-      <div class="mcs-input-wrap" style="width: 160px;">
-        <input class="mcs-input" type="date" formControlName="weekStart" (change)="applyCalendarFilters()" />
+      <div class="mcs-input-wrap" style="width: 160px">
+        <input
+          class="mcs-input"
+          type="date"
+          formControlName="weekStart"
+          (change)="applyCalendarFilters()"
+        />
       </div>
       <button class="mcs-btn secondary-soft" type="submit">
-        <mac-icon name="refresh" [size]="14"/>
+        <mac-icon name="refresh" [size]="14" />
         <span>Actualizar</span>
       </button>
     </form>
-    
+
     <div class="mcs-row mcs-gap-sm">
       <button class="mcs-btn secondary-soft" type="button" (click)="goToCurrentWeek()">
         <span>Hoy</span>
       </button>
       <div class="mcs-row mcs-gap-xs">
-        <button class="mcs-btn secondary-soft icon-only" type="button" (click)="previousWeek()" aria-label="Semana anterior">
-          <mac-icon name="chevronLeft" [size]="14"/>
+        <button
+          class="mcs-btn secondary-soft icon-only"
+          type="button"
+          (click)="previousWeek()"
+          aria-label="Semana anterior"
+        >
+          <mac-icon name="chevronLeft" [size]="14" />
         </button>
-        <button class="mcs-btn secondary-soft icon-only" type="button" (click)="nextWeek()" aria-label="Semana siguiente">
-          <mac-icon name="chevronRight" [size]="14"/>
+        <button
+          class="mcs-btn secondary-soft icon-only"
+          type="button"
+          (click)="nextWeek()"
+          aria-label="Semana siguiente"
+        >
+          <mac-icon name="chevronRight" [size]="14" />
         </button>
       </div>
     </div>
@@ -71,21 +104,21 @@
     <article class="mcs-card calendar-card">
       <div class="card-header mcs-row mcs-between">
         <div class="mcs-row mcs-gap-sm">
-          <mac-icon name="calendar" [size]="18" style="color: var(--primary-new);"/>
+          <mac-icon name="calendar" [size]="18" style="color: var(--primary-new)" />
           <h2 class="card-title">Calendario Semanal</h2>
         </div>
         <span class="week-range-label">{{ calendarRangeLabel() }}</span>
       </div>
-      
+
       <div class="calendar-content">
         @if (calendarError()) {
           <div class="mcs-alert danger mcs-mb">
-            <mac-icon name="alert" [size]="16"/>
+            <mac-icon name="alert" [size]="16" />
             <span>{{ calendarError() }}</span>
           </div>
         }
 
-        <div class="calendar-frame" style="position: relative;">
+        <div class="calendar-frame" style="position: relative">
           @if (loadingCalendar()) {
             <div class="calendar-loader-overlay">
               <span class="mcs-loader"></span>
@@ -100,30 +133,45 @@
     <div class="mcs-card">
       @for (r of reservations(); track r._id; let i = $index) {
         <div class="mcs-list-row" [class.has-border]="i > 0" (click)="openEdit(r)">
-          <div class="mcs-i-round" style="background: var(--surface-muted);" [style.color]="getReservationStatusColor(getReservationDisplayStatus(r))">
-            <mac-icon name="calendar" [size]="14"/>
+          <div
+            class="mcs-i-round"
+            style="background: var(--surface-muted)"
+            [style.color]="getReservationStatusColor(getReservationDisplayStatus(r))"
+          >
+            <mac-icon name="calendar" [size]="14" />
           </div>
           <div class="mcs-grow">
-            <div style="font-weight: 600;">{{ r.amenity }}</div>
-            <div style="font-size: 12px; color: var(--text-muted-new);">{{ toTimeLabel(r.start) }} - {{ toTimeLabel(r.end) }} · {{ r.start | date:'mediumDate' }}</div>
+            <div style="font-weight: 600">{{ r.amenity }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new)">
+              {{ toTimeLabel(r.start) }} - {{ toTimeLabel(r.end) }} ·
+              {{ r.start | date: 'mediumDate' }}
+            </div>
           </div>
-          <div style="width: 130px;">
-            <span class="mcs-badge" [style.background]="getReservationStatusColor(getReservationDisplayStatus(r))" style="color: white;">
+          <div style="width: 130px">
+            <span
+              class="mcs-badge"
+              [style.background]="getReservationStatusColor(getReservationDisplayStatus(r))"
+              style="color: white"
+            >
               {{ getReservationDisplayStatus(r) | titlecase }}
             </span>
           </div>
           <div class="mcs-row mcs-gap-sm">
-            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); openEdit(r)">
-              <mac-icon name="edit" [size]="13"/>
+            <button
+              class="mcs-btn sm icon-only"
+              type="button"
+              (click)="$event.stopPropagation(); openEdit(r)"
+            >
+              <mac-icon name="edit" [size]="13" />
             </button>
             <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(r)">
-              <mac-icon name="trash" [size]="13"/>
+              <mac-icon name="trash" [size]="13" />
             </button>
           </div>
         </div>
       }
       @if (reservations().length === 0) {
-        <div class="mcs-empty" style="padding: 40px;">
+        <div class="mcs-empty" style="padding: 40px">
           <p>No hay reservaciones para esta semana.</p>
         </div>
       }
@@ -134,36 +182,57 @@
   <mac-drawer
     [open]="editorOpen()"
     [title]="editingReservationId() ? 'Editar reservación' : 'Nueva reservación'"
-    [subtitle]="editingReservationId() ? 'Modifique los detalles de la reserva' : 'Complete el formulario para reservar una amenidad'"
+    [subtitle]="
+      editingReservationId()
+        ? 'Modifique los detalles de la reserva'
+        : 'Complete el formulario para reservar una amenidad'
+    "
     [width]="520"
-    (closed)="closeEditor()">
-    
+    (closed)="closeEditor()"
+  >
     <ng-container body>
       <form [formGroup]="form" (ngSubmit)="saveReservation()" class="mcs-stack">
         @if (isSuperadmin()) {
           <div class="mcs-field">
             <label class="mcs-field-label">Tenant *</label>
-            <app-fancy-select formControlName="tenantId" [placeholder]="'Selecciona un condominio'" [options]="tenantOptions()" />
+            <app-fancy-select
+              formControlName="tenantId"
+              [placeholder]="'Selecciona un condominio'"
+              [options]="tenantOptions()"
+            />
           </div>
         }
 
         @if (isSuperadmin() || userRole() === 'admin') {
           <div class="mcs-field">
             <label class="mcs-field-label">Usuario *</label>
-            <app-fancy-select formControlName="userId" [placeholder]="'Selecciona un usuario'" [options]="userOptions()" />
+            <app-fancy-select
+              formControlName="userId"
+              [placeholder]="'Selecciona un usuario'"
+              [options]="userOptions()"
+            />
           </div>
         }
 
         <div class="mcs-field">
           <label class="mcs-field-label">Amenidad *</label>
-          <app-fancy-select formControlName="amenity" [placeholder]="'Selecciona una amenidad'" [options]="formAmenityOptions()" />
+          <app-fancy-select
+            formControlName="amenity"
+            [placeholder]="'Selecciona una amenidad'"
+            [options]="formAmenityOptions()"
+          />
         </div>
 
         <div class="mcs-field">
           <label class="mcs-field-label">Fecha de reservación *</label>
           <div class="mcs-input-wrap">
-            <span class="mcs-input-icon"><mac-icon name="calendar" [size]="14"/></span>
-            <input class="mcs-input with-icon" type="date" formControlName="date" [min]="toDateInputValue(today)" />
+            <span class="mcs-input-icon"><mac-icon name="calendar" [size]="14" /></span>
+            <input
+              class="mcs-input with-icon"
+              type="date"
+              formControlName="date"
+              [min]="toDateInputValue(today)"
+            />
           </div>
         </div>
 
@@ -171,14 +240,14 @@
           <div class="mcs-field mcs-grow">
             <label class="mcs-field-label">Hora inicio *</label>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="clock" [size]="14"/></span>
+              <span class="mcs-input-icon"><mac-icon name="clock" [size]="14" /></span>
               <input class="mcs-input with-icon" type="time" formControlName="startTime" />
             </div>
           </div>
           <div class="mcs-field mcs-grow">
             <label class="mcs-field-label">Hora fin *</label>
             <div class="mcs-input-wrap">
-              <span class="mcs-input-icon"><mac-icon name="clock" [size]="14"/></span>
+              <span class="mcs-input-icon"><mac-icon name="clock" [size]="14" /></span>
               <input class="mcs-input with-icon" type="time" formControlName="endTime" />
             </div>
           </div>
@@ -186,23 +255,42 @@
 
         <div class="mcs-field">
           <label class="mcs-field-label">Estado</label>
-          <app-fancy-select formControlName="status" [options]="[
-            { label: 'Activa', value: 'activa' },
-            { label: 'Cancelada', value: 'cancelada' }
-          ]" />
+          <app-fancy-select
+            formControlName="status"
+            [options]="[
+              { label: 'Activa', value: 'activa' },
+              { label: 'Cancelada', value: 'cancelada' },
+            ]"
+          />
         </div>
       </form>
     </ng-container>
 
     <ng-container footer>
       @if (editingReservationId()) {
-        <button class="mcs-btn danger-soft" type="button" (click)="askDelete(editingReservation()!)">Eliminar</button>
+        <button
+          class="mcs-btn danger-soft"
+          type="button"
+          (click)="askDelete(editingReservation()!)"
+        >
+          Eliminar
+        </button>
       }
       <div class="mcs-grow"></div>
       <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
-      <button class="mcs-btn primary" type="button" (click)="saveReservation()" [disabled]="loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span><span>Guardando...</span> }
-        @else { <mac-icon name="check" [size]="13"/><span>{{ editingReservationId() ? 'Guardar cambios' : 'Crear reservación' }}</span> }
+      <button
+        class="mcs-btn primary"
+        type="button"
+        (click)="saveReservation()"
+        [disabled]="loading()"
+      >
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span><span>Guardando...</span>
+        } @else {
+          <mac-icon name="check" [size]="13" /><span>{{
+            editingReservationId() ? 'Guardar cambios' : 'Crear reservación'
+          }}</span>
+        }
       </button>
     </ng-container>
   </mac-drawer>
@@ -211,9 +299,14 @@
   <mac-confirm-modal
     [open]="toDelete() !== null"
     title="¿Eliminar reservación?"
-    [message]="toDelete() ? '¿Está seguro de que desea eliminar esta reservación? Esta acción no se puede deshacer.' : ''"
+    [message]="
+      toDelete()
+        ? '¿Está seguro de que desea eliminar esta reservación? Esta acción no se puede deshacer.'
+        : ''
+    "
     confirmLabel="Eliminar"
     (cancelled)="cancelDelete()"
-    (confirmed)="confirmDelete()">
+    (confirmed)="confirmDelete()"
+  >
   </mac-confirm-modal>
 </section>

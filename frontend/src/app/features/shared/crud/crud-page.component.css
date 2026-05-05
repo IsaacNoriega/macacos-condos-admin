@@ -49,7 +49,9 @@
 
 .card:hover {
   transform: translateY(-2px) scale(1.004);
-  box-shadow: 0 24px 52px -28px rgba(14, 165, 233, 0.3), var(--glass-shadow);
+  box-shadow:
+    0 24px 52px -28px rgba(14, 165, 233, 0.3),
+    var(--glass-shadow);
   background: var(--glass-bg-hover);
 }
 
@@ -298,7 +300,9 @@ tr:hover {
   background-position:
     calc(100% - 16px) calc(50% - 3px),
     calc(100% - 10px) calc(50% - 3px);
-  background-size: 6px 6px, 6px 6px;
+  background-size:
+    6px 6px,
+    6px 6px;
   background-repeat: no-repeat;
 }
 

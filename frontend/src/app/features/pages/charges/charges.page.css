@@ -3,8 +3,14 @@
 }
 
 @keyframes mcs-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tenant-carousel-wrap {
@@ -45,7 +51,9 @@
 .tenant-card.active {
   background: var(--primary-50);
   border-color: var(--primary-new);
-  box-shadow: inset 0 0 0 1px var(--primary-new), var(--shadow-sm);
+  box-shadow:
+    inset 0 0 0 1px var(--primary-new),
+    var(--shadow-sm);
 }
 
 .tc-icon {
@@ -216,10 +224,19 @@
   color: var(--ok-700);
 }
 
-.text-faint { color: var(--text-faint); }
-.text-soft { color: var(--text-soft); }
+.text-faint {
+  color: var(--text-faint);
+}
+.text-soft {
+  color: var(--text-soft);
+}
 
 @media (max-width: 768px) {
-  .toolbar { flex-direction: column; align-items: stretch; }
-  .mcs-grid.cols-3 { grid-template-columns: 1fr; }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mcs-grid.cols-3 {
+    grid-template-columns: 1fr;
+  }
 }

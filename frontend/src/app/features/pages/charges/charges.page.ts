@@ -76,7 +76,8 @@ export class ChargesPage implements OnInit {
       lateFeePerDay: c.lateFeePerDay || 0,
       paymentStatus: c.isPaid ? ('paid' as const) : ('pending' as const),
       unitCode: units.find((u) => u._id === c.unitId)?.code || 'N/A',
-      userName: users.find((u) => u._id === c.userId)?.name || (c.userId ? 'N/A' : 'Toda la unidad'),
+      userName:
+        users.find((u) => u._id === c.userId)?.name || (c.userId ? 'N/A' : 'Toda la unidad'),
       createdAt: new Date((c as any).createdAt || Date.now()),
     }));
   });
@@ -92,7 +93,9 @@ export class ChargesPage implements OnInit {
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
 
-  readonly tenantOptions = computed(() => this.tenants().map((t) => ({ label: t.name, value: t._id })));
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((t) => ({ label: t.name, value: t._id })),
+  );
   readonly unitOptions = computed(() => {
     const selectedTenant = this.form.get('tenantId')?.value;
     return this.units()
@@ -113,11 +116,12 @@ export class ChargesPage implements OnInit {
     const tenants = this.tenants();
     const allCharges = this.charges();
 
-    return tenants.map(t => ({
+    return tenants.map((t) => ({
       id: t._id,
       name: t.name,
-      pendingCount: allCharges.filter(c => c.tenantId === t._id && c.paymentStatus === 'pending').length,
-      totalCount: allCharges.filter(c => c.tenantId === t._id).length
+      pendingCount: allCharges.filter((c) => c.tenantId === t._id && c.paymentStatus === 'pending')
+        .length,
+      totalCount: allCharges.filter((c) => c.tenantId === t._id).length,
     }));
   });
 
@@ -165,9 +169,13 @@ export class ChargesPage implements OnInit {
     return result;
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredCharges().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredCharges().length / this.pageSize)),
+  );
   readonly pageNumbers = computed(() => Array.from({ length: this.totalPages() }, (_, i) => i + 1));
-  readonly pendingCount = computed(() => this.charges().filter((c) => c.paymentStatus === 'pending').length);
+  readonly pendingCount = computed(
+    () => this.charges().filter((c) => c.paymentStatus === 'pending').length,
+  );
 
   private readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
@@ -264,12 +272,24 @@ export class ChargesPage implements OnInit {
     this.detail.set(charge);
   }
 
-  closeEditor(): void { this.editorOpen.set(false); }
-  closeDetail(): void { this.detail.set(null); }
+  closeEditor(): void {
+    this.editorOpen.set(false);
+  }
+  closeDetail(): void {
+    this.detail.set(null);
+  }
 
-  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
-  setFilter(val: ChargeFilter): void { this.activeFilter.set(val); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setSearch(val: string): void {
+    this.searchTerm.set(val);
+    this.page.set(1);
+  }
+  setFilter(val: ChargeFilter): void {
+    this.activeFilter.set(val);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
 
   saveCharge(): void {
     if (this.form.invalid) {
@@ -300,7 +320,9 @@ export class ChargesPage implements OnInit {
     this.toDelete.set(charge);
   }
 
-  cancelDelete(): void { this.toDelete.set(null); }
+  cancelDelete(): void {
+    this.toDelete.set(null);
+  }
 
   confirmDelete(): void {
     const charge = this.toDelete();
@@ -308,18 +330,29 @@ export class ChargesPage implements OnInit {
     this.toDelete.set(null);
     this.loading.set(true);
     const query = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(charge.tenantId)}` : '';
-    this.api.delete(`/charges/${charge.id}${query}`).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.toast.ok('Cargo eliminado');
-        this.loadCharges();
-      },
-      error: (err) => this.toast.bad('Error al eliminar', err?.error?.message),
-    });
+    this.api
+      .delete(`/charges/${charge.id}${query}`)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => {
+          this.toast.ok('Cargo eliminado');
+          this.loadCharges();
+        },
+        error: (err) => this.toast.bad('Error al eliminar', err?.error?.message),
+      });
   }
 
-  previousPage(): void { if (this.page() > 1) this.page.update((p) => p - 1); }
-  nextPage(): void { if (this.page() < this.totalPages()) this.page.update((p) => p + 1); }
-  goToPage(n: number): void { this.page.set(n); }
+  previousPage(): void {
+    if (this.page() > 1) this.page.update((p) => p - 1);
+  }
+  nextPage(): void {
+    if (this.page() < this.totalPages()) this.page.update((p) => p + 1);
+  }
+  goToPage(n: number): void {
+    this.page.set(n);
+  }
 
-  trackById(_: number, c: ChargeCard): string { return c.id; }
+  trackById(_: number, c: ChargeCard): string {
+    return c.id;
+  }
 }

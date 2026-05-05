@@ -10,15 +10,15 @@
     <div class="mcs-row mcs-gap-sm">
       <div class="mcs-seg">
         <button type="button" [class.on]="view() === 'grid'" (click)="setView('grid')">
-          <mac-icon name="grid" [size]="13"/><span>Grid</span>
+          <mac-icon name="grid" [size]="13" /><span>Grid</span>
         </button>
         <button type="button" [class.on]="view() === 'list'" (click)="setView('list')">
-          <mac-icon name="list" [size]="13"/><span>Lista</span>
+          <mac-icon name="list" [size]="13" /><span>Lista</span>
         </button>
       </div>
       @if (isStaff()) {
         <button class="mcs-btn primary" type="button" (click)="openCreate()">
-          <mac-icon name="plus" [size]="15"/>
+          <mac-icon name="plus" [size]="15" />
           <span>Nuevo aviso</span>
         </button>
       }
@@ -27,19 +27,24 @@
 
   <!-- Toolbar -->
   <div class="toolbar">
-    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1;">
-      <span class="mcs-input-icon"><mac-icon name="search" [size]="14"/></span>
+    <div class="mcs-input-wrap" style="max-width: 360px; flex: 1">
+      <span class="mcs-input-icon"><mac-icon name="search" [size]="14" /></span>
       <input
         class="mcs-input with-icon"
         type="search"
         placeholder="Buscar avisos..."
         [value]="searchTerm()"
-        (input)="setSearch($any($event.target).value)"/>
+        (input)="setSearch($any($event.target).value)"
+      />
     </div>
 
     @if (isSuperadmin()) {
-      <div class="mcs-field" style="margin: 0; min-width: 240px;">
-        <select class="mcs-input" [value]="selectedFilterTenantId()" (change)="onFilterTenantChange($event)">
+      <div class="mcs-field" style="margin: 0; min-width: 240px">
+        <select
+          class="mcs-input"
+          [value]="selectedFilterTenantId()"
+          (change)="onFilterTenantChange($event)"
+        >
           <option value="">Mi Condominio (Default)</option>
           @for (t of tenants(); track t._id) {
             <option [value]="t._id">{{ t.name }}</option>
@@ -49,7 +54,12 @@
     }
     <div class="filter-chips">
       @for (f of filters; track f.value) {
-        <button type="button" class="mcs-chip" [class.on]="activeFilter() === f.value" (click)="setFilter(f.value)">
+        <button
+          type="button"
+          class="mcs-chip"
+          [class.on]="activeFilter() === f.value"
+          (click)="setFilter(f.value)"
+        >
           {{ f.label }}
         </button>
       }
@@ -58,37 +68,43 @@
 
   <!-- Notices Grid -->
   @if (loading() && notices().length === 0) {
-    <div class="mcs-loader-wrap" style="padding: 100px 0;">
+    <div class="mcs-loader-wrap" style="padding: 100px 0">
       <span class="mcs-loader"></span>
       <p>Cargando avisos...</p>
     </div>
   } @else if (filteredNotices().length === 0) {
-    <div class="mcs-empty mcs-card" style="padding: 80px 20px;">
-      <mac-icon name="panelLeft" [size]="48" style="opacity: 0.3;"/>
+    <div class="mcs-empty mcs-card" style="padding: 80px 20px">
+      <mac-icon name="panelLeft" [size]="48" style="opacity: 0.3" />
       <h3>Sin avisos</h3>
       <p>No hay anuncios publicados en esta categoría.</p>
     </div>
   } @else if (view() === 'grid') {
     <div class="mcs-grid cols-3">
       @for (n of pagedNotices(); track n._id) {
-        <article class="mcs-card notice-card" [class.urgente]="n.category === 'urgente'" (click)="openEdit(n)">
+        <article
+          class="mcs-card notice-card"
+          [class.urgente]="n.category === 'urgente'"
+          (click)="openEdit(n)"
+        >
           <header class="notice-head">
-            <span class="mcs-badge sm" [class]="getCategoryColor(n.category)">{{ n.category | uppercase }}</span>
+            <span class="mcs-badge sm" [class]="getCategoryColor(n.category)">{{
+              n.category | uppercase
+            }}</span>
             <span class="notice-date">{{ relativeTime(n.createdAt) }}</span>
           </header>
-          
+
           <h3 class="notice-title">{{ n.title }}</h3>
           <p class="notice-content">{{ n.content }}</p>
-          
+
           <footer class="notice-foot">
             <div class="author">
-              <mac-icon name="user" [size]="12"/>
+              <mac-icon name="user" [size]="12" />
               <span>{{ n.authorName || 'Administración' }}</span>
             </div>
             @if (isStaff()) {
               <div class="actions">
                 <button class="mcs-btn sm ghost icon-only" (click)="askDelete(n, $event)">
-                  <mac-icon name="trash" [size]="14"/>
+                  <mac-icon name="trash" [size]="14" />
                 </button>
               </div>
             }
@@ -100,14 +116,33 @@
     <!-- Pagination -->
     @if (totalPages() > 1) {
       <footer class="pagination">
-        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
-          <mac-icon name="chevronLeft" [size]="14"/>
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="previousPage()"
+          [disabled]="page() === 1"
+          aria-label="Anterior"
+        >
+          <mac-icon name="chevronLeft" [size]="14" />
         </button>
         @for (n of pageNumbers(); track n) {
-          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n }}</button>
+          <button
+            class="mcs-btn sm page-num"
+            type="button"
+            [class.primary]="page() === n"
+            (click)="goToPage(n)"
+          >
+            {{ n }}
+          </button>
         }
-        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
-          <mac-icon name="chevronRight" [size]="14"/>
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="nextPage()"
+          [disabled]="page() === totalPages()"
+          aria-label="Siguiente"
+        >
+          <mac-icon name="chevronRight" [size]="14" />
         </button>
       </footer>
     }
@@ -116,24 +151,37 @@
       @for (n of pagedNotices(); track n._id; let i = $index) {
         <div class="mcs-list-row" [class.has-border]="i > 0" (click)="selectNotice(n)">
           <div class="mcs-avatar" [class]="getCategoryColor(n.category)">
-            <mac-icon [name]="getCategoryIcon(n.category)" [size]="14"/>
+            <mac-icon [name]="getCategoryIcon(n.category)" [size]="14" />
           </div>
           <div class="mcs-grow">
-            <div style="font-weight: 600;">{{ n.title }}</div>
-            <div style="font-size: 12px; color: var(--text-muted-new);">{{ n.createdAt | date:'mediumDate' }} · {{ n.content | slice:0:60 }}{{ n.content.length > 60 ? '...' : '' }}</div>
+            <div style="font-weight: 600">{{ n.title }}</div>
+            <div style="font-size: 12px; color: var(--text-muted-new)">
+              {{ n.createdAt | date: 'mediumDate' }} · {{ n.content | slice: 0 : 60
+              }}{{ n.content.length > 60 ? '...' : '' }}
+            </div>
           </div>
-          <div style="width: 130px;">
-            <span class="mcs-badge sm" [class]="getCategoryColor(n.category)">{{ n.category | titlecase }}</span>
+          <div style="width: 130px">
+            <span class="mcs-badge sm" [class]="getCategoryColor(n.category)">{{
+              n.category | titlecase
+            }}</span>
           </div>
-          <div style="width: 120px; font-size: 13px; color: var(--text-soft);">
+          <div style="width: 120px; font-size: 13px; color: var(--text-soft)">
             Categoría: {{ n.category | titlecase }}
           </div>
           <div class="mcs-row mcs-gap-sm">
-            <button class="mcs-btn sm icon-only" type="button" (click)="$event.stopPropagation(); selectNotice(n)">
-              <mac-icon name="edit" [size]="13"/>
+            <button
+              class="mcs-btn sm icon-only"
+              type="button"
+              (click)="$event.stopPropagation(); selectNotice(n)"
+            >
+              <mac-icon name="edit" [size]="13" />
             </button>
-            <button class="mcs-btn sm danger-soft icon-only" type="button" (click)="askDelete(n, $event)">
-              <mac-icon name="trash" [size]="13"/>
+            <button
+              class="mcs-btn sm danger-soft icon-only"
+              type="button"
+              (click)="askDelete(n, $event)"
+            >
+              <mac-icon name="trash" [size]="13" />
             </button>
           </div>
         </div>
@@ -143,14 +191,33 @@
     <!-- Pagination -->
     @if (totalPages() > 1) {
       <footer class="pagination">
-        <button class="mcs-btn sm icon-only" type="button" (click)="previousPage()" [disabled]="page() === 1" aria-label="Anterior">
-          <mac-icon name="chevronLeft" [size]="14"/>
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="previousPage()"
+          [disabled]="page() === 1"
+          aria-label="Anterior"
+        >
+          <mac-icon name="chevronLeft" [size]="14" />
         </button>
         @for (n of pageNumbers(); track n) {
-          <button class="mcs-btn sm page-num" type="button" [class.primary]="page() === n" (click)="goToPage(n)">{{ n }}</button>
+          <button
+            class="mcs-btn sm page-num"
+            type="button"
+            [class.primary]="page() === n"
+            (click)="goToPage(n)"
+          >
+            {{ n }}
+          </button>
         }
-        <button class="mcs-btn sm icon-only" type="button" (click)="nextPage()" [disabled]="page() === totalPages()" aria-label="Siguiente">
-          <mac-icon name="chevronRight" [size]="14"/>
+        <button
+          class="mcs-btn sm icon-only"
+          type="button"
+          (click)="nextPage()"
+          [disabled]="page() === totalPages()"
+          aria-label="Siguiente"
+        >
+          <mac-icon name="chevronRight" [size]="14" />
         </button>
       </footer>
     }
@@ -160,15 +227,24 @@
   <mac-drawer
     [open]="editorOpen()"
     [title]="selectedNoticeId() ? 'Editar aviso' : 'Nuevo aviso'"
-    [subtitle]="selectedNoticeId() ? 'Actualice el contenido del anuncio' : 'Publique un mensaje para toda la comunidad'"
+    [subtitle]="
+      selectedNoticeId()
+        ? 'Actualice el contenido del anuncio'
+        : 'Publique un mensaje para toda la comunidad'
+    "
     [width]="500"
-    (closed)="closeEditor()">
-    
+    (closed)="closeEditor()"
+  >
     <ng-container body>
       <form [formGroup]="form" (ngSubmit)="saveNotice()" class="mcs-stack">
         <div class="mcs-field">
           <label class="mcs-field-label">Título del aviso *</label>
-          <input class="mcs-input" type="text" formControlName="title" placeholder="Ej: Mantenimiento de elevadores"/>
+          <input
+            class="mcs-input"
+            type="text"
+            formControlName="title"
+            placeholder="Ej: Mantenimiento de elevadores"
+          />
         </div>
 
         <div class="mcs-field">
@@ -190,8 +266,16 @@
 
         <div class="mcs-field">
           <label class="mcs-field-label">Mensaje *</label>
-          <textarea class="mcs-input" rows="6" formControlName="content" placeholder="Escriba los detalles aquí..."></textarea>
-          <div class="text-xs text-right mcs-mt-xs" [class.text-danger]="form.get('content')?.errors?.['maxlength']">
+          <textarea
+            class="mcs-input"
+            rows="6"
+            formControlName="content"
+            placeholder="Escriba los detalles aquí..."
+          ></textarea>
+          <div
+            class="text-xs text-right mcs-mt-xs"
+            [class.text-danger]="form.get('content')?.errors?.['maxlength']"
+          >
             {{ form.get('content')?.value?.length || 0 }} / 1000
           </div>
         </div>
@@ -201,7 +285,9 @@
     <ng-container footer>
       <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
       <button class="mcs-btn primary" type="button" (click)="saveNotice()" [disabled]="loading()">
-        @if (loading()) { <span class="mcs-btn-spin"></span> }
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span>
+        }
         <span>{{ selectedNoticeId() ? 'Guardar cambios' : 'Publicar aviso' }}</span>
       </button>
     </ng-container>
@@ -214,6 +300,7 @@
     message="Esta acción quitará el aviso del portal de todos los residentes."
     confirmLabel="Eliminar"
     (cancelled)="toDelete.set(null)"
-    (confirmed)="confirmDelete()">
+    (confirmed)="confirmDelete()"
+  >
   </mac-confirm-modal>
 </section>

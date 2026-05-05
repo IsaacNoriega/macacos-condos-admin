@@ -21,7 +21,7 @@ interface TenantCard extends Tenant {
     ReactiveFormsModule,
     MacIconComponent,
     DrawerComponent,
-    ConfirmModalComponent
+    ConfirmModalComponent,
   ],
   templateUrl: './tenants.page.html',
   styleUrl: './tenants.page.css',
@@ -42,11 +42,13 @@ export class TenantsPage implements OnInit {
   readonly selectedTenantId = signal<string | null>(null);
 
   readonly form: FormGroup;
-  readonly selectedTenant = computed(() => this.tenants().find(t => t._id === this.selectedTenantId()) || null);
+  readonly selectedTenant = computed(
+    () => this.tenants().find((t) => t._id === this.selectedTenantId()) || null,
+  );
 
   readonly filteredTenants = computed(() => {
     const query = this.searchTerm().trim().toLowerCase();
-    return this.tenants().filter(t => {
+    return this.tenants().filter((t) => {
       const searchable = [t.name, t.address, t.contactEmail].join(' ').toLowerCase();
       return !query || searchable.includes(query);
     });
@@ -57,7 +59,9 @@ export class TenantsPage implements OnInit {
     return this.filteredTenants().slice(start, start + this.pageSize);
   });
 
-  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.filteredTenants().length / this.pageSize)));
+  readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.filteredTenants().length / this.pageSize)),
+  );
 
   constructor() {
     this.form = this.fb.group({
@@ -71,23 +75,29 @@ export class TenantsPage implements OnInit {
     effect(() => {
       const selected = this.selectedTenant();
       if (!selected) {
-        this.form.reset({
-          name: '',
-          identifier: '',
-          address: '',
-          contactEmail: '',
-          isActive: true,
-        }, { emitEvent: false });
+        this.form.reset(
+          {
+            name: '',
+            identifier: '',
+            address: '',
+            contactEmail: '',
+            isActive: true,
+          },
+          { emitEvent: false },
+        );
         return;
       }
 
-      this.form.patchValue({
-        name: selected.name,
-        identifier: (selected as any).identifier || '',
-        address: selected.address,
-        contactEmail: selected.contactEmail,
-        isActive: selected.isActive,
-      }, { emitEvent: false });
+      this.form.patchValue(
+        {
+          name: selected.name,
+          identifier: (selected as any).identifier || '',
+          address: selected.address,
+          contactEmail: selected.contactEmail,
+          isActive: selected.isActive,
+        },
+        { emitEvent: false },
+      );
     });
   }
 
@@ -105,7 +115,12 @@ export class TenantsPage implements OnInit {
   }
 
   initials(name: string): string {
-    return (name || '').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return (name || '')
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   }
 
   openCreate(): void {
@@ -131,7 +146,7 @@ export class TenantsPage implements OnInit {
     const val = this.form.getRawValue();
     const isEditing = !!this.selectedTenantId();
     const endpoint = isEditing ? `/tenants/${this.selectedTenantId()}` : '/tenants';
-    
+
     this.loading.set(true);
     const req$ = isEditing ? this.api.put(endpoint, val) : this.api.post(endpoint, val);
 
@@ -141,20 +156,22 @@ export class TenantsPage implements OnInit {
         this.closeEditor();
         this.loadTenants();
       },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar condominio')
+      error: (err) => this.toast.bad(err?.error?.message || 'Error al guardar condominio'),
     });
   }
 
   toggleTenant(tenant: TenantCard, ev: Event): void {
     ev.stopPropagation();
     const newState = !tenant.isActive;
-    
+
     this.api.put(`/tenants/${tenant._id}`, { isActive: newState }).subscribe({
       next: () => {
         this.toast.ok(newState ? 'Condominio activado' : 'Condominio desactivado');
-        this.tenants.update(list => list.map(t => t._id === tenant._id ? { ...t, isActive: newState } : t));
+        this.tenants.update((list) =>
+          list.map((t) => (t._id === tenant._id ? { ...t, isActive: newState } : t)),
+        );
       },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al cambiar estado')
+      error: (err) => this.toast.bad(err?.error?.message || 'Error al cambiar estado'),
     });
   }
 
@@ -168,32 +185,38 @@ export class TenantsPage implements OnInit {
     if (!tenant) return;
 
     this.loading.set(true);
-    this.api.delete(`/tenants/${tenant._id}`).pipe(finalize(() => this.loading.set(false))).subscribe({
-      next: () => {
-        this.toast.ok('Condominio eliminado');
-        this.toDelete.set(null);
-        this.loadTenants();
-      },
-      error: (err) => this.toast.bad(err?.error?.message || 'Error al eliminar')
-    });
+    this.api
+      .delete(`/tenants/${tenant._id}`)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: () => {
+          this.toast.ok('Condominio eliminado');
+          this.toDelete.set(null);
+          this.loadTenants();
+        },
+        error: (err) => this.toast.bad(err?.error?.message || 'Error al eliminar'),
+      });
   }
 
   private loadTenants(): void {
     this.loading.set(true);
-    this.api.get<{ success: boolean; tenants: Tenant[] }>('/tenants')
+    this.api
+      .get<{ success: boolean; tenants: Tenant[] }>('/tenants')
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (response) => {
           const raw = response.tenants || [];
-          this.tenants.set(raw.map(t => ({
-            ...t,
-            isActive: (t as any).isActive !== false
-          })));
+          this.tenants.set(
+            raw.map((t) => ({
+              ...t,
+              isActive: (t as any).isActive !== false,
+            })),
+          );
         },
         error: (err) => {
           this.toast.bad(err?.error?.message || 'Error al cargar condominios');
           this.tenants.set([]);
-        }
+        },
       });
   }
 }

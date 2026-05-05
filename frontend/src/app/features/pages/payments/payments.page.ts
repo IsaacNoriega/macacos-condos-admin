@@ -2,7 +2,15 @@ import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom, finalize, forkJoin } from 'rxjs';
-import { Payment, PaymentProofUploadResponse, StripeCheckoutResponse, Tenant, Unit, User as ApiUser, Charge as ApiCharge } from '../../../core/api.models';
+import {
+  Payment,
+  PaymentProofUploadResponse,
+  StripeCheckoutResponse,
+  Tenant,
+  Unit,
+  User as ApiUser,
+  Charge as ApiCharge,
+} from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { FancySelectComponent } from '../../shared/form/fancy-select.component';
@@ -37,7 +45,7 @@ interface PaymentCharge {
     CurrencyPipe,
     FancySelectComponent,
     MacIconComponent,
-    DrawerComponent
+    DrawerComponent,
   ],
   templateUrl: './payments.page.html',
   styleUrl: './payments.page.css',
@@ -92,7 +100,9 @@ export class PaymentsPage implements OnInit {
   readonly isStaff = computed(() => ['admin', 'superadmin', 'staff'].includes(this.role()));
   readonly currentUserId = computed(() => this.auth.user()?._id);
 
-  readonly tenantOptions = computed(() => this.tenants().map((t) => ({ label: t.name, value: t._id })));
+  readonly tenantOptions = computed(() =>
+    this.tenants().map((t) => ({ label: t.name, value: t._id })),
+  );
   readonly unitOptions = computed(() => {
     const tid = this.paymentForm.get('tenantId')?.value;
     return this.units()
@@ -112,14 +122,15 @@ export class PaymentsPage implements OnInit {
     const filter = this.activeFilter();
 
     if (search) {
-      list = list.filter(p => 
-        this.getUserLabel(p.userId).toLowerCase().includes(search) ||
-        this.getUnitLabel(p.unitId).toLowerCase().includes(search)
+      list = list.filter(
+        (p) =>
+          this.getUserLabel(p.userId).toLowerCase().includes(search) ||
+          this.getUnitLabel(p.unitId).toLowerCase().includes(search),
       );
     }
 
     if (filter !== 'all') {
-      list = list.filter(p => p.status === filter);
+      list = list.filter((p) => p.status === filter);
     }
 
     return list;
@@ -137,7 +148,7 @@ export class PaymentsPage implements OnInit {
     { label: 'Todo', value: 'all' },
     { label: 'Pagados', value: 'completed' },
     { label: 'En revisión', value: 'in_review' },
-    { label: 'Fallidos', value: 'failed' }
+    { label: 'Fallidos', value: 'failed' },
   ];
 
   ngOnInit() {
@@ -171,7 +182,7 @@ export class PaymentsPage implements OnInit {
         relativeTo: this.route,
         queryParams: { session_id: null, stripe: null },
         queryParamsHandling: 'merge',
-        replaceUrl: true
+        replaceUrl: true,
       });
     } catch (err: any) {
       this.toast.bad('Error al confirmar pago', err?.error?.message || 'Error desconocido');
@@ -180,9 +191,17 @@ export class PaymentsPage implements OnInit {
     }
   }
 
-  setSearch(val: string): void { this.searchTerm.set(val); this.page.set(1); }
-  setFilter(val: any): void { this.activeFilter.set(val); this.page.set(1); }
-  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setSearch(val: string): void {
+    this.searchTerm.set(val);
+    this.page.set(1);
+  }
+  setFilter(val: any): void {
+    this.activeFilter.set(val);
+    this.page.set(1);
+  }
+  setView(view: 'grid' | 'list'): void {
+    this.view.set(view);
+  }
 
   openRegister() {
     this.paymentForm.reset({ currency: 'mxn', amount: 0 });
@@ -205,10 +224,9 @@ export class PaymentsPage implements OnInit {
     this.selectedChargeId.set(null);
   }
 
-
   loadData(): void {
     this.loading.set(true);
-    
+
     if (this.isStaff()) {
       const requests: any = {
         units: this.api.get<{ units: Unit[] }>('/units'),
@@ -247,7 +265,11 @@ export class PaymentsPage implements OnInit {
         const chargesRes = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>('/charges'));
         const charges = chargesRes.charges || [];
         // Show charges specifically for the user OR charges for the unit without a specific user
-        this.residentCharges.set(charges.filter((c) => !c.isPaid && (c.userId === this.currentUserId() || !c.userId)) as any);
+        this.residentCharges.set(
+          charges.filter(
+            (c) => !c.isPaid && (c.userId === this.currentUserId() || !c.userId),
+          ) as any,
+        );
       }
     } catch (err) {
       this.error.set('Error al cargar pagos');
@@ -256,8 +278,7 @@ export class PaymentsPage implements OnInit {
     }
   }
 
-  async loadOptions() {
-  }
+  async loadOptions() {}
 
   async onTenantChange() {
     const tid = this.paymentForm.get('tenantId')?.value;
@@ -282,10 +303,14 @@ export class PaymentsPage implements OnInit {
         const queryParams = [];
         if (usid) queryParams.push(`userId=${usid}`);
         if (unid) queryParams.push(`unitId=${unid}`);
-        
-        const res = await firstValueFrom(this.api.get<{ charges: ApiCharge[] }>(`/charges?${queryParams.join('&')}`));
+
+        const res = await firstValueFrom(
+          this.api.get<{ charges: ApiCharge[] }>(`/charges?${queryParams.join('&')}`),
+        );
         const pending = (res.charges || []).filter((c) => !c.isPaid);
-        this.chargeOptions.set(pending.map((c) => ({ label: `${c.description} ($${c.amount})`, value: c._id })));
+        this.chargeOptions.set(
+          pending.map((c) => ({ label: `${c.description} ($${c.amount})`, value: c._id })),
+        );
       } catch (e) {
         console.error(e);
       }
@@ -319,7 +344,12 @@ export class PaymentsPage implements OnInit {
       let proofUrl = '';
       if (this.selectedFile()) {
         const tid = val.tenantId || this.auth.user()?.tenantId || '';
-        const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(this.selectedFile()!, tid)));
+        const upload: any = await firstValueFrom(
+          this.api.postFormData<any>(
+            '/payments/proofs',
+            this.createFormData(this.selectedFile()!, tid),
+          ),
+        );
         proofUrl = upload.proofOfPaymentUrl || upload.url;
       }
 
@@ -332,7 +362,7 @@ export class PaymentsPage implements OnInit {
           currency: val.currency!,
           provider: 'manual',
           proofOfPaymentUrl: proofUrl,
-        })
+        }),
       );
 
       this.message.set('Pago registrado correctamente');
@@ -352,7 +382,6 @@ export class PaymentsPage implements OnInit {
     return formData;
   }
 
-
   async submitProofForSelectedCharge() {
     const cid = this.selectedChargeId();
     const file = this.selectedFile();
@@ -361,7 +390,9 @@ export class PaymentsPage implements OnInit {
     this.loading.set(true);
     try {
       const tid = this.auth.user()?.tenantId || '';
-      const upload: any = await firstValueFrom(this.api.postFormData<any>('/payments/proofs', this.createFormData(file, tid)));
+      const upload: any = await firstValueFrom(
+        this.api.postFormData<any>('/payments/proofs', this.createFormData(file, tid)),
+      );
       await firstValueFrom(
         this.api.post('/payments', {
           tenantId: this.auth.user()?.tenantId,
@@ -371,7 +402,7 @@ export class PaymentsPage implements OnInit {
           currency: 'mxn',
           provider: 'manual',
           proofOfPaymentUrl: upload.proofOfPaymentUrl || upload.url,
-        })
+        }),
       );
       this.toast.ok('Comprobante enviado a revisión');
       this.closeProofDrawer();
@@ -391,9 +422,11 @@ export class PaymentsPage implements OnInit {
         userId: this.auth.user()?._id,
         chargeId: cid,
         amount: this.paymentForm.get('amount')?.value || 0,
-        currency: 'mxn'
+        currency: 'mxn',
       };
-      const res: any = await firstValueFrom(this.api.post<any>('/payments/checkout-session', payload));
+      const res: any = await firstValueFrom(
+        this.api.post<any>('/payments/checkout-session', payload),
+      );
       window.location.href = res.checkoutUrl || res.url;
     } catch (err) {
       this.error.set('Error al iniciar pago con Stripe');
@@ -407,9 +440,11 @@ export class PaymentsPage implements OnInit {
         userId: this.auth.user()?._id,
         chargeId: charge._id,
         amount: this.getChargeTotalAmount(charge),
-        currency: 'mxn'
+        currency: 'mxn',
       };
-      const res: any = await firstValueFrom(this.api.post<any>('/payments/checkout-session', payload));
+      const res: any = await firstValueFrom(
+        this.api.post<any>('/payments/checkout-session', payload),
+      );
       window.location.href = res.checkoutUrl || res.url;
     } catch (err) {
       this.error.set('Error al iniciar pago con Stripe');
@@ -446,22 +481,34 @@ export class PaymentsPage implements OnInit {
       return userId.name;
     }
     const id = typeof userId === 'object' ? userId?._id : userId;
-    const user = this.users().find(u => u._id === id);
+    const user = this.users().find((u) => u._id === id);
     return user?.name || user?.email || 'Usuario';
   }
   getUnitLabel(id?: string) {
-    const unit = this.units().find(u => u._id === id);
+    const unit = this.units().find((u) => u._id === id);
     return unit?.code || id || '—';
   }
   getChargeLabel(id: string) {
     return 'Mensualidad';
   }
   getStatusLabel(s: string) {
-    const map: any = { completed: 'Pagado', paid: 'Pagado', pending: 'Pendiente', in_review: 'En revisión', failed: 'Fallido' };
+    const map: any = {
+      completed: 'Pagado',
+      paid: 'Pagado',
+      pending: 'Pendiente',
+      in_review: 'En revisión',
+      failed: 'Fallido',
+    };
     return map[s] || s;
   }
   getStatusColor(s: string) {
-    const map: any = { completed: 'ok', paid: 'ok', pending: 'warn', in_review: 'info', failed: 'error' };
+    const map: any = {
+      completed: 'ok',
+      paid: 'ok',
+      pending: 'warn',
+      in_review: 'info',
+      failed: 'error',
+    };
     return map[s] || 'info';
   }
 
