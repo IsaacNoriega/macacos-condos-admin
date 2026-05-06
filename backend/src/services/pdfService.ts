@@ -212,6 +212,7 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
 
   let browser;
   try {
+    console.log('[Puppeteer] Iniciando navegador...');
     // Lanzar navegador en modo headless
     browser = await puppeteer.launch({
       headless: true,
@@ -222,9 +223,11 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
       ]
     });
 
+    console.log('[Puppeteer] Navegador iniciado. Creando página...');
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
+    console.log('[Puppeteer] Generando buffer de PDF...');
     // Generar PDF
     const pdfBuffer = await page.pdf({
       format: 'A4',
