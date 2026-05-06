@@ -16,8 +16,13 @@ const fonts = {
   }
 };
 
-// Handle different export formats between versions
-const PrinterClass = typeof PdfMakePrinter === 'function' ? PdfMakePrinter : PdfMakePrinter.default;
+// Handle different export formats between versions (v0.2.x vs v0.3.x)
+const PrinterClass = PdfMakePrinter.Printer || (typeof PdfMakePrinter === 'function' ? PdfMakePrinter : PdfMakePrinter.default);
+
+if (!PrinterClass) {
+  throw new Error('No se pudo encontrar el constructor de pdfmake. Revisa la instalación de la librería.');
+}
+
 const printer = new PrinterClass(fonts);
 
 export interface ReceiptData {
