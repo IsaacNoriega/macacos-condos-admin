@@ -14,11 +14,18 @@ const startServer = async () => {
     app.listen(PORT as number, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-
-    // Start background worker
-    const { startWorker } = require('./worker');
-    startWorker().catch((err: any) => console.error('Worker failed to start:', err));
+    // Start background worker with a delay to ensure API is stable first
+    setTimeout(() => {
+      console.log('Attempting to start background worker...');
+      try {
+        const { startWorker } = require('./worker');
+        startWorker().catch((err: any) => {
+          console.error('❌ Worker failed to start (async):', err);
+        });
+      } catch (err) {
+        console.error('❌ Worker failed to start (sync):', err);
+      }
+    }, 5000);
 
   } catch (error) {
     console.error('Failed to start server:', error);
