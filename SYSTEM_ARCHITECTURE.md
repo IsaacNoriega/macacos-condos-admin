@@ -1,75 +1,81 @@
-# 🦍 Macacos Condos Admin - Manual Maestro de Arquitectura y Funcionalidad
+# 🦍 Macacos Condos Admin - Especificación Técnica y Arquitectónica Completa
 
-Este documento es una inmersión profunda en el ecosistema de Macacos Condos Admin, detallando sus módulos, lógica de negocio, capas de seguridad y estrategias de optimización.
-
----
-
-## 🚀 1. Módulos Funcionales (¿Qué hace la App?)
-
-La aplicación está dividida en módulos lógicos que garantizan una separación de responsabilidades:
-
-- **🔐 Módulo de Autenticación (Auth)**:
-  - Gestiona el acceso seguro mediante JWT.
-  - Implementa recuperación de contraseñas y control de sesiones.
-  - **Diferenciador**: Inyecta el `tenantId` en el token para asegurar que un usuario nunca pueda saltarse su frontera de datos.
-
-- **🏢 Módulo de Condominios (Tenants)**:
-  - Exclusivo para SuperAdmins. Permite crear, editar y supervisar múltiples condominios desde un solo lugar.
-  - Gestiona la configuración global de cada tenant (nombre, dirección, configuración financiera).
-
-- **💰 Módulo de Finanzas (Charges & Payments)**:
-  - **Cargos Individuales y Masivos**: Permite generar cobros por mantenimiento, multas o servicios.
-  - **Lógica de Carga Masiva**: Un SuperAdmin puede facturar a todo un condominio con un solo click, automatizando la creación de cientos de registros.
-  - **Gestión de Pagos**: Registro de transferencias, validación de estados (pendiente, pagado, atrasado) y cálculo automático de recargos por mora.
-
-- **🏘️ Gestión de Activos (Units & Residents)**:
-  - Control total de unidades (departamentos/casas) y su ocupación.
-  - Registro detallado de residentes vinculado a sus unidades para una trazabilidad financiera perfecta.
-
-- **📊 Módulo de Analítica (Dashboard)**:
-  - Visualización en tiempo real de la salud financiera del condominio (ingresos, adeudos, ocupación).
-  - **Diferenciador**: Utiliza agregaciones de MongoDB optimizadas y caché de Redis.
+Este documento proporciona un desglose exhaustivo de la ingeniería, seguridad y lógica operativa del ecosistema Macacos Condos Admin.
 
 ---
 
-## 🛡️ 2. Seguridad de Grado Empresarial
+## 🏛️ 1. Arquitectura del Frontend (Angular 17+)
 
-### 🏗️ Arquitectura Zero Trust (Azure Gateway)
-El servidor no confía en nadie. Solo acepta peticiones que provengan de la IP autorizada del **Azure Application Gateway**. Si alguien intenta atacar la URL de Railway directamente, el `azureIpMiddleware` lo bloquea de inmediato.
+El frontend está diseñado siguiendo patrones de alta eficiencia y reactividad moderna.
 
-### 🛂 RBAC (Role Based Access Control)
-Implementamos tres niveles de acceso estrictos:
-1.  **SuperAdmin**: Control total sobre todos los tenants y finanzas globales.
-2.  **Admin**: Control total sobre su propio condominio (tenant).
-3.  **Residente**: Acceso limitado a sus propios estados de cuenta y pagos.
+### 🧩 Componentes y Estado
+- **Standalone Components**: Eliminamos la sobrecarga de módulos para un renderizado más rápido y una mejor sacudida de código (tree-shaking).
+- **Signals**: Utilizamos el nuevo sistema de reactividad de Angular para una gestión de estado granular, evitando ciclos de detección de cambios innecesarios y optimizando el rendimiento en el navegador.
+- **Tailwind CSS & Material UI**: Interfaz premium con diseño responsivo y micro-animaciones fluidas.
 
-### 🧼 Sanitización y Validación de Datos
-- **Backend**: Cada petición que llega al servidor es filtrada por un middleware de validación que utiliza esquemas estrictos. Si un dato no tiene el formato correcto o intenta inyectar código malicioso, se rechaza antes de tocar la base de datos.
-- **Frontend**: Uso de formularios reactivos de Angular que sanitizan la entrada del usuario en tiempo real y evitan el envío de datos corruptos.
-
----
-
-## ⚡ 3. Optimización y Performance
-
-### 💎 Estrategia de Caché (Redis Cluster)
-- **Cache-Aside Pattern**: Para no saturar a MongoDB con cálculos de estadísticas, el sistema guarda los resultados en un cluster de Redis en Azure.
-- **Velocidad**: Las consultas al dashboard pasaron de segundos a milisegundos.
-
-### 🧵 Procesamiento en Segundo Plano (Workers)
-Las tareas pesadas no detienen la aplicación:
-- **BullMQ**: Generar un PDF, subirlo a la nube y enviar un email se hace fuera del ciclo de la petición. El usuario recibe una respuesta instantánea mientras los Workers trabajan en segundo plano.
+### 🛡️ Seguridad en el Cliente
+- **Auth Interceptor**: Adjunta automáticamente el token JWT en el header `Authorization`.
+- **Tenant Interceptor**: Inyecta dinámicamente el header `x-tenant-id` en cada petición, asegurando la integridad del multi-tenancy.
+- **Route Guards**: Protegen las rutas según el rol (SuperAdmin vs Admin), redirigiendo al login si la sesión expira.
+- **Sanitización de Forms**: Implementación de `Reactive Forms` con validadores personalizados para prevenir la entrada de datos corruptos antes de que lleguen a la red.
 
 ---
 
-## 📈 4. Escalabilidad y Futuro
+## ⚙️ 2. Arquitectura del Backend (Node.js & Express)
 
-### 🚀 Escalabilidad Horizontal
-El backend está diseñado para ser **Stateless** (sin estado). Esto significa que podemos levantar 10, 100 o 1000 servidores en Railway y todos funcionarán perfectamente sincronizados gracias a Redis y MongoDB Atlas.
+El backend sigue un patrón modular basado en servicios, garantizando que cada pieza sea independiente y testeable.
 
-### ☁️ Cloud Hybrid Model
-- **Railway**: Para la agilidad del código.
-- **Azure Cloud**: Para la potencia de la red (Gateway), almacenamiento masivo (Blob Storage) y comunicaciones de confianza (Email Services).
+### 🔌 API REST Modular
+- **Ruteo**: Estructura de `/api/v1` con separación por módulos (Auth, Users, Charges, Payments, Maintenance, etc.).
+- **Middleware Chain**: Cada petición pasa por una serie de filtros:
+  1. `azureIpMiddleware`: Bloqueo de IPs externas al Gateway.
+  2. `helmet`: Inyección de cabeceras de seguridad HTTP.
+  3. `authMiddleware`: Validación de JWT y rol de usuario.
+  4. `tenantMiddleware`: Validación de pertenencia al condominio.
+  5. `validateRequest`: Sanitización estricta del payload usando **Zod**.
+
+### 🏗️ Persistencia y Datos
+- **Mongoose & MongoDB Atlas**: Modelado de datos con esquemas estrictos e índices optimizados para búsquedas rápidas por `tenantId`.
+- **Aggregation Pipelines**: Consultas complejas para el dashboard que calculan ingresos y morosidad en tiempo real mediante tuberías de procesamiento (`$lookup`, `$group`, `$project`).
 
 ---
 
-> **Conclusión**: Macacos Condos Admin no es solo un CRUD; es una infraestructura diseñada para crecer, proteger los datos financieros y ofrecer una experiencia de usuario ultra-rápida.
+## 🛡️ 3. Seguridad Zero Trust e Infraestructura
+
+### ⛩️ Red y Perímetro
+- **Azure Application Gateway**: Actúa como un firewall de aplicaciones web (WAF), filtrando ataques de inyección y denegación de servicio (DDoS).
+- **Zero Trust Guard**: El servidor Railway valida que el tráfico provenga exclusivamente del Gateway mediante el análisis de la última IP en el header `x-forwarded-for`.
+- **HTTPS Nativo**: Soporte completo para SSL/TLS con validación PKI (Comodo/Digicert).
+
+### ☁️ Servicios Cloud Integrados
+- **Azure Blob Storage**: Almacenamiento seguro de comprobantes de pago y recibos generados, con redundancia geográfica.
+- **Azure Communication Services**: Infraestructura de correo empresarial con SPF, DKIM y DMARC configurados para evitar el spam.
+
+---
+
+## 🚀 4. Performance y Escalabilidad
+
+### 💎 Estrategia de Caché Avanzada
+- **Azure Managed Redis Cluster**: Implementamos el patrón **Cache-Aside**. Los datos financieros se cachean con claves estructuradas (`tenant:{id}:stats`).
+- **Invalidación Atómica**: Al detectar una mutación (nuevo pago), el sistema invalida el caché del tenant específico en milisegundos, manteniendo la consistencia total.
+
+### 🧵 Procesamiento Asíncrono (BullMQ)
+- **Producer/Consumer**: Las tareas pesadas se envían a Redis y son procesadas por Workers independientes.
+- **Lógica de Workers**:
+  - **PDF Worker**: Genera recibos usando plantillas dinámicas (Handlebars) y Puppeteer.
+  - **Email Worker**: Maneja colas de envío masivo para cargos mensuales.
+- **Escalabilidad**: Podemos escalar los Workers de forma independiente a la API para manejar picos de tráfico (ej. el día 1 de cada mes).
+
+---
+
+## 📈 5. Lógica de Negocio Financiera
+
+### 💰 Ciclo de Cobro Automatizado
+1. **Bulk Charge Generation**: Un SuperAdmin selecciona un Tenant. El sistema busca a todos los residentes activos, vincula sus `unitId` y genera cargos masivos con una sola operación de base de datos.
+2. **Notificación en Cascada**: BullMQ dispara notificaciones individuales para cada residente.
+3. **Validación de Pago**: Al subir un comprobante, el sistema registra la transacción, marca la deuda como pagada y genera el recibo oficial de forma asíncrona.
+
+---
+
+> **Estatus de Ingeniería**: Grado Producción / Alta Disponibilidad
+> **Diseñado por**: Antigravity AI & Senior Developers
