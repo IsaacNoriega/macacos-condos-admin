@@ -19,6 +19,7 @@ import reservationsRoutes from './modules/reservations/routes';
 import amenitiesRoutes from './modules/amenities/routes';
 import noticesRoutes from './modules/notices/routes';
 import healthRoutes from './modules/health/routes';
+import analyticsRoutes from './modules/analytics/routes';
 import { AppError } from './utils/httpError';
 import logger from './utils/logger';
 
@@ -92,6 +93,7 @@ app.use('/api/maintenance', authMiddleware, tenantMiddleware, maintenanceRoutes)
 app.use('/api/reservations', authMiddleware, tenantMiddleware, reservationsRoutes);
 app.use('/api/amenities', authMiddleware, tenantMiddleware, amenitiesRoutes);
 app.use('/api/notices', authMiddleware, tenantMiddleware, noticesRoutes);
+app.use('/api/analytics', authMiddleware, tenantMiddleware, analyticsRoutes);
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
