@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -525,6 +524,22 @@ export class PaymentsPage implements OnInit {
   getChargeTotalAmount(c: PaymentCharge) {
     return c.amount + this.getChargeLateFeeAmount(c);
   }
+
+  async downloadReceipt(payment: Payment) {
+    try {
+      const res: any = await firstValueFrom(
+        this.api.get<any>(`/payments/${payment._id}/receipt`),
+      );
+
+      if (res.receiptUrl) {
+        window.open(res.receiptUrl, '_blank');
+      } else if (res.isProcessing) {
+        this.toast.info(
+          'El recibo se está generando en segundo plano. Por favor, intenta de nuevo en unos momentos.',
+        );
+      }
+    } catch (err: any) {
+      this.toast.bad('Error al obtener el recibo', err?.error?.message);
+    }
+  }
 }
-=======
->>>>>>> optimization
