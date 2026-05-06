@@ -24,6 +24,8 @@ export const redisConnection = isCluster
           tls: redisConfig.tls,
         },
         dnsLookup: (address, callback) => callback(null, address),
+        maxRedirections: 16,
+        enableReadyCheck: false,
       }
     )
   : new Redis({

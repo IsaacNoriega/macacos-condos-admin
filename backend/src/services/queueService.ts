@@ -32,16 +32,30 @@ class QueueService {
       throw new Error('Aislamiento Crítico: tenantId es obligatorio para agregar tareas a la cola.');
     }
 
-    console.log(`[QueueService] Añadiendo tarea '${name}' para tenant: ${tenantId}`);
-    const job = await this.queue.add(name, { ...data, tenantId });
-    console.log(`[QueueService] Tarea añadida exitosamente. JobID: ${job.id}`);
-    
-    logger.log('queue.task.added', 'system', tenantId, { 
-      jobId: job.id, 
-      taskName: name 
-    });
+    try {
+      console.log(`[QueueService] Asegurando que la cola esté lista...`);
+      await this.queue.waitUntilReady();
 
-    return job;
+      console.log(`[QueueService] Añadiendo tarea '${name}' para tenant: ${tenantId}`);
+      
+      // Timeout de 10 segundos para evitar cuelgues infinitos
+      const job = await Promise.race([
+        this.queue.add(name, { ...data, tenantId }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout al añadir tarea a Redis')), 10000))
+      ]) as any;
+
+      console.log(`[QueueService] Tarea añadida exitosamente. JobID: ${job.id}`);
+      
+      logger.log('queue.task.added', 'system', tenantId, { 
+        jobId: job.id, 
+        taskName: name 
+      });
+
+      return job;
+    } catch (err) {
+      console.error(`[QueueService] ❌ Error al añadir tarea:`, err);
+      throw err;
+    }
   }
 
   async close() {
