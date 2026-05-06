@@ -16,6 +16,12 @@
           <mac-icon name="list" [size]="13" /><span>Lista</span>
         </button>
       </div>
+      @if (isSuperadmin()) {
+        <button class="mcs-btn secondary-soft" type="button" (click)="openBulkCreate()">
+          <mac-icon name="grid" [size]="15" />
+          <span>Carga Masiva</span>
+        </button>
+      }
       <button class="mcs-btn primary" type="button" (click)="openCreate()">
         <mac-icon name="plus" [size]="15" />
         <span>Nuevo cargo</span>
@@ -420,4 +426,80 @@
     (confirmed)="confirmDelete()"
   >
   </mac-confirm-modal>
+
+  <!-- ─── Drawer: Bulk Charge (Superadmin only) ─── -->
+  <mac-drawer
+    [open]="bulkEditorOpen()"
+    [title]="'Nueva Carga Masiva'"
+    [subtitle]="'Asigne un cargo a TODOS los residentes de un condominio'"
+    [width]="520"
+    (closed)="closeBulkEditor()"
+  >
+    <ng-container body>
+      <form [formGroup]="bulkForm" (ngSubmit)="saveBulkCharge()" class="mcs-stack">
+        <div class="mcs-field">
+          <label class="mcs-field-label">Condominio Destino</label>
+          <app-fancy-select
+            formControlName="tenantId"
+            [placeholder]="'Selecciona el condominio'"
+            [options]="tenantOptions()"
+          />
+          <div class="mcs-text-muted text-xs" style="margin-top: 6px">
+            Se generará un cargo individual para cada usuario registrado en este condominio.
+          </div>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Descripción del concepto</label>
+          <textarea
+            class="mcs-textarea"
+            formControlName="description"
+            placeholder="Ej: Cuota de Mantenimiento Extraordinaria"
+          ></textarea>
+        </div>
+
+        <div class="mcs-row mcs-gap">
+          <div class="mcs-field mcs-grow">
+            <label class="mcs-field-label">Monto por persona</label>
+            <input
+              class="mcs-input mono"
+              type="number"
+              formControlName="amount"
+              placeholder="0.00"
+            />
+          </div>
+          <div class="mcs-field mcs-grow">
+            <label class="mcs-field-label">Recargo diario</label>
+            <input
+              class="mcs-input mono"
+              type="number"
+              formControlName="lateFeePerDay"
+              placeholder="0.00"
+            />
+          </div>
+        </div>
+
+        <div class="mcs-field">
+          <label class="mcs-field-label">Fecha límite de pago</label>
+          <input class="mcs-input" type="date" formControlName="dueDate" />
+        </div>
+
+        <div class="mcs-alert info" style="margin-top: 20px">
+          <mac-icon name="info" [size]="16" />
+          <p>Al procesar, se enviará un correo de notificación a cada residente con los detalles del cargo.</p>
+        </div>
+      </form>
+    </ng-container>
+
+    <ng-container footer>
+      <button class="mcs-btn" type="button" (click)="closeBulkEditor()">Cancelar</button>
+      <button class="mcs-btn primary" type="button" (click)="saveBulkCharge()" [disabled]="loading()">
+        @if (loading()) {
+          <span class="mcs-btn-spin"></span><span>Procesando...</span>
+        } @else {
+          <mac-icon name="check" [size]="13" /><span>Ejecutar Carga Masiva</span>
+        }
+      </button>
+    </ng-container>
+  </mac-drawer>
 </section>
