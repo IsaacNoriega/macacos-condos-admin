@@ -15,6 +15,7 @@ import Payment from './model';
 import Tenant from '../tenants/model';
 import Charge from '../charges/model';
 import User from '../users/model';
+import { cacheService } from '../../services/cacheService';
 
 const DEFAULT_LATE_FEE_PER_DAY = Number(process.env.LATE_FEE_PER_DAY || '10');
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -252,6 +253,12 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
       provider: payment.provider,
       status: payment.status,
     });
+
+    // Invalidad dashboard stats
+    cacheService.invalidateDashboardStats(targetTenantId).catch(err => 
+      logger.error('cache.invalidate.error', 'system', targetTenantId, err)
+    );
+
     res.status(201).json({ success: true, payment });
   } catch (err: unknown) {
     if (blobToCleanupOnFailure) {
@@ -541,6 +548,11 @@ export const confirmStripeCheckoutSession = async (req: Request, res: Response, 
       userId: String(metadata.userId),
     });
 
+    // Invalidad dashboard stats
+    cacheService.invalidateDashboardStats(targetTenantId).catch(err => 
+      logger.error('cache.invalidate.error', 'system', targetTenantId, err)
+    );
+
     res.json({
       success: true,
       paid: true,
@@ -644,6 +656,14 @@ export const deletePayment = async (req: Request, res: Response, next: NextFunct
     }
 
     logger.log('payments.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { paymentId });
+    
+    // Invalidad dashboard stats
+    if (tenantScope) {
+      cacheService.invalidateDashboardStats(tenantScope).catch(err => 
+        logger.error('cache.invalidate.error', 'system', tenantScope, err)
+      );
+    }
+
     res.json({ success: true, message: 'Pago eliminado' });
   } catch (err: unknown) {
     logger.error('payments.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -702,6 +722,11 @@ export const approvePaymentWithProof = async (req: Request, res: Response, next:
       proofOfPayment: true,
     });
 
+    // Invalidad dashboard stats
+    cacheService.invalidateDashboardStats(tenantId).catch(err => 
+      logger.error('cache.invalidate.error', 'system', tenantId, err)
+    );
+
     res.json({ success: true, message: 'Pago aprobado', payment: updatedPayment });
   } catch (err: unknown) {
     logger.error('payments.approve.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -742,6 +767,11 @@ export const rejectPaymentWithProof = async (req: Request, res: Response, next: 
       paymentId,
       proofOfPayment: true,
     });
+
+    // Invalidad dashboard stats
+    cacheService.invalidateDashboardStats(tenantId).catch(err => 
+      logger.error('cache.invalidate.error', 'system', tenantId, err)
+    );
 
     res.json({ success: true, message: 'Pago rechazado', payment: updatedPayment });
   } catch (err: unknown) {
