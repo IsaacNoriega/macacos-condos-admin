@@ -20,10 +20,12 @@ export const taskProcessor = async (job: Job) => {
   try {
     switch (name) {
       case 'generate-receipt':
-        // data: { payment, charge, tenant }
+        console.log(`[Worker] Generando recibo para pago: ${data.payment._id}`);
         const receiptUrl = await generatePaymentReceipt(data);
-        // Persistir la URL en la base de datos (Diseño SDD)
-        await Payment.updateOne({ _id: data.payment._id }, { receiptUrl });
+        console.log(`[Worker] PDF generado y subido: ${receiptUrl}`);
+        
+        const updateResult = await Payment.updateOne({ _id: data.payment._id }, { receiptUrl });
+        console.log(`[Worker] Base de datos actualizada: ${updateResult.modifiedCount} documentos modificados`);
         break;
 
       case 'send-email':
