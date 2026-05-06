@@ -85,6 +85,14 @@ app.use(express.urlencoded({ extended: true }));
 // Health check endpoint (sin autenticación para balanceadores de carga)
 app.use('/health', healthRoutes);
 
+// 🛡️ Validación SSL (PKI Validation)
+app.get('/.well-known/pki-validation/ED70DF3BEDBCC33963F5334CD901ACD0.txt', (req, res) => {
+  const content = `50B9860ECCB3FF7B305E674807EC0D61C524BFC3393FBF7C2D9B4A0EB3B54EED
+comodoca.com
+3e6fe478f20b924`;
+  res.type('text/plain').send(content);
+});
+
 // Importar y usar rutas de módulos
 app.use('/api/auth', authRoutes);
 app.use('/api/tenants', authMiddleware, tenantsRoutes);
