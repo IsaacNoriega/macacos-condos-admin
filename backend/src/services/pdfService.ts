@@ -3,27 +3,31 @@ import { createHash } from 'crypto';
 import { uploadReceiptToAzure } from '../config/azureBlob';
 import { toError } from '../utils/httpError';
 import logger from '../utils/logger';
+import path from 'path';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const PdfMakePrinter = require('pdfmake');
+// IMPORTACIÓN CLAVE: En Node.js, pdfmake exporta el constructor directamente
+const PdfPrinter = require('pdfmake');
 
+// CONFIGURACIÓN DE FUENTES: Railway necesita rutas físicas reales (.ttf)
+// Usamos path.join y process.cwd() para que siempre encuentre los archivos en el contenedor
 const fonts = {
   Roboto: {
-    normal: 'Helvetica',
-    bold: 'Helvetica-Bold',
-    italics: 'Helvetica-Oblique',
-    bolditalics: 'Helvetica-BoldOblique'
+    normal: path.join(process.cwd(), 'node_modules/pdfmake/fonts/Roboto-Regular.ttf'),
+    bold: path.join(process.cwd(), 'node_modules/pdfmake/fonts/Roboto-Medium.ttf'),
+    italics: path.join(process.cwd(), 'node_modules/pdfmake/fonts/Roboto-Italic.ttf'),
+    bolditalics: path.join(process.cwd(), 'node_modules/pdfmake/fonts/Roboto-MediumItalic.ttf')
   }
 };
 
-// Handle different export formats between versions (v0.2.x vs v0.3.x)
-const PrinterClass = PdfMakePrinter.Printer || (typeof PdfMakePrinter === 'function' ? PdfMakePrinter : PdfMakePrinter.default);
-
-if (!PrinterClass) {
-  throw new Error('No se pudo encontrar el constructor de pdfmake. Revisa la instalación de la librería.');
+let printer: any;
+try {
+  // Inicializamos el printer fuera de la función para reutilizarlo (mejor rendimiento)
+  printer = new PdfPrinter(fonts);
+} catch (error) {
+  console.error('❌ Error crítico al inicializar PdfPrinter:', error);
+  // No lanzamos el error aquí para no tumbar el servidor al arranque, 
+  // pero lo manejamos en la función de generación.
 }
-
-const printer = new PrinterClass(fonts);
 
 export interface ReceiptData {
   payment: any;
@@ -35,10 +39,15 @@ export interface ReceiptData {
  * Servicio para la generación de recibos PDF con diseño minimalista inspirado en Apple.
  */
 export const generatePaymentReceipt = async (data: ReceiptData): Promise<string> => {
+  if (!printer) {
+    throw new Error('El servicio de PDF no está inicializado correctamente.');
+  }
+
   const { payment, charge, tenant } = data;
   const paymentIdStr = String(payment._id);
   const tenantIdStr = String(tenant._id || tenant.id);
   
+  // Sello digital para trazabilidad (SPMP)
   const digitalSeal = createHash('sha256')
     .update(`${paymentIdStr}-${payment.amount}-${payment.createdAt}`)
     .digest('hex')
@@ -143,10 +152,12 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
     try {
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       const chunks: Buffer[] = [];
+      
       pdfDoc.on('data', (chunk: any) => chunks.push(chunk));
       pdfDoc.on('end', async () => {
         try {
           const result = Buffer.concat(chunks);
+          // Subida a Azure Blob Storage
           const uploadResult = await uploadReceiptToAzure(result, tenantIdStr, paymentIdStr);
           resolve(uploadResult.url);
         } catch (uploadError: unknown) {
@@ -154,7 +165,12 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
           reject(uploadError);
         }
       });
-      pdfDoc.on('error', (err: any) => reject(err));
+      
+      pdfDoc.on('error', (err: any) => {
+        logger.error('pdfService.generation.error', tenantIdStr, 'system', toError(err));
+        reject(err);
+      });
+      
       pdfDoc.end();
     } catch (err) {
       reject(err);
