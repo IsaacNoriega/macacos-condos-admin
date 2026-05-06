@@ -90,6 +90,7 @@ export class ChargesPage implements OnInit {
   readonly detail = signal<ChargeCard | null>(null);
   readonly toDelete = signal<ChargeCard | null>(null);
   readonly editingId = signal<string | null>(null);
+  readonly bulkEditorOpen = signal(false);
 
   readonly currentRole = computed(() => this.auth.role() ?? 'admin');
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
@@ -112,6 +113,7 @@ export class ChargesPage implements OnInit {
   });
 
   readonly form: FormGroup;
+  readonly bulkForm: FormGroup;
 
   readonly tenantSummaries = computed(() => {
     const tenants = this.tenants();
@@ -194,6 +196,14 @@ export class ChargesPage implements OnInit {
       lateFeePerDay: [0],
     });
 
+    this.bulkForm = this.fb.group({
+      tenantId: ['', Validators.required],
+      description: ['', Validators.required],
+      amount: [0, [Validators.required, Validators.min(0.01)]],
+      dueDate: ['', Validators.required],
+      lateFeePerDay: [0],
+    });
+
     effect(() => {
       const editingId = this.editingId();
       if (!editingId) return;
@@ -263,6 +273,11 @@ export class ChargesPage implements OnInit {
     this.editorOpen.set(true);
   }
 
+  openBulkCreate(): void {
+    this.bulkForm.reset({ tenantId: '', amount: 0, lateFeePerDay: 0 });
+    this.bulkEditorOpen.set(true);
+  }
+
   openEdit(charge: ChargeCard): void {
     this.editingId.set(charge.id);
     this.editorMode.set('edit');
@@ -275,6 +290,9 @@ export class ChargesPage implements OnInit {
 
   closeEditor(): void {
     this.editorOpen.set(false);
+  }
+  closeBulkEditor(): void {
+    this.bulkEditorOpen.set(false);
   }
   closeDetail(): void {
     this.detail.set(null);
@@ -313,6 +331,25 @@ export class ChargesPage implements OnInit {
         this.loadCharges();
       },
       error: (err) => this.toast.bad('Error al guardar', err?.error?.message),
+    });
+  }
+
+  saveBulkCharge(): void {
+    if (this.bulkForm.invalid) {
+      this.bulkForm.markAllAsTouched();
+      return;
+    }
+
+    const val = this.bulkForm.value;
+    this.loading.set(true);
+
+    this.api.post('/charges/bulk', val).pipe(finalize(() => this.loading.set(false))).subscribe({
+      next: (res: any) => {
+        this.toast.ok(res.message || 'Cargos masivos creados exitosamente');
+        this.closeBulkEditor();
+        this.loadCharges();
+      },
+      error: (err) => this.toast.bad('Error al procesar carga masiva', err?.error?.message),
     });
   }
 
