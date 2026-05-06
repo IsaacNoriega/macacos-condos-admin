@@ -790,11 +790,13 @@ export const getPaymentReceipt = async (req: Request, res: Response, next: NextF
     }
 
     // Si no existe, delegar al worker (RNF-ESC-002 / RNF-REN-001)
+    console.log(`[API] Solicitando generación de recibo para pago: ${paymentId}`);
     await queueService.addTask('generate-receipt', { 
       payment, 
       charge, 
       tenant 
     }, String(payment.tenantId));
+    console.log(`[API] Tarea añadida a la cola para pago: ${paymentId}`);
 
     res.status(202).json({ 
       success: true, 

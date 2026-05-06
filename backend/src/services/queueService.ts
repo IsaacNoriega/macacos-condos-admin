@@ -32,7 +32,9 @@ class QueueService {
       throw new Error('Aislamiento Crítico: tenantId es obligatorio para agregar tareas a la cola.');
     }
 
+    console.log(`[QueueService] Añadiendo tarea '${name}' para tenant: ${tenantId}`);
     const job = await this.queue.add(name, { ...data, tenantId });
+    console.log(`[QueueService] Tarea añadida exitosamente. JobID: ${job.id}`);
     
     logger.log('queue.task.added', 'system', tenantId, { 
       jobId: job.id, 
