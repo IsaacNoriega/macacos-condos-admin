@@ -239,8 +239,8 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
 
     await browser.close();
 
-    // Subir a Azure
-    const uploadResult = await uploadReceiptToAzure(pdfBuffer, tenantIdStr, paymentIdStr);
+    // Subir a Azure (Convertimos Uint8Array a Buffer para compatibilidad)
+    const uploadResult = await uploadReceiptToAzure(Buffer.from(pdfBuffer), tenantIdStr, paymentIdStr);
     
     logger.log('pdf.generated.successfully', 'system', tenantIdStr, { paymentId: paymentIdStr });
     
