@@ -32,7 +32,7 @@ describe('app integration', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
       expect.objectContaining({
-        status: 'healthy',
+        status: 'OK',
         timestamp: expect.any(String),
       })
     );

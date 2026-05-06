@@ -25,7 +25,7 @@ export const checkHealth = async (req: Request, res: Response) => {
     const isDbConnected = dbStatus === 1;
 
     const healthData = {
-      status: isDbConnected ? 'healthy' : 'unhealthy',
+      status: isDbConnected ? 'OK' : 'unhealthy',
       dbStatus: getDbStatusString(dbStatus),
       uptime: process.uptime(), // Tiempo en segundos desde el inicio del proceso
       timestamp: new Date().toISOString(),
