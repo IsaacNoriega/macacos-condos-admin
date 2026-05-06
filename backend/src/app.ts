@@ -22,6 +22,7 @@ import healthRoutes from './modules/health/routes';
 import analyticsRoutes from './modules/analytics/routes';
 import { AppError } from './utils/httpError';
 import logger from './utils/logger';
+import { azureIpMiddleware } from './middleware/azureIpMiddleware';
 
 const app = express();
 
@@ -67,6 +68,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-tenant-id']
 }));
+
+// 🔥 Seguridad Zero Trust: Solo permitir tráfico desde Azure Application Gateway
+app.use(azureIpMiddleware);
 
 // Middleware de logging
 app.use(morgan('combined'));
