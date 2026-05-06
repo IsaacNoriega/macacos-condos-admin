@@ -7,8 +7,8 @@ const ALLOWED_AZURE_IP = '172.214.17.219';
  * Solo permite peticiones que provengan del Azure Application Gateway.
  */
 export const azureIpMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Bonus: Bypass automático en desarrollo
-  if (process.env.NODE_ENV === 'development') {
+  // Bonus: Bypass automático en desarrollo y pruebas
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     return next();
   }
 
