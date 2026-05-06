@@ -98,5 +98,12 @@
   .toolbar {
     flex-direction: column;
     align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .toolbar .mcs-input-wrap {
+    max-width: none !important;
+  }
+  .filter-chips {
+    flex-wrap: wrap;
   }
 }

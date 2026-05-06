@@ -126,4 +126,10 @@
     flex-direction: column;
     align-items: stretch;
   }
+  .toolbar .mcs-input-wrap {
+    max-width: none !important;
+  }
+  .filter-chips {
+    flex-wrap: wrap;
+  }
 }

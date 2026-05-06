@@ -193,3 +193,23 @@ html[data-theme='dark'] .type-card.on {
   min-width: 30px;
   padding: 0 8px;
 }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .toolbar .mcs-input-wrap {
+    max-width: none !important;
+  }
+  .unit-hero {
+    height: 80px;
+  }
+  .unit-hero span {
+    font-size: 28px;
+  }
+  .unit-kpi .kpi-value {
+    font-size: 14px;
+  }
+}

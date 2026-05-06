@@ -123,6 +123,19 @@
     flex-direction: column;
     align-items: stretch;
   }
+  .toolbar .mcs-input-wrap {
+    max-width: none !important;
+  }
+  .calendar-frame {
+    height: 450px;
+    min-height: 350px;
+  }
+  .calendar-content {
+    padding: 12px;
+  }
+  .card-header {
+    padding: 12px 14px;
+  }
 }
 
 .calendar-loader-overlay {
