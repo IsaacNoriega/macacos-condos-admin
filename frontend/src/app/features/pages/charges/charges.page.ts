@@ -318,11 +318,14 @@ export class ChargesPage implements OnInit {
 
     const val = this.form.value;
     const editingId = this.editingId();
+    const api = this.api;
+    if (!api) return;
+
     this.loading.set(true);
 
     const req$ = editingId
-      ? this.api.put(`/charges/${editingId}`, val)
-      : this.api.post('/charges', val);
+      ? api.put(`/charges/${editingId}`, val)
+      : api.post('/charges', val);
 
     req$.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => {
@@ -341,9 +344,12 @@ export class ChargesPage implements OnInit {
     }
 
     const val = this.bulkForm.value;
+    const api = this.api;
+    if (!api) return;
+
     this.loading.set(true);
 
-    this.api.post('/charges/bulk', val).pipe(finalize(() => this.loading.set(false))).subscribe({
+    api.post('/charges/bulk', val).pipe(finalize(() => this.loading.set(false))).subscribe({
       next: (res: any) => {
         this.toast.ok(res.message || 'Cargos masivos creados exitosamente');
         this.closeBulkEditor();
@@ -365,10 +371,13 @@ export class ChargesPage implements OnInit {
   confirmDelete(): void {
     const charge = this.toDelete();
     if (!charge) return;
+    const api = this.api;
+    if (!api) return;
+
     this.toDelete.set(null);
     this.loading.set(true);
     const query = this.isSuperadmin() ? `?tenantId=${encodeURIComponent(charge.tenantId)}` : '';
-    this.api
+    api
       .delete(`/charges/${charge.id}${query}`)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({

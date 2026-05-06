@@ -3,6 +3,7 @@ import Payment from '../payments/model';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import User from '../users/model';
+import Resident from '../residents/model';
 import * as chargesService from './service';
 import * as residentsService from '../residents/service';
 import { queueService } from '../../services/queueService';
@@ -201,22 +202,33 @@ export const createBulkCharges = async (req: Request, res: Response, next: NextF
   try {
     const { tenantId, description, amount, dueDate, lateFeePerDay } = req.body;
 
-    // Obtener todos los usuarios del tenant
-    const users = await User.find({ tenantId }).lean();
+    // Obtener todos los residentes del tenant para tener el vínculo UserId <-> UnitId
+    const residents = await Resident.find({ tenantId }).lean();
     
-    if (!users.length) {
-      return res.status(404).json({ success: false, message: 'No hay usuarios en este condominio' });
+    if (!residents.length) {
+      return res.status(404).json({ success: false, message: 'No hay residentes registrados en este condominio' });
     }
 
-    const chargePayloads = users.map(user => ({
-      userId: user._id,
+    // Mapear residentes a usuarios para obtener sus IDs de usuario (User._id)
+    // Asumimos que el email vincula Resident con User
+    const emails = residents.map(r => r.email);
+    const usersInTenant = await User.find({ email: { $in: emails }, tenantId }).lean();
+    const emailToUserId = new Map(usersInTenant.map(u => [u.email.toLowerCase(), u._id]));
+
+    const chargePayloads = residents.map(res => ({
+      userId: emailToUserId.get(res.email.toLowerCase()) || null,
+      unitId: res.unitId,
       description,
       amount,
       dueDate,
       lateFeePerDay,
       tenantId,
       isPaid: false
-    }));
+    })).filter(p => p.userId); // Solo personas con usuario activo
+
+    if (!chargePayloads.length) {
+      return res.status(404).json({ success: false, message: 'No se encontraron usuarios activos vinculados a residentes' });
+    }
 
     // Crear cargos masivamente
     const charges = await chargesService.createBulkChargesInTenant(chargePayloads, tenantId);
@@ -226,10 +238,14 @@ export const createBulkCharges = async (req: Request, res: Response, next: NextF
       logger.error('cache.invalidate.error', 'system', tenantId, err)
     );
 
-    // Encolar emails para todos
+    // Encolar emails para los que tienen usuario
     const dueDateStr = new Date(dueDate).toLocaleDateString('es-MX');
-    const emailPromises = users.map(user => 
-      queueService.addTask('send-email', {
+    const emailPromises = chargePayloads.map(payload => {
+      // Buscar el email del usuario para la notificación
+      const user = usersInTenant.find(u => String(u._id) === String(payload.userId));
+      if (!user) return Promise.resolve();
+
+      return queueService.addTask('send-email', {
         type: 'new-charge',
         email: user.email,
         name: user.name,
@@ -237,8 +253,8 @@ export const createBulkCharges = async (req: Request, res: Response, next: NextF
         concept: description,
         dueDate: dueDateStr,
         tenantId
-      }, tenantId)
-    );
+      }, tenantId);
+    });
 
     await Promise.all(emailPromises);
 
