@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { redisConfig } from '../config/redis';
+import { redisConnection } from '../config/redis';
 import logger from '../utils/logger';
 
 /**
@@ -11,7 +11,7 @@ class QueueService {
 
   constructor() {
     this.queue = new Queue('{macacos-tasks}', {
-      connection: redisConfig,
+      connection: redisConnection,
       defaultJobOptions: {
         attempts: 3,
         backoff: {

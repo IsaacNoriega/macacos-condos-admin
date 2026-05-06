@@ -1,5 +1,5 @@
 import { Worker } from 'bullmq';
-import { redisConfig } from './config/redis';
+import { redisConnection } from './config/redis';
 import { taskProcessor } from './processors/taskProcessor';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
@@ -24,7 +24,7 @@ const startWorker = async () => {
   }
 
   const worker = new Worker('{macacos-tasks}', taskProcessor, {
-    connection: redisConfig,
+    connection: redisConnection,
     concurrency: 5, // Procesar hasta 5 tareas simultáneas por worker
   });
 
