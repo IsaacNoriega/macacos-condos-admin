@@ -54,11 +54,16 @@ class CacheService {
   }
 
   /**
-   * Invalida las estadísticas del dashboard para un tenant específico.
+   * Invalida las estadísticas del dashboard para un tenant específico y las globales.
    */
   async invalidateDashboardStats(tenantId: string): Promise<void> {
-    const key = this.generateKey(tenantId, 'dashboard', 'stats');
-    await this.invalidate(key);
+    const tenantKey = this.generateKey(tenantId, 'dashboard', 'stats');
+    const globalKey = this.generateKey('global', 'dashboard', 'stats');
+    
+    await Promise.all([
+      this.invalidate(tenantKey),
+      this.invalidate(globalKey)
+    ]);
   }
 
   /**
