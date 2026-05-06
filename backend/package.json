@@ -4,7 +4,7 @@
   "description": "Macacos Condos Admin - Backend",
   "main": "dist/server.js",
   "scripts": {
-    "build": "rimraf dist && tsc",
+    "build": "rm -rf dist && tsc",
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec ts-node src/server.ts",
     "worker": "nodemon --watch src --ext ts --exec ts-node src/worker.ts",
