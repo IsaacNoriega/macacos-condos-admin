@@ -5,11 +5,17 @@ import { toError } from '../utils/httpError';
 import logger from '../utils/logger';
 import path from 'path';
 
-// IMPORTACIÓN CLAVE: En Node.js, pdfmake exporta el constructor directamente
-const PdfPrinter = require('pdfmake');
+/**
+ * IMPORTACIÓN ROBUSTA: Maneja el envoltorio .default que a veces 
+ * genera la compilación de TypeScript en entornos Node.js.
+ */
+const PdfMake = require('pdfmake');
+const PdfPrinter = PdfMake.default || PdfMake;
 
-// CONFIGURACIÓN DE FUENTES: Railway necesita rutas físicas reales (.ttf)
-// Usamos path.join y process.cwd() para que siempre encuentre los archivos en el contenedor
+/**
+ * CONFIGURACIÓN DE FUENTES: Railway requiere rutas físicas absolutas.
+ * Se utilizan las fuentes Roboto incluidas por defecto en la librería.
+ */
 const fonts = {
   Roboto: {
     normal: path.join(process.cwd(), 'node_modules/pdfmake/fonts/Roboto-Regular.ttf'),
@@ -20,13 +26,16 @@ const fonts = {
 };
 
 let printer: any;
+
 try {
-  // Inicializamos el printer fuera de la función para reutilizarlo (mejor rendimiento)
-  printer = new PdfPrinter(fonts);
+  // Verificamos que sea un constructor antes de inicializar
+  if (typeof PdfPrinter === 'function') {
+    printer = new PdfPrinter(fonts);
+  } else {
+    throw new Error('El módulo importado de pdfmake no es un constructor válido.');
+  }
 } catch (error) {
   console.error('❌ Error crítico al inicializar PdfPrinter:', error);
-  // No lanzamos el error aquí para no tumbar el servidor al arranque, 
-  // pero lo manejamos en la función de generación.
 }
 
 export interface ReceiptData {
@@ -36,18 +45,18 @@ export interface ReceiptData {
 }
 
 /**
- * Servicio para la generación de recibos PDF con diseño minimalista inspirado en Apple.
+ * Servicio para la generación de recibos PDF con diseño minimalista.
  */
 export const generatePaymentReceipt = async (data: ReceiptData): Promise<string> => {
   if (!printer) {
-    throw new Error('El servicio de PDF no está inicializado correctamente.');
+    throw new Error('El servicio de PDF no está inicializado (PdfPrinter es undefined).');
   }
 
   const { payment, charge, tenant } = data;
   const paymentIdStr = String(payment._id);
   const tenantIdStr = String(tenant._id || tenant.id);
   
-  // Sello digital para trazabilidad (SPMP)
+  // Sello digital de autenticidad (SHA-256)
   const digitalSeal = createHash('sha256')
     .update(`${paymentIdStr}-${payment.amount}-${payment.createdAt}`)
     .digest('hex')
@@ -157,7 +166,6 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
       pdfDoc.on('end', async () => {
         try {
           const result = Buffer.concat(chunks);
-          // Subida a Azure Blob Storage
           const uploadResult = await uploadReceiptToAzure(result, tenantIdStr, paymentIdStr);
           resolve(uploadResult.url);
         } catch (uploadError: unknown) {
@@ -166,11 +174,7 @@ export const generatePaymentReceipt = async (data: ReceiptData): Promise<string>
         }
       });
       
-      pdfDoc.on('error', (err: any) => {
-        logger.error('pdfService.generation.error', tenantIdStr, 'system', toError(err));
-        reject(err);
-      });
-      
+      pdfDoc.on('error', (err: any) => reject(err));
       pdfDoc.end();
     } catch (err) {
       reject(err);
