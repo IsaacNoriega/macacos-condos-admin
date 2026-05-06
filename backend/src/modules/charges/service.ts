@@ -46,3 +46,9 @@ export const findCharges = (filter: any) => {
   return Charge.find(filter).lean();
 };
 
+export const createBulkChargesInTenant = async (payloads: any[], tenantId: string) => {
+  // Asegurar que todos tengan el tenantId correcto
+  const finalPayloads = payloads.map(p => ({ ...p, tenantId }));
+  return Charge.insertMany(finalPayloads);
+};
+

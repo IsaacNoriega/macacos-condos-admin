@@ -96,6 +96,29 @@ export const buildWelcomeEmail = (name: string, tenantIdentifier: string, token?
   return getPremiumTemplate('Bienvenido a Macacos', content, buttonText, activationUrl);
 };
 
+export const buildReceiptEmail = (name: string, amount: number, tenantName: string, receiptUrl: string) => {
+  const content = `
+    <p>Hola, <strong>${name}</strong>.</p>
+    <p>Tu pago por un monto de <strong>$${amount.toLocaleString()} MXN</strong> en <strong>${tenantName}</strong> ha sido procesado exitosamente.</p>
+    <p>Ya puedes descargar tu recibo oficial haciendo clic en el botón de abajo.</p>
+  `;
+  return getPremiumTemplate('Tu recibo de pago está listo', content, 'Descargar Recibo', receiptUrl);
+};
+
+export const buildNewChargeEmail = (name: string, amount: number, concept: string, dueDate: string) => {
+  const portalUrl = `${PROD_URL}/payments`;
+  const content = `
+    <p>Hola, <strong>${name}</strong>.</p>
+    <p>Se ha generado un nuevo cargo en tu cuenta por concepto de: <strong>${concept}</strong>.</p>
+    <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: left;">
+      <p style="margin: 0 0 10px 0;"><strong>Monto:</strong> $${amount.toLocaleString()} MXN</p>
+      <p style="margin: 0;"><strong>Fecha límite:</strong> ${dueDate}</p>
+    </div>
+    <p>Puedes realizar tu pago a través de la plataforma haciendo clic en el botón de abajo.</p>
+  `;
+  return getPremiumTemplate('Nuevo cargo generado', content, 'Ir a pagar', portalUrl);
+};
+
 export const sendResetPasswordEmail = async (
   email: string,
   name: string,
@@ -114,6 +137,28 @@ export const sendWelcomeEmail = async (
 ) => {
   const html = buildWelcomeEmail(name, tenantIdentifier, token, email);
   return sendMailInternal(email, 'Bienvenido a Macacos Condos', html);
+};
+
+export const sendReceiptEmail = async (
+  email: string,
+  name: string,
+  amount: number,
+  tenantName: string,
+  receiptUrl: string
+) => {
+  const html = buildReceiptEmail(name, amount, tenantName, receiptUrl);
+  return sendMailInternal(email, 'Tu recibo de pago - Macacos Condos', html);
+};
+
+export const sendNewChargeEmail = async (
+  email: string,
+  name: string,
+  amount: number,
+  concept: string,
+  dueDate: string
+) => {
+  const html = buildNewChargeEmail(name, amount, concept, dueDate);
+  return sendMailInternal(email, 'Nuevo cargo generado - Macacos Condos', html);
 };
 
 export const sendSMS = async (phone: string, message: string) => {

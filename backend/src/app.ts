@@ -114,8 +114,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
       err instanceof AppError && err.details
         ? err.details
         : process.env.NODE_ENV === 'development'
-        ? { stack: err?.stack }
-        : undefined,
+          ? { stack: err?.stack }
+          : undefined,
   });
 });
 

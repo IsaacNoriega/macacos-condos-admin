@@ -16,7 +16,6 @@ class CacheService {
    */
   async getOrSet<T>(key: string, fetchFn: () => Promise<T>, ttl: number = this.defaultTTL): Promise<T> {
     try {
-      // 1. Intentar obtener de Redis
       const cachedData = await redisConnection.get(key);
       
       if (cachedData) {
@@ -26,17 +25,13 @@ class CacheService {
 
       console.log(`[Cache] MISS: ${key}. Consultando base de datos...`);
     } catch (error) {
-      // Failover: Si Redis falla, registramos el error y seguimos a la DB
       logger.error('cache.get.error', 'system', 'global', error as Error);
     }
 
-    // 2. Cache Miss o fallo de Redis: Consultar a MongoDB
     const data = await fetchFn();
 
-    // 3. Intentar guardar en Redis para futuras consultas
     try {
       if (data !== null && data !== undefined) {
-        // Usamos EX para establecer TTL en la misma operación
         await redisConnection.set(key, JSON.stringify(data), 'EX', ttl);
       }
     } catch (error) {
@@ -47,8 +42,7 @@ class CacheService {
   }
 
   /**
-   * Invalida una clave o un patrón de claves (Cache Invalidation).
-   * @param key Clave exacta a eliminar
+   * Invalida una clave o un patrón de claves.
    */
   async invalidate(key: string): Promise<void> {
     try {
@@ -60,11 +54,16 @@ class CacheService {
   }
 
   /**
-   * Invalida las estadísticas del dashboard para un tenant específico.
+   * Invalida las estadísticas del dashboard para un tenant específico y las globales.
    */
   async invalidateDashboardStats(tenantId: string): Promise<void> {
-    const key = this.generateKey(tenantId, 'dashboard', 'stats');
-    await this.invalidate(key);
+    const tenantKey = this.generateKey(tenantId, 'dashboard', 'stats');
+    const globalKey = this.generateKey('global', 'dashboard', 'stats');
+    
+    await Promise.all([
+      this.invalidate(tenantKey),
+      this.invalidate(globalKey)
+    ]);
   }
 
   /**

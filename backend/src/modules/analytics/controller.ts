@@ -11,29 +11,33 @@ import { AppError } from '../../utils/httpError';
  */
 export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const isSuperadmin = req.user?.role === 'superadmin';
     const tenantId = req.tenantId;
-    if (!tenantId) throw new AppError('Tenant ID requerido', 400);
+    
+    // Si no es superadmin y no hay tenantId, hay un problema de permisos
+    if (!isSuperadmin && !tenantId) throw new AppError('Tenant ID requerido', 400);
 
-    const cacheKey = cacheService.generateKey(tenantId, 'dashboard', 'stats');
+    // Para el Superadmin, si no hay tenantId en el request, mostramos global
+    const queryTenantId = tenantId || (isSuperadmin ? 'global' : null);
+    if (!queryTenantId) throw new AppError('No se pudo determinar el alcance de la consulta', 400);
 
-    // Estrategia Cache-Aside
+    const cacheKey = cacheService.generateKey(queryTenantId, 'dashboard', 'stats');
+
     const stats = await cacheService.getOrSet(cacheKey, async () => {
-      // Definir rango de los últimos 6 meses para las gráficas
       const sixMonthsAgo = new Date();
       sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
+      // Si es global (Superadmin sin tenant específico), no filtramos por tenantId
+      const matchStage = queryTenantId === 'global' ? {} : { tenantId };
+
       const [payments, users, reservations, maintenance] = await Promise.all([
-        // Pagos completados
         Payment.aggregate([
-          { $match: { tenantId, status: { $in: ['paid', 'completed'] } } },
+          { $match: { ...matchStage, status: { $in: ['paid', 'completed'] } } },
           { $group: { _id: null, totalAmount: { $sum: '$amount' }, count: { $sum: 1 } } }
         ]),
-        // Conteo de usuarios
-        User.countDocuments({ tenantId }),
-        // Reservaciones recientes
-        Reservation.countDocuments({ tenantId, createdAt: { $gte: sixMonthsAgo } }),
-        // Mantenimientos abiertos
-        Maintenance.countDocuments({ tenantId, status: { $ne: 'resolved' } })
+        User.countDocuments(matchStage),
+        Reservation.countDocuments({ ...matchStage, createdAt: { $gte: sixMonthsAgo } }),
+        Maintenance.countDocuments({ ...matchStage, status: { $ne: 'resolved' } })
       ]);
 
       return {
@@ -41,6 +45,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
         usersCount: users,
         recentReservations: reservations,
         openMaintenance: maintenance,
+        scope: queryTenantId === 'global' ? 'Global (All Tenants)' : `Tenant: ${tenantId}`,
         updatedAt: new Date()
       };
     });

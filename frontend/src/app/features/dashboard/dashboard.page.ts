@@ -340,7 +340,7 @@ export class DashboardPage implements OnInit, OnDestroy {
     private readonly api: ApiService,
     readonly auth: AuthService,
     private readonly router: Router,
-  ) {}
+  ) { }
 
   private refreshIntervalId: any;
 
@@ -367,62 +367,24 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.error.set(null);
     this.now.set(new Date());
 
-    this.api.get<{ stats: any }>('/analytics/dashboard').subscribe({
-      next: (response) => {
-        const { stats } = response;
-        // Adaptamos la respuesta del backend a la estructura que espera el frontend
-        // Para no romper las gráficas de series de tiempo existentes, mantenemos el mock de items
-        // pero con los totales reales del backend.
-        // NOTA: En una fase 2, el backend debería devolver también las series de tiempo.
-        
-        const mockSources: DashboardSourceState[] = [
-          {
-            key: 'users',
-            label: 'Usuarios',
-            endpoint: '/users',
-            listKey: 'users',
-            dateKey: 'createdAt',
-            roles: ['superadmin', 'admin'],
-            color: DASHBOARD_COLORS.users,
-            items: new Array(stats.usersCount).fill({ createdAt: new Date() })
-          },
-          {
-            key: 'payments',
-            label: 'Pagos',
-            endpoint: '/payments',
-            listKey: 'payments',
-            dateKey: 'paymentDate',
-            roles: ['superadmin', 'admin', 'residente', 'propietario'],
-            color: DASHBOARD_COLORS.payments,
-            items: new Array(stats.payments.count).fill({ paymentDate: new Date(), status: 'paid' })
-          },
-          {
-            key: 'reservations',
-            label: 'Reservaciones',
-            endpoint: '/reservations',
-            listKey: 'reservations',
-            dateKey: 'createdAt',
-            roles: ['superadmin', 'admin', 'residente', 'propietario'],
-            color: DASHBOARD_COLORS.reservations,
-            items: new Array(stats.recentReservations).fill({ createdAt: new Date() })
-          },
-          {
-            key: 'maintenance',
-            label: 'Mantenimiento',
-            endpoint: '/maintenance',
-            listKey: 'reports',
-            dateKey: 'createdAt',
-            roles: ['superadmin', 'admin', 'residente', 'propietario'],
-            color: DASHBOARD_COLORS.maintenance,
-            items: new Array(stats.openMaintenance).fill({ createdAt: new Date() })
-          }
-        ];
+    forkJoin(
+      sourceConfig.map((source) => this.api.get<Record<string, unknown>>(source.endpoint)),
+    ).subscribe({
+      next: (responses) => {
+        const updated = sourceConfig.map((source, index) => {
+          const response = responses[index] as Record<string, unknown>;
+          const list = response[source.listKey];
 
-        this.sources.set(mockSources);
+          return {
+            ...source,
+            items: Array.isArray(list) ? (list as Record<string, unknown>[]) : [],
+          };
+        });
+        this.sources.set(updated);
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set(err?.error?.message || 'No se pudieron cargar métricas optimizadas.');
+        this.error.set(err?.error?.message || 'No se pudieron cargar métricas del dashboard.');
         this.loading.set(false);
       },
     });
