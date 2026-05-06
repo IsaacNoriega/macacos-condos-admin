@@ -23,7 +23,7 @@ const startWorker = async () => {
     }
   }
 
-  const worker = new Worker('macacos-tasks', taskProcessor, {
+  const worker = new Worker('{macacos-tasks}', taskProcessor, {
     connection: redisConfig,
     concurrency: 5, // Procesar hasta 5 tareas simultáneas por worker
   });

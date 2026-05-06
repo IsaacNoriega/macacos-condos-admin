@@ -10,7 +10,7 @@ class QueueService {
   private queue: Queue;
 
   constructor() {
-    this.queue = new Queue('macacos-tasks', {
+    this.queue = new Queue('{macacos-tasks}', {
       connection: redisConfig,
       defaultJobOptions: {
         attempts: 3,
