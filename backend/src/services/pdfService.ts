@@ -5,7 +5,7 @@ import { toError } from '../utils/httpError';
 import logger from '../utils/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const PdfPrinter = require('pdfmake');
+const PdfMakePrinter = require('pdfmake');
 
 const fonts = {
   Roboto: {
@@ -16,7 +16,9 @@ const fonts = {
   }
 };
 
-const printer = new PdfPrinter(fonts);
+// Handle different export formats between versions
+const PrinterClass = typeof PdfMakePrinter === 'function' ? PdfMakePrinter : PdfMakePrinter.default;
+const printer = new PrinterClass(fonts);
 
 export interface ReceiptData {
   payment: any;

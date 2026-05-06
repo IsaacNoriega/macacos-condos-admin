@@ -11,15 +11,15 @@ dotenv.config();
  * Worker Independiente para procesamiento asíncrono.
  * Cumple con RNF-ESC-002 (Escalabilidad Horizontal).
  */
-const startWorker = async () => {
+export const startWorker = async () => {
   // El worker necesita conexión a la BD si los servicios la requieren
-  if (process.env.MONGODB_URI) {
+  if (mongoose.connection.readyState === 0 && process.env.MONGODB_URI) {
     try {
       await mongoose.connect(process.env.MONGODB_URI);
       console.log('Worker: MongoDB connected');
     } catch (err) {
       console.error('Worker: MongoDB connection error', err);
-      process.exit(1);
+      // No salir si falla aquí, quizás la API ya está conectada
     }
   }
 
@@ -37,6 +37,7 @@ const startWorker = async () => {
   });
 
   console.log('Worker: BullMQ Worker started successfully');
+  return worker;
 };
 
 // Capturar errores no manejados
@@ -44,4 +45,7 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-startWorker();
+// Solo arrancar automáticamente si es el archivo principal
+if (require.main === module) {
+  startWorker();
+}
