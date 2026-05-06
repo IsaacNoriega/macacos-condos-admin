@@ -22,12 +22,43 @@ vi.mock('../charges/model', () => ({
   default: {
     findOne: vi.fn(),
     updateOne: vi.fn(),
+    findById: vi.fn(() => ({
+      lean: vi.fn().mockResolvedValue({ _id: 'charge-1', amount: 500 }),
+    })),
   },
 }));
 
 vi.mock('../users/model', () => ({
   default: {
     findById: vi.fn(),
+  },
+}));
+
+vi.mock('../tenants/model', () => ({
+  default: {
+    findById: vi.fn(() => ({
+      lean: vi.fn().mockResolvedValue({ _id: 'tenant-1', name: 'Tenant 1' }),
+    })),
+  },
+}));
+
+vi.mock('../../services/queueService', () => ({
+  queueService: {
+    addTask: vi.fn().mockResolvedValue({ id: 'job-1' }),
+  },
+}));
+
+vi.mock('../tenants/model', () => ({
+  default: {
+    findById: vi.fn(() => ({
+      lean: vi.fn().mockResolvedValue({ _id: 'tenant-1', name: 'Tenant 1' }),
+    })),
+  },
+}));
+
+vi.mock('../../services/queueService', () => ({
+  queueService: {
+    addTask: vi.fn().mockResolvedValue({ id: 'job-1' }),
   },
 }));
 

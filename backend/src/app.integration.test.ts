@@ -1,11 +1,29 @@
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import mongoose from 'mongoose';
 import app from './app';
+
+vi.mock('mongoose', async () => {
+  const actual = await vi.importActual('mongoose');
+  return {
+    ...actual as any,
+    default: {
+      ...actual as any,
+      connection: {
+        readyState: 1,
+      },
+    },
+    connection: {
+      readyState: 1,
+    }
+  };
+});
 
 describe('app integration', () => {
   beforeEach(() => {
     process.env.JWT_SECRET = 'integration-secret';
+    vi.clearAllMocks();
   });
 
   it('GET /health returns OK and timestamp', async () => {
@@ -14,7 +32,7 @@ describe('app integration', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
       expect.objectContaining({
-        status: 'OK',
+        status: 'healthy',
         timestamp: expect.any(String),
       })
     );

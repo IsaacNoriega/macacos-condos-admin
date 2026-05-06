@@ -34,6 +34,12 @@ vi.mock('bcrypt', () => ({
   },
 }));
 
+vi.mock('../../services/queueService', () => ({
+  queueService: {
+    addTask: vi.fn().mockResolvedValue({ id: 'job-1' }),
+  },
+}));
+
 // 2. Imports after mocks
 import { login, forgotPassword, resetPassword } from './controller';
 import { findUserByEmailInTenant, updateUserPasswordByResetToken } from '../users/service';
