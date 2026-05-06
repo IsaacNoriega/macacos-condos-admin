@@ -4,6 +4,7 @@ import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import User from '../users/model';
 import * as chargesService from './service';
+import { cacheService } from '../../services/cacheService';
 import * as residentsService from '../residents/service';
 
 type ChargeWithStatusBase = {
@@ -125,6 +126,12 @@ export const createCharge = async (req: Request, res: Response, next: NextFuncti
     if (payload.userId === '') delete payload.userId;
     const charge = await chargesService.createChargeInTenant(payload, targetTenantId);
     logger.log('charges.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { chargeId: String(charge._id) });
+    
+    // Invalidad dashboard stats
+    cacheService.invalidateDashboardStats(targetTenantId).catch(err => 
+      logger.error('cache.invalidate.error', 'system', targetTenantId, err)
+    );
+
     res.status(201).json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -145,6 +152,14 @@ export const updateCharge = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('charges.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
+
+    // Invalidad dashboard stats
+    if (tenantScope) {
+      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
+        logger.error('cache.invalidate.error', 'system', tenantScope, err)
+      );
+    }
+
     res.json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -162,6 +177,14 @@ export const deleteCharge = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('charges.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
+
+    // Invalidad dashboard stats
+    if (tenantScope) {
+      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
+        logger.error('cache.invalidate.error', 'system', tenantScope, err)
+      );
+    }
+
     res.json({ success: true, message: 'Cargo eliminado' });
   } catch (err: unknown) {
     logger.error('charges.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
