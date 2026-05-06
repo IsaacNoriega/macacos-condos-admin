@@ -14,6 +14,8 @@ const startServer = async () => {
     app.listen(PORT as number, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+
     // Start background worker with a delay to ensure API is stable first
     setTimeout(() => {
       console.log('Attempting to start background worker...');
