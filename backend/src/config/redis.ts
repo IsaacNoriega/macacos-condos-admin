@@ -21,11 +21,11 @@ export const redisConnection = isCluster
       {
         redisOptions: {
           password: redisConfig.password,
-          tls: redisConfig.tls,
+          tls: { servername: redisConfig.host },
         },
-        dnsLookup: (address, callback) => callback(null, address),
         maxRedirections: 16,
-        enableReadyCheck: false,
+        enableReadyCheck: true,
+        slotsRefreshTimeout: 5000,
       }
     )
   : new Redis({
