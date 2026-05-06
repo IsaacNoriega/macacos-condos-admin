@@ -1,6 +1,4 @@
-.payments-page {
-  /* Pattern: Toolbar */
-}
+/* payments-page: styles scoped via Angular encapsulation */
 
 .toolbar {
   display: flex;
