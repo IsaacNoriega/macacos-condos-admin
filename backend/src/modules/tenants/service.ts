@@ -10,15 +10,15 @@ import Amenity from '../amenities/model';
 import { deletePaymentProofBlob } from '../../config/azureBlob';
 
 export const findAllTenants = () => {
-  return Tenant.find();
+  return Tenant.find().lean();
 };
 
 export const findTenantById = (tenantId: string) => {
-  return Tenant.findById(tenantId);
+  return Tenant.findById(tenantId).lean();
 };
 
 export const findTenantByIdentifier = (identifier: string) => {
-  return Tenant.findOne({ identifier: identifier.toLowerCase().trim() });
+  return Tenant.findOne({ identifier: identifier.toLowerCase().trim() }).lean();
 };
 
 export const createTenant = async (payload: Record<string, unknown>) => {
@@ -37,7 +37,7 @@ export const createTenant = async (payload: Record<string, unknown>) => {
 };
 
 export const updateTenant = (tenantId: string, payload: Record<string, unknown>) => {
-  return Tenant.findByIdAndUpdate(tenantId, payload, { new: true });
+  return Tenant.findByIdAndUpdate(tenantId, payload, { new: true, lean: true });
 };
 
 export const deleteTenant = async (tenantId: string) => {

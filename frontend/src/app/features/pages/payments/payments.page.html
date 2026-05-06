@@ -165,6 +165,13 @@
               <div class="p-provider">Proveedor: {{ p.provider | uppercase }}</div>
             }
 
+            @if (p.status === 'completed' || p.status === 'paid') {
+              <button class="mcs-btn sm primary-soft mcs-grow" (click)="downloadReceipt(p)">
+                <mac-icon name="download" [size]="13" />
+                <span>Recibo</span>
+              </button>
+            }
+
             @if (isStaff() && p.status === 'in_review') {
               <div class="mcs-row mcs-gap-xs" style="margin-top: 8px">
                 <button class="mcs-btn sm success-soft mcs-grow" (click)="approvePayment(p._id)">
@@ -230,6 +237,15 @@
                 title="Ver comprobante"
               >
                 <mac-icon name="eye" [size]="13" />
+              </button>
+            }
+            @if (p.status === 'completed' || p.status === 'paid') {
+              <button
+                class="mcs-btn sm icon-only primary-soft"
+                (click)="downloadReceipt(p)"
+                title="Descargar Recibo"
+              >
+                <mac-icon name="download" [size]="13" />
               </button>
             }
             @if (isStaff() && p.status === 'in_review') {

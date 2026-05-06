@@ -1,15 +1,5 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import {
-  AfterViewInit,
-  Component,
-  OnDestroy,
-  OnInit,
-  ViewChild,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { AfterViewInit, Component, ChangeDetectionStrategy, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { FullCalendarComponent, FullCalendarModule } from '@fullcalendar/angular';
@@ -48,6 +38,7 @@ interface SummaryCard {
 
 @Component({
   selector: 'app-reservations-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
@@ -237,7 +228,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     const currentUserId = this.auth.user()?._id || '';
     const isSuperadmin = role === 'superadmin';
     const isAdmin = role === 'admin';
-    const isSelfServiceRole = role === 'residente' || role === 'familiar';
+    const isSelfServiceRole = role === 'residente' || role === 'propietario';
 
     effect(() => {
       const editing = this.editingReservation();

@@ -569,6 +569,14 @@ html[data-theme='dark'] {
 .mcs-btn.danger-soft:hover {
   background: var(--bad-200);
 }
+.mcs-btn.primary-soft {
+  background: var(--primary-soft);
+  color: var(--primary-new);
+  border-color: transparent;
+}
+.mcs-btn.primary-soft:hover {
+  background: var(--primary-soft-strong);
+}
 .mcs-btn.sm {
   height: 30px;
   padding: 0 10px;
@@ -1316,6 +1324,9 @@ html[data-theme='dark'] .mcs-link {
 }
 .mcs-gap-sm {
   gap: 8px;
+}
+.mcs-gap-xs {
+  gap: 4px;
 }
 .mcs-gap {
   gap: 12px;

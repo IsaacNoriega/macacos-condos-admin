@@ -7,6 +7,7 @@ import { AppError, toError } from '../../utils/httpError';
 import { createUserInTenant, findUserByEmailInTenant, findUsersByEmail, updateUserPasswordByResetToken } from '../users/service';
 import { findTenantByIdentifier, findTenantById } from '../tenants/service';
 import { sendResetPasswordEmail } from '../../utils/notifications';
+import { queueService } from '../../services/queueService';
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -102,14 +103,14 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     user.resetPasswordExpires = expiresAt;
     await user.save();
 
-    // Enviar correo de bienvenida (background) sin bloquear
-    (async () => {
-      try {
-        await sendResetPasswordEmail(user.email, user.name, rawToken, identifier);
-      } catch (err) {
-        logger.error('email.forgot.deferred.error', String(user._id), String(user.tenantId), err as Error);
-      }
-    })();
+    // Enviar correo de recuperación vía BullMQ (RNF-ESC-002)
+    await queueService.addTask('send-email', {
+      type: 'reset-password',
+      email: user.email,
+      name: user.name,
+      token: rawToken,
+      tenantIdentifier: identifier
+    }, String(user.tenantId));
 
     logger.log('auth.forgotPassword', String(user._id), String(user.tenantId), { email: user.email });
 

@@ -4,11 +4,11 @@ import { Types } from 'mongoose';
 export class NoticeService {
   async getAllByTenant(tenantId?: string): Promise<INotice[]> {
     const filter = tenantId ? { tenantId: new Types.ObjectId(tenantId) } : {};
-    return Notice.find(filter).sort({ createdAt: -1 });
+    return Notice.find(filter).sort({ createdAt: -1 }).lean();
   }
 
   async getById(id: string): Promise<INotice | null> {
-    return Notice.findById(id);
+    return Notice.findById(id).lean();
   }
 
   async create(data: Partial<INotice>): Promise<INotice> {
@@ -17,7 +17,7 @@ export class NoticeService {
   }
 
   async update(id: string, data: Partial<INotice>): Promise<INotice | null> {
-    return Notice.findByIdAndUpdate(id, { $set: data }, { new: true });
+    return Notice.findByIdAndUpdate(id, { $set: data }, { new: true, lean: true });
   }
 
   async delete(id: string): Promise<boolean> {

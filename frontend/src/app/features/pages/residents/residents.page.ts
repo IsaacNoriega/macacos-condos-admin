@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { Resident as ApiResident, Tenant, Unit, User as ApiUser } from '../../../core/api.models';
@@ -30,7 +30,7 @@ interface ResidentCard {
   isActive: boolean;
   tenant: string;
   unitCode: string;
-  linkedRole: 'residente' | 'familiar' | 'desconocido';
+  linkedRole: 'residente' | 'propietario' | 'desconocido';
   createdAt: Date;
 }
 
@@ -51,6 +51,7 @@ const RELATIONSHIP_OPTIONS = [
 
 @Component({
   selector: 'app-residents-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
@@ -113,7 +114,7 @@ export class ResidentsPage {
     }
 
     return this.users().filter((u) => {
-      if (u.role !== 'residente' && u.role !== 'familiar') return false;
+      if (u.role !== 'residente' && u.role !== 'propietario') return false;
       if (superadmin && u.tenantId !== selectedTenantId) return false;
       return true;
     });
@@ -314,8 +315,8 @@ export class ResidentsPage {
     const selectedUser = this.eligibleUsers().find((u) => u.email === email);
     if (!selectedUser) return;
     this.form.patchValue({ name: selectedUser.name }, { emitEvent: false });
-    if (selectedUser.role === 'familiar') {
-      this.form.patchValue({ relationship: 'familiar' }, { emitEvent: false });
+    if (selectedUser.role === 'propietario') {
+      this.form.patchValue({ relationship: 'propietario' }, { emitEvent: false });
       return;
     }
     const current = this.form.get('relationship')?.value;
@@ -450,11 +451,7 @@ export class ResidentsPage {
     );
   }
   linkedRoleLabel(role: ResidentCard['linkedRole']): string {
-    return {
-      residente: 'Usuario residente',
-      familiar: 'Usuario familiar',
-      desconocido: 'Sin usuario enlazado',
-    }[role];
+    return { residente: 'Usuario residente', propietario: 'Usuario propietario', desconocido: 'Sin usuario enlazado' }[role];
   }
   initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -569,10 +566,7 @@ export class ResidentsPage {
       isActive,
       tenant: this.resolveTenantName(resident.tenantId),
       unitCode: this.resolveUnitCode(resident.unitId),
-      linkedRole:
-        linkedUser?.role === 'residente' || linkedUser?.role === 'familiar'
-          ? linkedUser.role
-          : 'desconocido',
+      linkedRole: linkedUser?.role === 'residente' || linkedUser?.role === 'propietario' ? linkedUser.role : 'desconocido',
       createdAt: resident.createdAt ? new Date(resident.createdAt) : new Date(),
     };
   }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { MaintenanceReport, Tenant, User, UserRole } from '../../../core/api.models';
@@ -28,6 +28,7 @@ const FILTERS: Array<{ label: string; value: MaintenanceFilter }> = [
 
 @Component({
   selector: 'app-maintenance-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,

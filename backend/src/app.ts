@@ -18,6 +18,7 @@ import maintenanceRoutes from './modules/maintenance/routes';
 import reservationsRoutes from './modules/reservations/routes';
 import amenitiesRoutes from './modules/amenities/routes';
 import noticesRoutes from './modules/notices/routes';
+import healthRoutes from './modules/health/routes';
 import { AppError } from './utils/httpError';
 import logger from './utils/logger';
 
@@ -44,11 +45,18 @@ const AZURE_SWA_ORIGIN_REGEX = /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.azuresta
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) {
       return callback(null, true);
     }
 
     if (allowedCorsOrigins.has(origin) || AZURE_SWA_ORIGIN_REGEX.test(origin)) {
+      return callback(null, true);
+    }
+
+    // In development, we can be more permissive or at least log the mismatch
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[CORS] Allowing origin ${origin} in development mode`);
       return callback(null, true);
     }
 
@@ -69,10 +77,8 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), str
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint (sin autenticación)
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Health check endpoint (sin autenticación para balanceadores de carga)
+app.use('/health', healthRoutes);
 
 // Importar y usar rutas de módulos
 app.use('/api/auth', authRoutes);

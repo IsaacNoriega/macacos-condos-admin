@@ -19,7 +19,7 @@ export const createAmenityInTenant = async (payload: Record<string, unknown>, te
 export const updateAmenityInTenant = (amenityId: string, tenantId: string | undefined, payload: Record<string, unknown>) => {
   const filter: any = { _id: amenityId };
   if (tenantId) filter.tenantId = tenantId;
-  return Amenity.findOneAndUpdate(filter, payload, { new: true });
+  return Amenity.findOneAndUpdate(filter, payload, { new: true, lean: true });
 };
 
 export const deleteAmenityInTenant = (amenityId: string, tenantId?: string) => {

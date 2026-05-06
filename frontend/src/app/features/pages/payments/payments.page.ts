@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -525,3 +526,5 @@ export class PaymentsPage implements OnInit {
     return c.amount + this.getChargeLateFeeAmount(c);
   }
 }
+=======
+>>>>>>> optimization

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { User as ApiUser, Tenant, UserRole } from '../../../core/api.models';
@@ -11,7 +11,7 @@ import { MacIconComponent } from '../../shared/mac-icon/mac-icon.component';
 import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { ConfirmModalComponent } from '../../shared/confirm-modal/confirm-modal.component';
 
-type UserRoleFilter = 'all' | 'admin' | 'residente' | 'familiar' | 'superadmin';
+type UserRoleFilter = 'all' | 'admin' | 'residente' | 'propietario' | 'superadmin';
 
 interface UserCardView {
   id: string;
@@ -29,7 +29,7 @@ const ROLE_FILTERS: Array<{ label: string; value: UserRoleFilter }> = [
   { label: 'Todos', value: 'all' },
   { label: 'Administradores', value: 'admin' },
   { label: 'Residentes', value: 'residente' },
-  { label: 'Familiares', value: 'familiar' },
+  { label: 'Propietarios', value: 'propietario' },
   { label: 'Superadmins', value: 'superadmin' },
 ];
 
@@ -37,11 +37,12 @@ const ROLE_OPTIONS = [
   { label: 'Superadmin', value: 'superadmin' },
   { label: 'Admin', value: 'admin' },
   { label: 'Residente', value: 'residente' },
-  { label: 'Familiar', value: 'familiar' },
+  { label: 'Propietario', value: 'propietario' },
 ];
 
 @Component({
   selector: 'app-users-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
@@ -342,16 +343,11 @@ export class UsersPage implements OnInit {
 
   getRoleColor(role: string): string {
     switch (role) {
-      case 'superadmin':
-        return 'danger';
-      case 'admin':
-        return 'primary';
-      case 'residente':
-        return 'ok';
-      case 'familiar':
-        return 'info';
-      default:
-        return 'warn';
+      case 'superadmin': return 'danger';
+      case 'admin': return 'primary';
+      case 'residente': return 'ok';
+      case 'propietario': return 'info';
+      default: return 'warn';
     }
   }
 

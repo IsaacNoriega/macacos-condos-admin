@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { Tenant } from '../../../core/api.models';
@@ -15,6 +15,7 @@ interface TenantCard extends Tenant {
 
 @Component({
   selector: 'app-tenants-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,

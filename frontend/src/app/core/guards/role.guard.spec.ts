@@ -54,13 +54,13 @@ describe('roleGuard', () => {
   it('allows residente in shared routes', () => {
     currentRole = 'residente';
 
-    const result = execute(['superadmin', 'admin', 'residente', 'familiar']);
+    const result = execute(['superadmin', 'admin', 'residente', 'propietario']);
 
     expect(result).toBe(true);
   });
 
-  it('blocks familiar in admin-only routes', () => {
-    currentRole = 'familiar';
+  it('blocks propietario in admin-only routes', () => {
+    currentRole = 'propietario';
 
     const result = execute(['superadmin', 'admin']);
     const router = TestBed.inject(Router);

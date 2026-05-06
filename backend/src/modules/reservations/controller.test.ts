@@ -35,7 +35,9 @@ import { mockNext, mockRequest, mockResponse } from '../../test/utils/httpMocks'
 describe('reservations controller', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(Amenity.findOne).mockResolvedValue({ name: 'Gym', maxDurationHours: 4 } as any);
+    vi.mocked(Amenity.findOne).mockReturnValue({
+      lean: vi.fn().mockResolvedValue({ name: 'Gym', maxDurationHours: 4 } as any)
+    } as any);
   });
 
   it('getAllReservations returns data from service', async () => {

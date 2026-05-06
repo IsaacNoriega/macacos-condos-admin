@@ -29,18 +29,18 @@ export const serializeReservation = (reservation: any, now = new Date()) => {
 };
 
 export const findAllReservations = () => {
-  return Reservation.find({});
+  return Reservation.find({}).lean();
 };
 
 export const findReservationsByTenant = (tenantId?: string) => {
   const filter = tenantId ? { tenantId } : {};
-  return Reservation.find(filter);
+  return Reservation.find(filter).lean();
 };
 
 export const findReservationByIdInTenant = (reservationId: string, tenantId?: string) => {
   const filter: any = { _id: reservationId };
   if (tenantId) filter.tenantId = tenantId;
-  return Reservation.findOne(filter);
+  return Reservation.findOne(filter).lean();
 };
 
 export const findReservationConflict = (
@@ -81,7 +81,7 @@ export const updateReservationInTenant = (
   return Reservation.findOneAndUpdate(
     filter,
     payload,
-    { new: true }
+    { new: true, lean: true }
   );
 };
 

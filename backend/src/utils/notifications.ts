@@ -68,29 +68,17 @@ const getPremiumTemplate = (title: string, content: string, buttonText: string, 
   </div>
 `;
 
-export const sendResetPasswordEmail = async (
-  email: string,
-  name: string,
-  token: string,
-  tenantIdentifier: string
-) => {
+export const buildResetEmail = (name: string, token: string, tenantIdentifier: string) => {
   const resetUrl = `${PROD_URL}/reset-password?token=${token}`; 
   const content = `
     <p>Hola, <strong>${name}</strong>.</p>
     <p>Has solicitado restablecer tu contraseña para el condominio <strong>${tenantIdentifier}</strong>.</p>
     <p>Para continuar, haz clic en el botón de abajo y define tu nueva clave de acceso.</p>
   `;
-
-  const html = getPremiumTemplate('Recuperación de cuenta', content, 'Restablecer contraseña', resetUrl);
-  return sendMailInternal(email, 'Recuperación de contraseña', html);
+  return getPremiumTemplate('Recuperación de cuenta', content, 'Restablecer contraseña', resetUrl);
 };
 
-export const sendWelcomeEmail = async (
-  email: string,
-  name: string,
-  tenantIdentifier: string,
-  token?: string
-) => {
+export const buildWelcomeEmail = (name: string, tenantIdentifier: string, token?: string, email?: string) => {
   const activationUrl = token 
     ? `${PROD_URL}/reset-password?token=${token}`
     : `${PROD_URL}/login`;
@@ -101,12 +89,30 @@ export const sendWelcomeEmail = async (
     <p>Has sido registrado como residente en el condominio <strong>${tenantIdentifier}</strong>.</p>
     <p>Ya tienes acceso a la plataforma para gestionar tus pagos, reportes de mantenimiento y reservaciones de amenidades.</p>
     <p style="margin-top: 20px; font-size: 14px; color: #64748b;">
-      Tu usuario es: <strong>${email}</strong><br>
+      ${email ? `Tu usuario es: <strong>${email}</strong><br>` : ''}
       Identificador de condominio: <strong>${tenantIdentifier}</strong>
     </p>
   `;
+  return getPremiumTemplate('Bienvenido a Macacos', content, buttonText, activationUrl);
+};
 
-  const html = getPremiumTemplate('Bienvenido a Macacos', content, buttonText, activationUrl);
+export const sendResetPasswordEmail = async (
+  email: string,
+  name: string,
+  token: string,
+  tenantIdentifier: string
+) => {
+  const html = buildResetEmail(name, token, tenantIdentifier);
+  return sendMailInternal(email, 'Recuperación de contraseña', html);
+};
+
+export const sendWelcomeEmail = async (
+  email: string,
+  name: string,
+  tenantIdentifier: string,
+  token?: string
+) => {
+  const html = buildWelcomeEmail(name, tenantIdentifier, token, email);
   return sendMailInternal(email, 'Bienvenido a Macacos Condos', html);
 };
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 import { Charge as ApiCharge, Tenant, Unit, User as ApiUser } from '../../../core/api.models';
@@ -36,6 +36,7 @@ const FILTERS: Array<{ label: string; value: ChargeFilter }> = [
 
 @Component({
   selector: 'app-charges-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,

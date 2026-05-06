@@ -1,0 +1,50 @@
+import { Queue } from 'bullmq';
+import { redisConfig } from '../config/redis';
+import logger from '../utils/logger';
+
+/**
+ * Servicio Productor de Tareas.
+ * Permite delegar procesos pesados a workers independientes (RNF-ESC-002).
+ */
+class QueueService {
+  private queue: Queue;
+
+  constructor() {
+    this.queue = new Queue('macacos-tasks', {
+      connection: redisConfig,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 1000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+    });
+  }
+
+  /**
+   * Agrega un trabajo a la cola asegurando el aislamiento multi-tenant.
+   */
+  async addTask(name: string, data: any, tenantId: string) {
+    if (!tenantId) {
+      throw new Error('Aislamiento Crítico: tenantId es obligatorio para agregar tareas a la cola.');
+    }
+
+    const job = await this.queue.add(name, { ...data, tenantId });
+    
+    logger.log('queue.task.added', 'system', tenantId, { 
+      jobId: job.id, 
+      taskName: name 
+    });
+
+    return job;
+  }
+
+  async close() {
+    await this.queue.close();
+  }
+}
+
+export const queueService = new QueueService();

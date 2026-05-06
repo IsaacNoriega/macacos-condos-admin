@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { Tenant, Unit } from '../../../core/api.models';
@@ -49,6 +49,7 @@ const TYPE_VISUALS: Record<UnitType, TypeVisual> = {
 
 @Component({
   selector: 'app-units-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
     CommonModule,
@@ -163,17 +164,69 @@ export class UnitsPage {
       if (this.page() > totalPages) this.page.set(totalPages);
     });
 
+    // Auto-generate code when type or tenant changes (only in create mode)
+    this.form.get('type')?.valueChanges.subscribe(type => {
+      if (this.editorMode() === 'create' && !this.form.get('code')?.dirty) {
+        this.autoGenerateCode();
+      }
+    });
+
+    this.form.get('tenantId')?.valueChanges.subscribe(() => {
+      if (this.editorMode() === 'create' && !this.form.get('code')?.dirty) {
+        this.autoGenerateCode();
+      }
+    });
+
     this.loadTenantsAndUnits();
+  }
+
+  private autoGenerateCode(): void {
+    const type = this.form.get('type')?.value as UnitType;
+    const tenantId = this.form.get('tenantId')?.value;
+    const nextCode = this.generateNextCode(type, tenantId);
+    this.form.patchValue({ code: nextCode }, { emitEvent: false });
+  }
+
+  private generateNextCode(type: UnitType, tenantId?: string): string {
+    const prefix = type === 'departamento' ? 'DEP-' : 'CASA-';
+    
+    // Si es superadmin, filtramos por el tenant seleccionado. Si no, usamos el del usuario actual.
+    const filterTenantId = this.isSuperadmin() ? tenantId : this.auth.user()?.tenantId;
+
+    const existing = this.units().filter(u => 
+      u.code.toUpperCase().startsWith(prefix) && 
+      (!filterTenantId || u.tenantId === filterTenantId)
+    );
+
+    let max = 0;
+    existing.forEach(u => {
+      // Intentamos extraer el número después del prefijo
+      const numPart = u.code.toUpperCase().replace(prefix, '');
+      const num = parseInt(numPart, 10);
+      if (!isNaN(num) && num > max) max = num;
+    });
+
+    const nextNum = max + 1;
+    return `${prefix}${nextNum.toString().padStart(3, '0')}`;
   }
 
   // ─── Drawer controls ────────────────────────────────────────────────────
   openCreate(): void {
     this.editingId.set(null);
     this.editorMode.set('create');
+    
+    // Default values
+    const defaultType: UnitType = 'departamento';
+    const defaultTenantId = this.isSuperadmin() ? (this.tenants()[0]?._id || '') : (this.auth.user()?.tenantId || '');
+
     this.form.reset(
-      { tenantId: '', code: '', type: 'departamento', description: '', isActive: true },
-      { emitEvent: false },
+      { tenantId: defaultTenantId, code: '', type: defaultType, description: '', isActive: true },
+      { emitEvent: false }
     );
+
+    // Generate code based on defaults
+    this.autoGenerateCode();
+    
     this.editorOpen.set(true);
   }
 
@@ -210,23 +263,17 @@ export class UnitsPage {
   }
 
   // ─── Toolbar ────────────────────────────────────────────────────────────
-  setSearch(value: string): void {
-    this.searchTerm.set(value);
-    this.page.set(1);
+  setSearch(value: string): void { this.searchTerm.set(value); this.page.set(1); }
+  setFilter(value: UnitFilter): void { this.activeFilter.set(value); this.page.set(1); }
+  setView(view: 'grid' | 'list'): void { this.view.set(view); }
+  setType(type: UnitType): void { 
+    this.form.patchValue({ type }); 
+    // Trigger auto-generate if in create mode and code hasn't been manually edited
+    if (this.editorMode() === 'create' && !this.form.get('code')?.dirty) {
+      this.autoGenerateCode();
+    }
   }
-  setFilter(value: UnitFilter): void {
-    this.activeFilter.set(value);
-    this.page.set(1);
-  }
-  setView(view: 'grid' | 'list'): void {
-    this.view.set(view);
-  }
-  setType(type: UnitType): void {
-    this.form.patchValue({ type });
-  }
-  refresh(): void {
-    this.loadUnits();
-  }
+  refresh(): void { this.loadUnits(); }
 
   // ─── Save / Delete ──────────────────────────────────────────────────────
   saveUnit(): void {

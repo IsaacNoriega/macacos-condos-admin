@@ -5,17 +5,17 @@ import Maintenance from '../maintenance/model';
 import Resident from '../residents/model';
 
 export const findAllUsers = () => {
-  return User.find({}).select('-password');
+  return User.find({}).select('-password').lean();
 };
 
 export const findUsersByTenant = (tenantId?: string) => {
   const filter = tenantId ? { tenantId } : {};
-  return User.find(filter).select('-password');
+  return User.find(filter).select('-password').lean();
 };
 
 export const findUserByIdInTenant = (userId: string, tenantId?: string) => {
   const filter = tenantId ? { _id: userId, tenantId } : { _id: userId };
-  return User.findOne(filter).select('-password');
+  return User.findOne(filter).select('-password').lean();
 };
 
 export const createUserInTenant = async (payload: Record<string, unknown>, tenantId?: string) => {
@@ -29,7 +29,7 @@ export const updateUserInTenant = (userId: string, tenantId: string | undefined,
   return User.findOneAndUpdate(
     filter,
     payload,
-    { new: true }
+    { new: true, lean: true }
   ).select('-password');
 };
 
@@ -40,7 +40,7 @@ export const deleteUserInTenant = async (userId: string, tenantId?: string) => {
   // operaciones paralelas sobre una sola sesión. Aceptamos la pérdida
   // de atomicidad a cambio de compatibilidad con el despliegue actual.
   const userFilter = tenantId ? { _id: userId, tenantId } : { _id: userId };
-  const user = await User.findOne(userFilter);
+  const user = await User.findOne(userFilter).lean();
 
   if (!user) {
     return null;
@@ -97,7 +97,7 @@ export const findUserByEmailInTenant = (email: string, tenantId: string) => {
 };
 
 export const findUsersByEmail = (email: string) => {
-  return User.find({ email });
+  return User.find({ email }).lean();
 };
 
 export const updateUserPasswordByResetToken = async (resetTokenHash: string, hashedPassword: string): Promise<IUser | null> => {
