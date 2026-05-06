@@ -13,6 +13,7 @@ export interface ReceiptData {
 /**
  * Servicio para la generación de recibos PDF utilizando Puppeteer (HTML-to-PDF).
  * Proporciona un diseño premium, minimalista y alta estabilidad en producción.
+ * Migrado de pdfmake a Puppeteer para mayor robustez.
  */
 export const generatePaymentReceipt = async (data: ReceiptData): Promise<string> => {
   const { payment, charge, tenant } = data;
