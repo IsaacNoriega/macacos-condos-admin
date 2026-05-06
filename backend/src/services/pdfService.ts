@@ -5,7 +5,7 @@ import { toError } from '../utils/httpError';
 import logger from '../utils/logger';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const PdfPrinter = require('pdfmake/js/printer').default;
+const PdfPrinter = require('pdfmake');
 
 const fonts = {
   Roboto: {
