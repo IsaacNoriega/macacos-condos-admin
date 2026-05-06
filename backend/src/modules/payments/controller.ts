@@ -15,7 +15,6 @@ import Payment from './model';
 import Tenant from '../tenants/model';
 import Charge from '../charges/model';
 import User from '../users/model';
-import { cacheService } from '../../services/cacheService';
 
 const DEFAULT_LATE_FEE_PER_DAY = Number(process.env.LATE_FEE_PER_DAY || '10');
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -126,14 +125,14 @@ export const getAllPayments = async (req: Request, res: Response, next: NextFunc
         const u = await User.findById(req.user.id).select('email').lean();
         email = u?.email;
       }
-      
+
       const [userUnits, tenantPayments] = await Promise.all([
         residentsService.findUnitsByUserEmail(email || '', req.tenantId),
         paymentsService.findPaymentsByTenant(req.tenantId)
       ]);
       const unitIds = userUnits.map(u => String(u.unitId));
       const callerId = req.user?.id ? String(req.user.id) : '';
-      payments = tenantPayments.filter((payment) => 
+      payments = tenantPayments.filter((payment) =>
         String(payment.userId?._id || payment.userId) === callerId || (payment.unitId && unitIds.includes(String(payment.unitId)))
       );
     } else {
@@ -238,13 +237,13 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
 
     if (payment.status === 'paid' || payment.status === 'completed') {
       await markChargeAsPaid(String(chargeId), targetTenantId);
-      
+
       // Delegar generación de recibo al worker (RNF-ESC-002)
       const tenant = await Tenant.findById(targetTenantId).lean();
-      await queueService.addTask('generate-receipt', { 
-        payment, 
-        charge, 
-        tenant 
+      await queueService.addTask('generate-receipt', {
+        payment,
+        charge,
+        tenant
       }, targetTenantId);
     }
 
@@ -253,12 +252,6 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
       provider: payment.provider,
       status: payment.status,
     });
-
-    // Invalidad dashboard stats para Cache-Aside
-    cacheService.invalidateDashboardStats(targetTenantId).catch(err => 
-      logger.error('cache.invalidate.error', 'system', targetTenantId, err)
-    );
-
     res.status(201).json({ success: true, payment });
   } catch (err: unknown) {
     if (blobToCleanupOnFailure) {
@@ -548,11 +541,6 @@ export const confirmStripeCheckoutSession = async (req: Request, res: Response, 
       userId: String(metadata.userId),
     });
 
-    // Invalidad dashboard stats
-    cacheService.invalidateDashboardStats(targetTenantId).catch(err => 
-      logger.error('cache.invalidate.error', 'system', targetTenantId, err)
-    );
-
     res.json({
       success: true,
       paid: true,
@@ -656,13 +644,6 @@ export const deletePayment = async (req: Request, res: Response, next: NextFunct
     }
 
     logger.log('payments.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { paymentId });
-    // Invalidad dashboard stats
-    if (tenantScope) {
-      cacheService.invalidateDashboardStats(tenantScope).catch(err => 
-        logger.error('cache.invalidate.error', 'system', tenantScope, err)
-      );
-    }
-
     res.json({ success: true, message: 'Pago eliminado' });
   } catch (err: unknown) {
     logger.error('payments.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -710,21 +691,16 @@ export const approvePaymentWithProof = async (req: Request, res: Response, next:
       Charge.findById(payment.chargeId).lean(),
       Tenant.findById(payment.tenantId).lean()
     ]);
-    await queueService.addTask('generate-receipt', { 
-      payment, 
-      charge, 
-      tenant 
+    await queueService.addTask('generate-receipt', {
+      payment,
+      charge,
+      tenant
     }, tenantId);
 
     logger.log('payments.approve', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', {
       paymentId,
       proofOfPayment: true,
     });
-
-    // Invalidad dashboard stats
-    cacheService.invalidateDashboardStats(tenantId).catch(err => 
-      logger.error('cache.invalidate.error', 'system', tenantId, err)
-    );
 
     res.json({ success: true, message: 'Pago aprobado', payment: updatedPayment });
   } catch (err: unknown) {
@@ -767,11 +743,6 @@ export const rejectPaymentWithProof = async (req: Request, res: Response, next: 
       proofOfPayment: true,
     });
 
-    // Invalidad dashboard stats
-    cacheService.invalidateDashboardStats(tenantId).catch(err => 
-      logger.error('cache.invalidate.error', 'system', tenantId, err)
-    );
-
     res.json({ success: true, message: 'Pago rechazado', payment: updatedPayment });
   } catch (err: unknown) {
     logger.error('payments.reject.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -783,7 +754,7 @@ export const getPaymentReceipt = async (req: Request, res: Response, next: NextF
   try {
     const paymentId = String(req.params.id);
     const role = req.user?.role;
-    
+
     // Buscar pago
     const payment = role === 'superadmin'
       ? await Payment.findById(paymentId)
@@ -820,15 +791,15 @@ export const getPaymentReceipt = async (req: Request, res: Response, next: NextF
 
     // Si no existe, delegar al worker (RNF-ESC-002 / RNF-REN-001)
     console.log(`[API] Solicitando generación de recibo para pago: ${paymentId}`);
-    await queueService.addTask('generate-receipt', { 
-      payment, 
-      charge, 
-      tenant 
+    await queueService.addTask('generate-receipt', {
+      payment,
+      charge,
+      tenant
     }, String(payment.tenantId));
     console.log(`[API] Tarea añadida a la cola para pago: ${paymentId}`);
 
-    res.status(202).json({ 
-      success: true, 
+    res.status(202).json({
+      success: true,
       message: 'El recibo se está generando en segundo plano. Por favor, intente de nuevo en unos momentos.',
       isProcessing: true
     });

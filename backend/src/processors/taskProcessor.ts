@@ -1,7 +1,8 @@
 import { Job } from 'bullmq';
 import { generatePaymentReceipt } from '../services/pdfService';
-import { sendWelcomeEmail, sendResetPasswordEmail } from '../utils/notifications';
+import { sendWelcomeEmail, sendResetPasswordEmail, sendReceiptEmail, sendNewChargeEmail } from '../utils/notifications';
 import Payment from '../modules/payments/model';
+import User from '../modules/users/model';
 import logger from '../utils/logger';
 
 /**
@@ -26,6 +27,23 @@ export const taskProcessor = async (job: Job) => {
         
         const updateResult = await Payment.updateOne({ _id: data.payment._id }, { receiptUrl });
         console.log(`[Worker] Base de datos actualizada: ${updateResult.modifiedCount} documentos modificados`);
+
+        // Enviar Email al usuario
+        try {
+          const user = await User.findById(data.payment.userId).lean();
+          if (user && user.email) {
+            console.log(`[Worker] Enviando email de recibo a: ${user.email}`);
+            await sendReceiptEmail(
+              user.email,
+              user.name,
+              data.payment.amount,
+              data.tenant?.name || 'Tu Condominio',
+              receiptUrl
+            );
+          }
+        } catch (emailErr) {
+          logger.error('worker.receipt_email.error', 'system', tenantId, emailErr as Error);
+        }
         break;
 
       case 'send-email':
@@ -34,6 +52,8 @@ export const taskProcessor = async (job: Job) => {
           await sendWelcomeEmail(data.email, data.name, data.tenantIdentifier, data.token);
         } else if (data.type === 'reset-password') {
           await sendResetPasswordEmail(data.email, data.name, data.token, data.tenantIdentifier);
+        } else if (data.type === 'new-charge') {
+          await sendNewChargeEmail(data.email, data.name, data.amount, data.concept, data.dueDate);
         }
         break;
 

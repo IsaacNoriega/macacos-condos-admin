@@ -1,12 +1,22 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
-import { getAllCharges, createCharge, updateCharge, deleteCharge } from './controller';
+import { getAllCharges, createCharge, updateCharge, deleteCharge, createBulkCharges } from './controller';
 import roleMiddleware from '../../middleware/roleMiddleware';
 import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
 
 router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllCharges);
+router.post('/bulk',
+  roleMiddleware(['superadmin']),
+  body('tenantId').isMongoId().withMessage('tenantId inválido'),
+  body('description').notEmpty().withMessage('Descripción obligatoria'),
+  body('amount').isNumeric().withMessage('Monto inválido'),
+  body('dueDate').isISO8601().withMessage('Fecha de vencimiento inválida'),
+  body('lateFeePerDay').optional().isNumeric().withMessage('Recargo diario inválido'),
+  validateRequest,
+  createBulkCharges
+);
 router.post('/',
   roleMiddleware(['superadmin', 'admin']),
   body('userId').optional({ checkFalsy: true }).isMongoId().withMessage('userId inválido'),

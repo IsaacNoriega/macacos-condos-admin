@@ -4,8 +4,9 @@ import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import User from '../users/model';
 import * as chargesService from './service';
-import { cacheService } from '../../services/cacheService';
 import * as residentsService from '../residents/service';
+import { queueService } from '../../services/queueService';
+import { cacheService } from '../../services/cacheService';
 
 type ChargeWithStatusBase = {
   _id: unknown;
@@ -91,7 +92,7 @@ export const getAllCharges = async (req: Request, res: Response, next: NextFunct
     } else {
       // Build filter for admins/staff
       const filter: any = { tenantId: req.tenantId };
-      
+
       if (userId && unitId) {
         // Find specific for user OR unit-wide (where userId is null/empty)
         filter.$or = [
@@ -132,6 +133,26 @@ export const createCharge = async (req: Request, res: Response, next: NextFuncti
       logger.error('cache.invalidate.error', 'system', targetTenantId, err)
     );
 
+    // Notificar por Email si hay un usuario asignado
+    if (charge.userId) {
+      try {
+        const user = await User.findById(charge.userId).lean();
+        if (user && user.email) {
+          await queueService.addTask('send-email', {
+            type: 'new-charge',
+            email: user.email,
+            name: user.name,
+            amount: charge.amount,
+            concept: charge.description,
+            dueDate: new Date(charge.dueDate).toLocaleDateString('es-MX'),
+            tenantId: targetTenantId
+          }, targetTenantId);
+        }
+      } catch (emailErr) {
+        logger.error('charges.email.error', req.user?.id ? String(req.user.id) : 'system', targetTenantId, emailErr as Error);
+      }
+    }
+
     res.status(201).json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -152,14 +173,6 @@ export const updateCharge = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('charges.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
-
-    // Invalidad dashboard stats
-    if (tenantScope) {
-      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
-        logger.error('cache.invalidate.error', 'system', tenantScope, err)
-      );
-    }
-
     res.json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -177,17 +190,70 @@ export const deleteCharge = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('charges.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
-
-    // Invalidad dashboard stats
-    if (tenantScope) {
-      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
-        logger.error('cache.invalidate.error', 'system', tenantScope, err)
-      );
-    }
-
     res.json({ success: true, message: 'Cargo eliminado' });
   } catch (err: unknown) {
     logger.error('charges.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al eliminar cargo', 400, { cause: toError(err).message }));
+  }
+};
+
+export const createBulkCharges = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { tenantId, description, amount, dueDate, lateFeePerDay } = req.body;
+
+    // Obtener todos los usuarios del tenant
+    const users = await User.find({ tenantId }).lean();
+    
+    if (!users.length) {
+      return res.status(404).json({ success: false, message: 'No hay usuarios en este condominio' });
+    }
+
+    const chargePayloads = users.map(user => ({
+      userId: user._id,
+      description,
+      amount,
+      dueDate,
+      lateFeePerDay,
+      tenantId,
+      isPaid: false
+    }));
+
+    // Crear cargos masivamente
+    const charges = await chargesService.createBulkChargesInTenant(chargePayloads, tenantId);
+
+    // Invalidad dashboard stats
+    cacheService.invalidateDashboardStats(tenantId).catch(err => 
+      logger.error('cache.invalidate.error', 'system', tenantId, err)
+    );
+
+    // Encolar emails para todos
+    const dueDateStr = new Date(dueDate).toLocaleDateString('es-MX');
+    const emailPromises = users.map(user => 
+      queueService.addTask('send-email', {
+        type: 'new-charge',
+        email: user.email,
+        name: user.name,
+        amount,
+        concept: description,
+        dueDate: dueDateStr,
+        tenantId
+      }, tenantId)
+    );
+
+    await Promise.all(emailPromises);
+
+    logger.log('charges.bulk_create', req.user?.id ? String(req.user.id) : 'system', tenantId, { 
+      count: charges.length,
+      description 
+    });
+
+    res.status(201).json({ 
+      success: true, 
+      message: `Se crearon ${charges.length} cargos y se enviaron las notificaciones.`,
+      count: charges.length 
+    });
+  } catch (err: unknown) {
+    logger.error('charges.bulk.error', req.user?.id ? String(req.user.id) : 'system', req.body.tenantId || 'global', toError(err));
+    next(new AppError('Error al crear cargos masivos', 500, { cause: toError(err).message }));
   }
 };
