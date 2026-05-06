@@ -3,8 +3,6 @@ import Stripe from 'stripe';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as paymentsService from './service';
-import Charge from '../charges/model';
-import User from '../users/model';
 import * as residentsService from '../residents/service';
 import {
   deletePaymentProofBlob,
@@ -12,6 +10,11 @@ import {
   resolveOwnedProofBlobName,
   uploadPaymentProofToAzure,
 } from '../../config/azureBlob';
+import { queueService } from '../../services/queueService';
+import Payment from './model';
+import Tenant from '../tenants/model';
+import Charge from '../charges/model';
+import User from '../users/model';
 
 const DEFAULT_LATE_FEE_PER_DAY = Number(process.env.LATE_FEE_PER_DAY || '10');
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -234,6 +237,14 @@ export const createPayment = async (req: Request, res: Response, next: NextFunct
 
     if (payment.status === 'paid' || payment.status === 'completed') {
       await markChargeAsPaid(String(chargeId), targetTenantId);
+      
+      // Delegar generación de recibo al worker (RNF-ESC-002)
+      const tenant = await Tenant.findById(targetTenantId).lean();
+      await queueService.addTask('generate-receipt', { 
+        payment, 
+        charge, 
+        tenant 
+      }, targetTenantId);
     }
 
     logger.log('payments.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', {
@@ -675,6 +686,17 @@ export const approvePaymentWithProof = async (req: Request, res: Response, next:
 
     await markChargeAsPaid(String(payment.chargeId), tenantId);
 
+    // Delegar generación de recibo al worker (RNF-ESC-002)
+    const [charge, tenant] = await Promise.all([
+      Charge.findById(payment.chargeId).lean(),
+      Tenant.findById(payment.tenantId).lean()
+    ]);
+    await queueService.addTask('generate-receipt', { 
+      payment, 
+      charge, 
+      tenant 
+    }, tenantId);
+
     logger.log('payments.approve', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', {
       paymentId,
       proofOfPayment: true,
@@ -727,3 +749,61 @@ export const rejectPaymentWithProof = async (req: Request, res: Response, next: 
     next(err instanceof AppError ? err : new AppError('Error al rechazar pago', 400, { cause: toError(err).message }));
   }
 };
+
+export const getPaymentReceipt = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const paymentId = String(req.params.id);
+    const role = req.user?.role;
+    
+    // Buscar pago
+    const payment = role === 'superadmin'
+      ? await Payment.findById(paymentId)
+      : await Payment.findOne({ _id: paymentId, tenantId: req.tenantId });
+
+    if (!payment) {
+      throw new AppError('Pago no encontrado', 404);
+    }
+
+    // Seguridad: Solo el dueño del pago o un admin/superadmin puede verlo
+    if ((role === 'residente' || role === 'propietario') && String(payment.userId) !== String(req.user?.id)) {
+      throw new AppError('No tienes permisos para acceder a este recibo', 403);
+    }
+
+    // Solo se generan recibos de pagos completados o pagados
+    if (payment.status !== 'completed' && payment.status !== 'paid') {
+      throw new AppError('El recibo solo está disponible para pagos completados', 400);
+    }
+
+    // Si ya existe la URL del recibo, la devolvemos
+    if (payment.receiptUrl) {
+      return res.json({ success: true, receiptUrl: payment.receiptUrl });
+    }
+
+    // Obtener datos necesarios para el PDF
+    const [charge, tenant] = await Promise.all([
+      Charge.findById(payment.chargeId).lean(),
+      Tenant.findById(payment.tenantId).lean()
+    ]);
+
+    if (!charge || !tenant) {
+      throw new AppError('No se pudo encontrar la información del cargo o condominio', 404);
+    }
+
+    // Si no existe, delegar al worker (RNF-ESC-002 / RNF-REN-001)
+    await queueService.addTask('generate-receipt', { 
+      payment, 
+      charge, 
+      tenant 
+    }, String(payment.tenantId));
+
+    res.status(202).json({ 
+      success: true, 
+      message: 'El recibo se está generando en segundo plano. Por favor, intente de nuevo en unos momentos.',
+      isProcessing: true
+    });
+  } catch (err: unknown) {
+    logger.error('payments.receipt.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
+    next(err instanceof AppError ? err : new AppError('Error al generar el recibo', 400, { cause: toError(err).message }));
+  }
+};
+

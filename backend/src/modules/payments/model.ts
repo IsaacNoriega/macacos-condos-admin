@@ -19,6 +19,8 @@ export interface IPayment extends Document {
   paymentDate: Date;
   reviewedBy?: mongoose.Types.ObjectId;
   reviewedAt?: Date;
+  receiptUrl?: string;
+  receiptBlobName?: string;
   createdAt: Date;
 }
 
@@ -41,6 +43,8 @@ const paymentSchema = new Schema<IPayment>({
   paymentDate: { type: Date, default: Date.now },
   reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   reviewedAt: { type: Date },
+  receiptUrl: { type: String },
+  receiptBlobName: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

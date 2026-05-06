@@ -445,7 +445,7 @@ const DASHBOARD_SOURCE_CONFIGS: DashboardSourceConfig[] = [
     endpoint: '/payments',
     listKey: 'payments',
     dateKey: 'paymentDate',
-    roles: ['superadmin', 'admin', 'residente', 'familiar'],
+    roles: ['superadmin', 'admin', 'residente', 'propietario'],
     color: DASHBOARD_COLORS.payments,
     filter: (item) => {
       const status = String(item['status'] ?? '').toLowerCase();
@@ -467,7 +467,7 @@ const DASHBOARD_SOURCE_CONFIGS: DashboardSourceConfig[] = [
     endpoint: '/reservations',
     listKey: 'reservations',
     dateKey: 'createdAt',
-    roles: ['superadmin', 'admin', 'residente', 'familiar'],
+    roles: ['superadmin', 'admin', 'residente', 'propietario'],
     color: DASHBOARD_COLORS.reservations,
   },
   {
@@ -476,7 +476,7 @@ const DASHBOARD_SOURCE_CONFIGS: DashboardSourceConfig[] = [
     endpoint: '/maintenance',
     listKey: 'reports',
     dateKey: 'createdAt',
-    roles: ['superadmin', 'admin', 'residente', 'familiar'],
+    roles: ['superadmin', 'admin', 'residente', 'propietario'],
     color: DASHBOARD_COLORS.maintenance,
   },
   {

@@ -18,6 +18,7 @@ import maintenanceRoutes from './modules/maintenance/routes';
 import reservationsRoutes from './modules/reservations/routes';
 import amenitiesRoutes from './modules/amenities/routes';
 import noticesRoutes from './modules/notices/routes';
+import healthRoutes from './modules/health/routes';
 import { AppError } from './utils/httpError';
 import logger from './utils/logger';
 
@@ -76,10 +77,8 @@ app.post('/api/payments/webhook', express.raw({ type: 'application/json' }), str
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health check endpoint (sin autenticación)
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Health check endpoint (sin autenticación para balanceadores de carga)
+app.use('/health', healthRoutes);
 
 // Importar y usar rutas de módulos
 app.use('/api/auth', authRoutes);

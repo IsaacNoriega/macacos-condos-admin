@@ -142,7 +142,7 @@ describe('ResidentsPage CRUD operations', () => {
       status: 'Activo',
       tenant: 'Condo 1',
       unitCode: 'A-102',
-      linkedRole: 'familiar',
+      linkedRole: 'propietario',
       createdAt: new Date('2026-04-01T00:00:00.000Z'),
       avatarBg: 'linear-gradient(180deg, #90b9d7, #4b7f9d)',
     });

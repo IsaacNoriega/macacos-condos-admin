@@ -30,7 +30,7 @@ interface ResidentCard {
   isActive: boolean;
   tenant: string;
   unitCode: string;
-  linkedRole: 'residente' | 'familiar' | 'desconocido';
+  linkedRole: 'residente' | 'propietario' | 'desconocido';
   createdAt: Date;
 }
 
@@ -112,7 +112,7 @@ export class ResidentsPage {
     }
 
     return this.users().filter((u) => {
-      if (u.role !== 'residente' && u.role !== 'familiar') return false;
+      if (u.role !== 'residente' && u.role !== 'propietario') return false;
       if (superadmin && u.tenantId !== selectedTenantId) return false;
       return true;
     });
@@ -286,8 +286,8 @@ export class ResidentsPage {
     const selectedUser = this.eligibleUsers().find((u) => u.email === email);
     if (!selectedUser) return;
     this.form.patchValue({ name: selectedUser.name }, { emitEvent: false });
-    if (selectedUser.role === 'familiar') {
-      this.form.patchValue({ relationship: 'familiar' }, { emitEvent: false });
+    if (selectedUser.role === 'propietario') {
+      this.form.patchValue({ relationship: 'propietario' }, { emitEvent: false });
       return;
     }
     const current = this.form.get('relationship')?.value;
@@ -406,7 +406,7 @@ export class ResidentsPage {
     return { propietario: 'Propietario', familiar: 'Familiar', inquilino: 'Inquilino' }[r] ?? 'Residente';
   }
   linkedRoleLabel(role: ResidentCard['linkedRole']): string {
-    return { residente: 'Usuario residente', familiar: 'Usuario familiar', desconocido: 'Sin usuario enlazado' }[role];
+    return { residente: 'Usuario residente', propietario: 'Usuario propietario', desconocido: 'Sin usuario enlazado' }[role];
   }
   initials(name: string): string {
     const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -497,7 +497,7 @@ export class ResidentsPage {
       isActive,
       tenant: this.resolveTenantName(resident.tenantId),
       unitCode: this.resolveUnitCode(resident.unitId),
-      linkedRole: linkedUser?.role === 'residente' || linkedUser?.role === 'familiar' ? linkedUser.role : 'desconocido',
+      linkedRole: linkedUser?.role === 'residente' || linkedUser?.role === 'propietario' ? linkedUser.role : 'desconocido',
       createdAt: resident.createdAt ? new Date(resident.createdAt) : new Date(),
     };
   }

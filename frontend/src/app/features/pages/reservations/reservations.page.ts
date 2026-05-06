@@ -195,7 +195,7 @@ export class ReservationsPage implements OnInit, AfterViewInit, OnDestroy {
     const currentUserId = this.auth.user()?._id || '';
     const isSuperadmin = role === 'superadmin';
     const isAdmin = role === 'admin';
-    const isSelfServiceRole = role === 'residente' || role === 'familiar';
+    const isSelfServiceRole = role === 'residente' || role === 'propietario';
 
     effect(() => {
       const editing = this.editingReservation();

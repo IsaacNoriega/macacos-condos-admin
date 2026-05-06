@@ -53,6 +53,22 @@
   line-height: 1.2;
 }
 
+.tenant-id-badge {
+  margin-top: 6px;
+}
+
+.tenant-id-badge code {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-700);
+  background: var(--primary-50);
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--primary-100);
+  text-transform: lowercase;
+}
+
 .tenant-body {
   padding: 20px;
   flex-grow: 1;

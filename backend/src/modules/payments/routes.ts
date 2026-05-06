@@ -12,6 +12,7 @@ import {
   approvePaymentWithProof,
   rejectPaymentWithProof,
   uploadPaymentProof,
+  getPaymentReceipt,
 } from './controller';
 import roleMiddleware from '../../middleware/roleMiddleware';
 import validateRequest from '../../middleware/validateRequest';
@@ -44,6 +45,7 @@ const uploadProofFile = (req: Request, res: Response, next: NextFunction) => {
 };
 
 router.get('/', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), getAllPayments);
+router.get('/:id/receipt', roleMiddleware(['superadmin', 'admin', 'residente', 'propietario']), param('id').isMongoId().withMessage('ID inválido'), validateRequest, getPaymentReceipt);
 router.get('/:id/proof', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), param('id').isMongoId().withMessage('ID inválido'), validateRequest, getPaymentProof);
 router.post('/proofs', roleMiddleware(['superadmin', 'admin', 'residente', 'familiar']), uploadProofFile, uploadPaymentProof);
 router.post('/',

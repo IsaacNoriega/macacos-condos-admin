@@ -246,8 +246,8 @@ export class CrudPageComponent implements OnInit, OnDestroy {
       const selectedResidentUser = this.optionLookupByField.get('email')?.get(emailValue);
       const selectedRole = String(selectedResidentUser?.['role'] ?? '');
 
-      if (selectedRole === 'familiar') {
-        return baseOptions.filter((option) => option.value === 'familiar');
+      if (selectedRole === 'propietario') {
+        return baseOptions.filter((option) => option.value === 'propietario');
       }
 
       if (selectedRole === 'residente') {
@@ -297,9 +297,9 @@ export class CrudPageComponent implements OnInit, OnDestroy {
     const selectedRole = String(selectedResidentUser?.['role'] ?? '');
     const currentRelationship = String(this.form.get('relationship')?.value ?? '');
 
-    if (selectedRole === 'familiar') {
-      if (currentRelationship !== 'familiar') {
-        this.form.patchValue({ relationship: 'familiar' });
+    if (selectedRole === 'propietario') {
+      if (currentRelationship !== 'propietario') {
+        this.form.patchValue({ relationship: 'propietario' });
       }
       return;
     }

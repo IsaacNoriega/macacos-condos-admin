@@ -35,7 +35,7 @@ export const routes: Routes = [
 			{
 				path: 'units',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente'] },
+				data: { roles: ['superadmin', 'admin'] },
 				loadComponent: () => import('./features/pages/units/units.page').then((m) => m.UnitsPage),
 			},
 			{
@@ -53,25 +53,25 @@ export const routes: Routes = [
 			{
 				path: 'payments',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'propietario'] },
 				loadComponent: () => import('./features/pages/payments/payments.page').then((m) => m.PaymentsPage),
 			},
 			{
 				path: 'pagos/exito',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'propietario'] },
 				loadComponent: () => import('./features/pages/payments/payments.page').then((m) => m.PaymentsPage),
 			},
 			{
 				path: 'pagos/cancelado',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'propietario'] },
 				loadComponent: () => import('./features/pages/payments/payments.page').then((m) => m.PaymentsPage),
 			},
 			{
 				path: 'maintenance',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'propietario'] },
 				loadComponent: () =>
 					import('./features/pages/maintenance/maintenance.page').then((m) => m.MaintenancePage),
 			},
@@ -85,14 +85,14 @@ export const routes: Routes = [
 			{
 				path: 'reservations',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'propietario'] },
 				loadComponent: () =>
 					import('./features/pages/reservations/reservations.page').then((m) => m.ReservationsPage),
 			},
 			{
 				path: 'notices',
 				canActivate: [roleGuard],
-				data: { roles: ['superadmin', 'admin', 'residente', 'familiar'] },
+				data: { roles: ['superadmin', 'admin', 'residente', 'propietario'] },
 				loadComponent: () => import('./features/pages/notices/notices.page').then((m) => m.NoticesPage),
 			},
 			{ path: '', pathMatch: 'full', redirectTo: 'dashboard' },

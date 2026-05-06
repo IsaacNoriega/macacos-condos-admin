@@ -1,4 +1,4 @@
-export type UserRole = 'superadmin' | 'admin' | 'residente' | 'familiar';
+export type UserRole = 'superadmin' | 'admin' | 'propietario' | 'residente';
 
 export interface ApiErrorResponse {
   success?: boolean;

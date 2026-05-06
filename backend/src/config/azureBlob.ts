@@ -241,3 +241,42 @@ export const resolveOwnedProofBlobName = (
 
   return [prefix, tenantSegment, ...rest].join('/');
 };
+
+/**
+ * Sube un recibo generado (PDF) a Azure Blob Storage.
+ */
+export const uploadReceiptToAzure = async (
+  buffer: Buffer,
+  tenantId: string,
+  paymentId: string
+): Promise<{ blobName: string; url: string }> => {
+  const containerClient = getBlobServiceClient().getContainerClient(getContainerName());
+  await containerClient.createIfNotExists();
+
+  const safeTenantId = sanitizeIdSegment(tenantId);
+  const blobName = `receipts/${safeTenantId}/receipt-${paymentId}.pdf`;
+  const blobClient = containerClient.getBlockBlobClient(blobName);
+
+  await blobClient.uploadData(buffer, {
+    blobHTTPHeaders: {
+      blobContentType: 'application/pdf',
+    },
+  });
+
+  // Generar SAS URL válida por 7 días para el recibo
+  const sasToken = generateBlobSASQueryParameters(
+    {
+      containerName: getContainerName(),
+      blobName,
+      permissions: BlobSASPermissions.parse('r'),
+      expiresOn: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      protocol: SASProtocol.Https,
+    },
+    getSharedKeyCredential()
+  ).toString();
+
+  return {
+    blobName,
+    url: `${blobClient.url}?${sasToken}`,
+  };
+};
