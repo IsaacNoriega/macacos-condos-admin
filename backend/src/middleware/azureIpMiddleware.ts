@@ -7,18 +7,16 @@ const ALLOWED_AZURE_IP = '172.214.17.219';
  * Solo permite peticiones que provengan del Azure Application Gateway.
  */
 export const azureIpMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  // Bonus: Bypass automático en desarrollo y pruebas
+  const forwardedFor = req.headers['x-forwarded-for'] as string;
+  const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : req.socket.remoteAddress;
+
+  // Log de auditoría para verificar ejecución en tiempo real
+  console.log(`[Security] 🛡️ Guard Ejecutándose | IP: ${clientIp} | Env: ${process.env.NODE_ENV}`);
+
+  // Bonus: Bypass automático en desarrollo y pruebas para evitar bloqueos locales
   if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     return next();
   }
-
-  // Railway actúa como proxy, la IP del Gateway debería estar en x-forwarded-for.
-  // Sin embargo, Railway también puede pasar su propia IP de red interna.
-  // Verificamos el header estándar.
-  const forwardedFor = req.headers['x-forwarded-for'] as string;
-  
-  // Obtenemos la IP más cercana (que debería ser el Gateway si está configurado para apuntar directo a Railway)
-  const clientIp = forwardedFor ? forwardedFor.split(',')[0].trim() : req.socket.remoteAddress;
 
   if (clientIp !== ALLOWED_AZURE_IP) {
     console.warn(`[Security Alert] Access blocked from unauthorized IP: ${clientIp}`);
