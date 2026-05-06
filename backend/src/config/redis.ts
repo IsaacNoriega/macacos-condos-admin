@@ -7,9 +7,9 @@ import { ConnectionOptions } from 'bullmq';
  */
 export const redisConfig: ConnectionOptions = {
   host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6380'),
+  port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD,
-  tls: process.env.REDIS_TLS === 'true' || process.env.REDIS_PORT === '6380' ? {} : undefined,
+  tls: process.env.REDIS_TLS === 'true' ? {} : undefined,
   maxRetriesPerRequest: null, // Requerido por BullMQ
 };
 
