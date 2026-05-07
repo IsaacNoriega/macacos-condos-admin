@@ -16,6 +16,7 @@ type MaintenanceFilter = 'all' | 'pendiente' | 'en progreso' | 'resuelto';
 interface MaintenanceCard extends MaintenanceReport {
   userName: string;
   tenantName: string;
+  unitCode: string;
   createdAtDate: Date;
 }
 
@@ -57,9 +58,11 @@ export class MaintenancePage implements OnInit {
   readonly reports = signal<MaintenanceCard[]>([]);
   readonly tenants = signal<Tenant[]>([]);
   readonly users = signal<User[]>([]);
+  readonly units = signal<Unit[]>([]);
   readonly toDelete = signal<MaintenanceCard | null>(null);
   readonly editorOpen = signal(false);
   readonly selectedReportId = signal<string | null>(null);
+  readonly selectedFilterTenantId = signal<string>('');
 
   readonly currentRole = computed(() => this.auth.role() as UserRole);
   readonly isSuperadmin = computed(() => this.currentRole() === 'superadmin');
@@ -71,6 +74,9 @@ export class MaintenancePage implements OnInit {
   );
   readonly userOptions = computed(() =>
     this.users().map((u) => ({ label: `${u.name} (${u.email})`, value: u._id })),
+  );
+  readonly unitOptions = computed(() =>
+    this.units().map((u) => ({ label: u.code, value: u._id })),
   );
   readonly statusOptions = [
     { label: 'Pendiente', value: 'pendiente' },
@@ -110,6 +116,7 @@ export class MaintenancePage implements OnInit {
     this.form = this.fb.group({
       tenantId: [''],
       userId: [''],
+      unitId: ['', Validators.required],
       description: ['', Validators.required],
       status: ['pendiente'],
       assignedTo: [''],
@@ -120,8 +127,9 @@ export class MaintenancePage implements OnInit {
       if (!selected) {
         this.form.reset(
           {
-            tenantId: '',
+            tenantId: this.isSuperadmin() ? '' : this.auth.user()?.tenantId || '',
             userId: this.auth.user()?._id || '',
+            unitId: '',
             description: '',
             status: 'pendiente',
             assignedTo: '',
@@ -130,6 +138,8 @@ export class MaintenancePage implements OnInit {
         );
         return;
       }
+
+      this.loadUnits(selected.tenantId ? (typeof selected.tenantId === 'string' ? selected.tenantId : selected.tenantId._id) : '');
 
       const tid = selected.tenantId
         ? typeof selected.tenantId === 'string'
@@ -141,17 +151,28 @@ export class MaintenancePage implements OnInit {
           ? selected.userId
           : selected.userId._id
         : '';
+      const unitId = selected.unitId
+        ? typeof selected.unitId === 'string'
+          ? selected.unitId
+          : selected.unitId._id
+        : '';
 
       this.form.patchValue(
         {
           tenantId: tid,
           userId: uid,
+          unitId: unitId,
           description: selected.description,
           status: selected.status,
           assignedTo: selected.assignedTo || '',
         },
         { emitEvent: false },
       );
+    });
+
+    // Load units when tenant changes in form
+    this.form.get('tenantId')?.valueChanges.subscribe((tid) => {
+      if (tid) this.loadUnits(tid);
     });
   }
 
@@ -207,8 +228,9 @@ export class MaintenancePage implements OnInit {
     const isEditing = !!this.selectedReportId();
     let endpoint = isEditing ? `/maintenance/${this.selectedReportId()}` : '/maintenance';
 
-    if (isEditing && this.isSuperadmin() && val.tenantId) {
-      endpoint += `?tenantId=${encodeURIComponent(val.tenantId)}`;
+    const tid = val.tenantId || this.auth.user()?.tenantId;
+    if (this.isSuperadmin() && tid) {
+      endpoint += `?tenantId=${encodeURIComponent(tid)}`;
     }
 
     this.loading.set(true);
@@ -249,6 +271,11 @@ export class MaintenancePage implements OnInit {
       });
   }
 
+  onFilterTenantChange(ev: any): void {
+    this.selectedFilterTenantId.set(ev.target.value);
+    this.loadReports();
+  }
+
   private loadInitialData(): void {
     if (this.isSuperadmin()) {
       this.api
@@ -258,13 +285,36 @@ export class MaintenancePage implements OnInit {
     if (this.canManage()) {
       this.api.get<{ users: User[] }>('/users').subscribe((res) => this.users.set(res.users || []));
     }
+    if (!this.isSuperadmin()) {
+      this.loadUnits(this.auth.user()?.tenantId || '');
+    }
     this.loadReports();
+  }
+
+  private loadUnits(tenantId: string): void {
+    if (!tenantId) {
+      this.units.set([]);
+      return;
+    }
+    this.api
+      .get<{ residents: Resident[] }>(`/residents?tenantId=${tenantId}`)
+      .subscribe((res) => {
+        // Obtenemos las unidades únicas a partir de los residentes (esto es una simplificación)
+        // O mejor aún, cargamos las unidades directamente si tenemos el endpoint
+        this.api.get<{ units: Unit[] }>(`/units?tenantId=${tenantId}`).subscribe((resUnits) => {
+           this.units.set(resUnits.units || []);
+        });
+      });
   }
 
   private loadReports(): void {
     this.loading.set(true);
+    let url = '/maintenance';
+    if (this.isSuperadmin() && this.selectedFilterTenantId()) {
+      url += `?tenantId=${this.selectedFilterTenantId()}`;
+    }
     this.api
-      .get<{ reports: MaintenanceReport[] }>('/maintenance')
+      .get<{ reports: MaintenanceReport[] }>(url)
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (res) => {
@@ -274,6 +324,7 @@ export class MaintenancePage implements OnInit {
               ...r,
               userName: this.resolveUserName(r.userId),
               tenantName: this.resolveTenantName(r.tenantId),
+              unitCode: this.resolveUnitCode(r.unitId),
               createdAtDate: r.createdAt ? new Date(r.createdAt) : new Date(),
             })),
           );
@@ -298,6 +349,11 @@ export class MaintenancePage implements OnInit {
       if (t) return t.name;
     }
     return 'Condominio';
+  }
+
+  private resolveUnitCode(val: any): string {
+    if (val && typeof val === 'object' && val.code) return val.code;
+    return 'N/A';
   }
 
   getStatusColor(status: string): string {

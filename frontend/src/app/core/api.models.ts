@@ -99,6 +99,7 @@ export interface MaintenanceReport {
   _id: string;
   tenantId: string | { _id: string; name: string };
   userId: string | { _id: string; name: string; email: string };
+  unitId?: string | { _id: string; code: string };
   description: string;
   status: 'pendiente' | 'en progreso' | 'resuelto';
   assignedTo?: string;

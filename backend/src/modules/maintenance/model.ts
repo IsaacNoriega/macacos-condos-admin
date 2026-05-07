@@ -9,6 +9,7 @@ export interface IMaintenanceHistory {
 export interface IMaintenance extends Document {
   tenantId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
+  unitId: mongoose.Types.ObjectId;
   description: string;
   status: 'pendiente' | 'en progreso' | 'resuelto';
   assignedTo?: string;
@@ -19,6 +20,7 @@ export interface IMaintenance extends Document {
 const maintenanceSchema = new Schema<IMaintenance>({
   tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true, index: true },
   userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  unitId: { type: Schema.Types.ObjectId, ref: 'Unit', required: true },
   description: { type: String, required: true },
   status: { type: String, enum: ['pendiente', 'en progreso', 'resuelto'], default: 'pendiente' },
   assignedTo: { type: String },

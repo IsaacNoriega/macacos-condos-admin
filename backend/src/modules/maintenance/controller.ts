@@ -10,9 +10,8 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
     let reports;
 
     if (req.user?.role === 'superadmin') {
-      reports = queryTenantId
-        ? await maintenanceService.findMaintenanceByTenant(String(queryTenantId))
-        : await maintenanceService.findAllMaintenance();
+      const tenantToFind = queryTenantId === 'all' ? undefined : (queryTenantId ? String(queryTenantId) : req.tenantId);
+      reports = await maintenanceService.findMaintenanceByTenant(tenantToFind);
     } else if (req.user?.role === 'residente' || req.user?.role === 'familiar') {
       reports = await maintenanceService.findMaintenanceByUser(req.tenantId, String(req.user?.id));
     } else {
@@ -39,6 +38,10 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
     const targetUserId = req.user?.role === 'residente' || req.user?.role === 'familiar'
       ? String(req.user.id)
       : (requestedUserId ? String(requestedUserId) : String(req.user?.id || ''));
+
+    if (!payload.unitId) {
+       throw new AppError('La unidad es obligatoria para el reporte de mantenimiento', 400);
+    }
 
     const report = await maintenanceService.createMaintenanceInTenant({ ...payload, userId: targetUserId }, targetTenantId);
     logger.log('maintenance.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { reportId: String(report._id) });

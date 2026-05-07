@@ -86,20 +86,20 @@ describe('maintenance controller', () => {
       }));
     });
 
-    it('returns all reports for superadmin', async () => {
-      vi.mocked(findAllMaintenance).mockResolvedValue([{ _id: 'm1' }, { _id: 'm2' }] as any);
+    it('returns reports from all tenants for superadmin when all is passed', async () => {
+      vi.mocked(findMaintenanceByTenant).mockResolvedValue([{ _id: 'm1' }, { _id: 'm2' }] as any);
 
       const req = mockRequest({
-        tenantId: undefined,
+        tenantId: 'tenant-sa',
         user: { role: 'superadmin', id: 'sa-1' },
-        query: {},
+        query: { tenantId: 'all' },
       } as any);
       const res = mockResponse();
       const next = mockNext();
 
       await getAllReports(req, res, next);
 
-      expect(findAllMaintenance).toHaveBeenCalled();
+      expect(findMaintenanceByTenant).toHaveBeenCalledWith(undefined);
       expect(next).not.toHaveBeenCalled();
     });
 
@@ -123,7 +123,7 @@ describe('maintenance controller', () => {
       const req = mockRequest({
         tenantId: 'tenant-1',
         user: { id: 'user-1', role: 'residente' },
-        body: { title: 'Leak', description: 'Water leak in bathroom' },
+        body: { title: 'Leak', description: 'Water leak in bathroom', unitId: 'unit-1' },
       } as any);
       const res = mockResponse();
       const next = mockNext();
