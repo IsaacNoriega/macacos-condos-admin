@@ -1,6 +1,4 @@
-.payments-page {
-  /* Pattern: Toolbar */
-}
+/* payments-page: styles scoped via Angular encapsulation */
 
 .toolbar {
   display: flex;
@@ -203,5 +201,17 @@
   .toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+  .toolbar .mcs-input-wrap {
+    max-width: none !important;
+  }
+  .filter-chips {
+    flex-wrap: wrap;
+  }
+  .charge-amount {
+    font-size: 18px;
+  }
+  .p-amount {
+    font-size: 16px;
   }
 }

@@ -66,6 +66,7 @@
   color: var(--text-soft);
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.5;
@@ -98,5 +99,12 @@
   .toolbar {
     flex-direction: column;
     align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .toolbar .mcs-input-wrap {
+    max-width: none !important;
+  }
+  .filter-chips {
+    flex-wrap: wrap;
   }
 }
