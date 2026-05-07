@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
+import { cacheService } from '../../services/cacheService';
 import {
   findAllUsers,
   createUserInTenant,
@@ -54,6 +55,10 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await createUserInTenant({ ...rest, password: hashedPassword }, targetTenantId);
     logger.log('users.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { userId: String(user._id), role: user.role });
+
+    // Invalida caché de estadísticas
+    await cacheService.invalidateDashboardStats(targetTenantId);
+
     res.status(201).json({ success: true, user: { ...user.toObject(), password: undefined } });
   } catch (err: unknown) {
     logger.error('users.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -76,6 +81,10 @@ export const updateUser = async (req: Request, res: Response, next: NextFunction
     }
 
     logger.log('users.update', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { targetUserId: req.params.id });
+
+    // Invalida caché de estadísticas
+    if (tenantScope) await cacheService.invalidateDashboardStats(tenantScope);
+
     res.json({ success: true, user });
   } catch (err: unknown) {
     logger.error('users.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -94,6 +103,10 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
     }
 
     logger.log('users.delete', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', { targetUserId: req.params.id });
+
+    // Invalida caché de estadísticas
+    if (tenantScope) await cacheService.invalidateDashboardStats(tenantScope);
+
     res.json({ success: true, message: 'Usuario eliminado' });
   } catch (err: unknown) {
     logger.error('users.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

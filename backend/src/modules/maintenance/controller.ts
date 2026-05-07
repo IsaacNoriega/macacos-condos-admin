@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import logger from '../../utils/logger';
 import { AppError, toError } from '../../utils/httpError';
 import * as maintenanceService from './service';
+import { cacheService } from '../../services/cacheService';
 
 export const getAllReports = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -41,6 +42,10 @@ export const createReport = async (req: Request, res: Response, next: NextFuncti
 
     const report = await maintenanceService.createMaintenanceInTenant({ ...payload, userId: targetUserId }, targetTenantId);
     logger.log('maintenance.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { reportId: String(report._id) });
+    
+    // Invalida caché de estadísticas
+    await cacheService.invalidateDashboardStats(targetTenantId);
+
     res.status(201).json({ success: true, report });
   } catch (err: unknown) {
     logger.error('maintenance.create.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -59,6 +64,10 @@ export const updateReport = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('maintenance.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { reportId: req.params.id });
+
+    // Invalida caché de estadísticas
+    if (tenantScope) await cacheService.invalidateDashboardStats(tenantScope);
+
     res.json({ success: true, report });
   } catch (err: unknown) {
     logger.error('maintenance.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -77,6 +86,10 @@ export const deleteReport = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('maintenance.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { reportId: req.params.id });
+
+    // Invalida caché de estadísticas
+    if (tenantScope) await cacheService.invalidateDashboardStats(tenantScope);
+
     res.json({ success: true, message: 'Reporte eliminado' });
   } catch (err: unknown) {
     logger.error('maintenance.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

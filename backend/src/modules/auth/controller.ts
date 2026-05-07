@@ -56,10 +56,17 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     const token = jwt.sign(
       { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email },
       process.env.JWT_SECRET as string,
-      { expiresIn: '12h' }
+      { expiresIn: '15m' }
     );
+
+    const refreshToken = jwt.sign(
+      { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '7d' }
+    );
+
     logger.log('auth.login', String(user._id), String(user.tenantId), { email: user.email, role: user.role });
-    res.json({ success: true, token, user: { ...user.toObject(), password: undefined } });
+    res.json({ success: true, token, refreshToken, user: { ...user.toObject(), password: undefined } });
   } catch (err: unknown) {
     logger.error('auth.login.error', 'anonymous', 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error en login', 400, { cause: toError(err).message }));
@@ -141,5 +148,33 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
   } catch (err: unknown) {
     logger.error('auth.resetPassword.error', 'anonymous', 'global', toError(err));
     next(err instanceof AppError ? err : new AppError('Error al restablecer contraseña', 400, { cause: toError(err).message }));
+  }
+};
+
+export const refresh = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      throw new AppError('Refresh token requerido', 400);
+    }
+
+    let payload: any;
+    try {
+      payload = jwt.verify(refreshToken, process.env.JWT_SECRET as string);
+    } catch (err) {
+      throw new AppError('Refresh token inválido o expirado', 401);
+    }
+
+    // Generar nuevo access token
+    const token = jwt.sign(
+      { id: payload.id, tenantId: payload.tenantId, role: payload.role, email: payload.email },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '15m' }
+    );
+
+    res.json({ success: true, token });
+  } catch (err: unknown) {
+    next(err instanceof AppError ? err : new AppError('Error al refrescar token', 401, { cause: toError(err).message }));
   }
 };

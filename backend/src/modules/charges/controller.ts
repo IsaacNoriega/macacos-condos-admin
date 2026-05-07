@@ -174,6 +174,14 @@ export const updateCharge = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('charges.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
+
+    // Invalida caché de estadísticas
+    if (tenantScope) {
+      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
+        logger.error('cache.invalidate.error', 'system', String(tenantScope), err)
+      );
+    }
+
     res.json({ success: true, charge });
   } catch (err: unknown) {
     logger.error('charges.update.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));
@@ -191,6 +199,14 @@ export const deleteCharge = async (req: Request, res: Response, next: NextFuncti
     }
 
     logger.log('charges.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
+
+    // Invalida caché de estadísticas
+    if (tenantScope) {
+      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
+        logger.error('cache.invalidate.error', 'system', String(tenantScope), err)
+      );
+    }
+
     res.json({ success: true, message: 'Cargo eliminado' });
   } catch (err: unknown) {
     logger.error('charges.delete.error', req.user?.id ? String(req.user.id) : 'system', req.tenantId || 'global', toError(err));

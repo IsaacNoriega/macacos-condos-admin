@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
-import { register, login, forgotPassword, resetPassword } from './controller';
+import { register, login, forgotPassword, resetPassword, refresh } from './controller';
 import validateRequest from '../../middleware/validateRequest';
 
 const router = Router();
@@ -24,6 +24,13 @@ router.post(
 	body('password').notEmpty().withMessage('La contraseña es obligatoria'),
 	validateRequest,
 	login
+);
+// Refresh token
+router.post(
+	'/refresh',
+	body('refreshToken').notEmpty().withMessage('Refresh token requerido'),
+	validateRequest,
+	refresh
 );
 // Recuperación de contraseña
 router.post(
