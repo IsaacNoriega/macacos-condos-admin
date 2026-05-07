@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, ChangeDetectionStrategy, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { MaintenanceReport, Tenant, User, UserRole } from '../../../core/api.models';
+import { MaintenanceReport, Tenant, User, UserRole, Unit, Resident } from '../../../core/api.models';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';

@@ -42,8 +42,10 @@
           [value]="selectedFilterTenantId()"
           (change)="onFilterTenantChange($event)"
         >
-          <option value="">Mi Condominio</option>
-          <option value="all">Todos los condominios</option>
+          <option value="">Todos los condominios</option>
+          @if (auth.user()?.tenantId) {
+            <option [value]="auth.user()?.tenantId">Mi Condominio</option>
+          }
           @for (t of tenants(); track t._id) {
             <option [value]="t._id">{{ t.name }}</option>
           }

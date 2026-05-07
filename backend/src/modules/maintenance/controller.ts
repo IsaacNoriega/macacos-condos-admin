@@ -10,7 +10,8 @@ export const getAllReports = async (req: Request, res: Response, next: NextFunct
     let reports;
 
     if (req.user?.role === 'superadmin') {
-      const tenantToFind = queryTenantId === 'all' ? undefined : (queryTenantId ? String(queryTenantId) : req.tenantId);
+      const qId = req.query.tenantId as string;
+      const tenantToFind = (qId && qId !== 'all') ? qId : undefined;
       reports = await maintenanceService.findMaintenanceByTenant(tenantToFind);
     } else if (req.user?.role === 'residente' || req.user?.role === 'familiar') {
       reports = await maintenanceService.findMaintenanceByUser(req.tenantId, String(req.user?.id));
