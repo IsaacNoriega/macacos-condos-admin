@@ -102,6 +102,11 @@ export const createResident = async (req: Request, res: Response, next: NextFunc
 
     const resident = await residentsService.createResidentInTenant(req.body, targetTenantId);
     
+    // Sincronizar nombre con el usuario vinculado
+    if (req.body.name) {
+      linkedUser.name = req.body.name;
+      await linkedUser.save();
+    }
     // Generar token de activación para el usuario (background)
     (async () => {
       try {
@@ -191,6 +196,19 @@ export const updateResident = async (req: Request, res: Response, next: NextFunc
 
       const linkedUser = await ensureLinkedResidentUser(targetEmail, tenantScope);
       ensureRelationshipMatchesRole(String(linkedUser.role), targetRelationship);
+
+      // Sincronizar nombre si se está actualizando
+      if (req.body.name) {
+        linkedUser.name = req.body.name;
+        await linkedUser.save();
+      }
+    } else if (req.body.name) {
+      // Si el email no cambió pero el nombre sí, también sincronizar
+      const linkedUser = await findUserByEmailInTenant(currentResident.email, tenantScope);
+      if (linkedUser) {
+        linkedUser.name = req.body.name;
+        await linkedUser.save();
+      }
     }
 
     const resident = await residentsService.updateResidentInTenant(String(req.params.id), tenantScope, req.body);

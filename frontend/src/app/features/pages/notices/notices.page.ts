@@ -198,6 +198,8 @@ export class NoticesPage implements OnInit {
     const val = this.form.value;
     const id = this.selectedNoticeId();
 
+    console.log(`[Notice] Saving notice. ID: ${id || 'NEW'}, Payload:`, val);
+
     const req$ = id ? this.api.put(`/notices/${id}`, val) : this.api.post('/notices', val);
 
     req$.pipe(finalize(() => this.loading.set(false))).subscribe({

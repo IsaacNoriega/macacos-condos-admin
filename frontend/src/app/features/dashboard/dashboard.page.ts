@@ -307,6 +307,7 @@ export class DashboardPage implements OnInit, OnDestroy {
 
   readonly firstName = computed(() => {
     const name = this.auth.user()?.name?.trim();
+    console.log('[Dashboard] Computed firstName from name:', name);
     if (!name) return '';
     return name.split(/\s+/)[0] ?? '';
   });

@@ -30,6 +30,8 @@ export const createNotice = async (req: Request, res: Response, next: NextFuncti
     if (!tenantId) throw new AppError('Tenant ID missing', 400);
 
     const { title, content, category } = req.body;
+    console.log(`[Notice] Creating notice with title: "${title}" by user: ${req.user?.name} (${req.user?.id})`);
+
     
     const notice = await NoticeService.create({
       tenantId: tenantId as any,

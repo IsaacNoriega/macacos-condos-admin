@@ -54,13 +54,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     const token = jwt.sign(
-      { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email },
+      { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email, name: user.name },
       process.env.JWT_SECRET as string,
       { expiresIn: '15m' }
     );
 
     const refreshToken = jwt.sign(
-      { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email },
+      { id: user._id, tenantId: user.tenantId, role: user.role, email: user.email, name: user.name },
       process.env.JWT_SECRET as string,
       { expiresIn: '7d' }
     );
@@ -168,7 +168,7 @@ export const refresh = async (req: Request, res: Response, next: NextFunction) =
 
     // Generar nuevo access token
     const token = jwt.sign(
-      { id: payload.id, tenantId: payload.tenantId, role: payload.role, email: payload.email },
+      { id: payload.id, tenantId: payload.tenantId, role: payload.role, email: payload.email, name: payload.name },
       process.env.JWT_SECRET as string,
       { expiresIn: '15m' }
     );
