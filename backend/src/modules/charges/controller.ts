@@ -129,10 +129,8 @@ export const createCharge = async (req: Request, res: Response, next: NextFuncti
     const charge = await chargesService.createChargeInTenant(payload, targetTenantId);
     logger.log('charges.create', req.user?.id ? String(req.user.id) : 'system', targetTenantId || 'global', { chargeId: String(charge._id) });
     
-    // Invalidad dashboard stats
-    cacheService.invalidateDashboardStats(targetTenantId).catch(err => 
-      logger.error('cache.invalidate.error', 'system', targetTenantId, err)
-    );
+    // Invalida caché de estadísticas
+    await cacheService.invalidateDashboardStats(targetTenantId);
 
     // Notificar por Email si hay un usuario asignado
     if (charge.userId) {
@@ -176,11 +174,7 @@ export const updateCharge = async (req: Request, res: Response, next: NextFuncti
     logger.log('charges.update', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
 
     // Invalida caché de estadísticas
-    if (tenantScope) {
-      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
-        logger.error('cache.invalidate.error', 'system', String(tenantScope), err)
-      );
-    }
+    if (tenantScope) await cacheService.invalidateDashboardStats(String(tenantScope));
 
     res.json({ success: true, charge });
   } catch (err: unknown) {
@@ -201,11 +195,7 @@ export const deleteCharge = async (req: Request, res: Response, next: NextFuncti
     logger.log('charges.delete', req.user?.id ? String(req.user.id) : 'system', tenantScope || 'global', { chargeId: req.params.id });
 
     // Invalida caché de estadísticas
-    if (tenantScope) {
-      cacheService.invalidateDashboardStats(String(tenantScope)).catch(err => 
-        logger.error('cache.invalidate.error', 'system', String(tenantScope), err)
-      );
-    }
+    if (tenantScope) await cacheService.invalidateDashboardStats(String(tenantScope));
 
     res.json({ success: true, message: 'Cargo eliminado' });
   } catch (err: unknown) {
@@ -250,9 +240,7 @@ export const createBulkCharges = async (req: Request, res: Response, next: NextF
     const charges = await chargesService.createBulkChargesInTenant(chargePayloads, tenantId);
 
     // Invalidad dashboard stats
-    cacheService.invalidateDashboardStats(tenantId).catch(err => 
-      logger.error('cache.invalidate.error', 'system', tenantId, err)
-    );
+    await cacheService.invalidateDashboardStats(tenantId);
 
     // Encolar emails para los que tienen usuario
     const dueDateStr = new Date(dueDate).toLocaleDateString('es-MX');

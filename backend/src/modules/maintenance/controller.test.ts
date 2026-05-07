@@ -16,6 +16,14 @@ vi.mock('./service', () => ({
   deleteMaintenanceInTenant: vi.fn(),
 }));
 
+vi.mock('../../services/cacheService', () => ({
+  cacheService: {
+    invalidateDashboardStats: vi.fn().mockResolvedValue(undefined),
+    generateKey: vi.fn().mockReturnValue('mock-key'),
+    getOrSet: vi.fn().mockImplementation((key, fn) => fn()),
+  },
+}));
+
 import { createReport, deleteReport, getAllReports, updateReport } from './controller';
 import {
   createMaintenanceInTenant,
