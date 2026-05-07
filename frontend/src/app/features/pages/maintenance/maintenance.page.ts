@@ -43,7 +43,7 @@ const FILTERS: Array<{ label: string; value: MaintenanceFilter }> = [
   styleUrl: './maintenance.page.css',
 })
 export class MaintenancePage implements OnInit {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(ApiService);
   private readonly toast = inject(ToastService);
