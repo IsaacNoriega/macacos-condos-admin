@@ -1,5 +1,25 @@
+import * as appInsights from 'applicationinsights';
 import dotenv from 'dotenv';
 dotenv.config();
+
+// 📊 Inicialización Crítica de Azure Application Insights (RNF-MON-001)
+// Debe ejecutarse antes de cargar express, mongoose o redis para capturar telemetría correctamente.
+const connectionString = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
+if (connectionString) {
+  appInsights.setup(connectionString)
+    .setAutoDependencyCorrelation(true)
+    .setAutoCollectRequests(true)
+    .setAutoCollectPerformance(true, true) // Habilita también contadores personalizados
+    .setAutoCollectExceptions(true)
+    .setAutoCollectDependencies(true)
+    .setAutoCollectConsole(true, true) // Incluye logs de consola en App Insights
+    .setSendLiveMetrics(true)
+    .start();
+  console.log('🚀 Azure Application Insights: Telemetría inicializada y Live Metrics activas.');
+} else {
+  console.warn('⚠️ [Azure Insights] APPLICATIONINSIGHTS_CONNECTION_STRING no encontrada. Ejecutando sin telemetría remota.');
+}
+
 import app from './app';
 import connectDB from './config/database';
 
