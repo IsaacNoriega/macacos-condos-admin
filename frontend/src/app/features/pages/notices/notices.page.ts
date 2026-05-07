@@ -101,6 +101,7 @@ export class NoticesPage implements OnInit {
     effect(() => {
       const id = this.selectedNoticeId();
       if (!id) {
+        this.form.enable();
         this.form.reset({
           category: 'info',
           tenantId: this.auth.user()?.tenantId || '',
@@ -115,6 +116,13 @@ export class NoticesPage implements OnInit {
           category: notice.category,
           tenantId: notice.tenantId,
         });
+
+        // Deshabilitar formulario si no es staff
+        if (!this.isStaff()) {
+          this.form.disable();
+        } else {
+          this.form.enable();
+        }
       }
     });
   }
@@ -175,7 +183,6 @@ export class NoticesPage implements OnInit {
   }
 
   openEdit(notice: Notice): void {
-    if (!this.isStaff()) return;
     this.selectedNoticeId.set(notice._id);
     this.editorOpen.set(true);
   }

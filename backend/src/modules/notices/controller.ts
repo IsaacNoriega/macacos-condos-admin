@@ -4,9 +4,20 @@ import { AppError } from '../../utils/httpError';
 
 export const getNotices = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    let tenantId = req.tenantId;
-    if (req.user?.role === 'superadmin' && req.query.tenantId) {
-      tenantId = req.query.tenantId as string;
+    let tenantId: string | undefined = req.tenantId;
+
+    if (req.user?.role === 'superadmin') {
+      const queryTenantId = req.query.tenantId as string;
+      if (queryTenantId === 'all') {
+        tenantId = undefined;
+      } else if (queryTenantId) {
+        tenantId = queryTenantId;
+      } else {
+        // Por defecto superadmin ve todos si no especifica uno? 
+        // O mejor dejamos que vea el suyo si no especifica nada.
+        // Vamos a dejar que vea el suyo por defecto para mantener consistencia con otros módulos.
+        tenantId = req.tenantId;
+      }
     }
 
     if (!tenantId && req.user?.role !== 'superadmin') {

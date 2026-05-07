@@ -147,7 +147,7 @@ describe('residents controller', () => {
     it('creates resident when all validations pass', async () => {
       vi.mocked(validateUnitInTenant).mockResolvedValue(true as any);
       vi.mocked(countResidentsInUnit).mockResolvedValue(2 as any);
-      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', name: 'Bob', role: 'residente' } as any);
+      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', name: 'Bob', role: 'residente', save: vi.fn().mockResolvedValue({}) } as any);
       vi.mocked(findTenantById).mockResolvedValue({ _id: 'tenant-1', identifier: 'mac-1' } as any);
       vi.mocked(sendWelcomeEmail).mockResolvedValue(true as any);
       vi.mocked(createResidentInTenant).mockResolvedValue({ _id: 'r3', name: 'Bob' } as any);
@@ -175,7 +175,7 @@ describe('residents controller', () => {
     it('creates resident when role is residente and relationship is familiar', async () => {
       vi.mocked(validateUnitInTenant).mockResolvedValue(true as any);
       vi.mocked(countResidentsInUnit).mockResolvedValue(2 as any);
-      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', name: 'Bob', role: 'residente' } as any);
+      vi.mocked(findUserByEmailInTenant).mockResolvedValue({ _id: 'u1', name: 'Bob', role: 'residente', save: vi.fn().mockResolvedValue({}) } as any);
       vi.mocked(findTenantById).mockResolvedValue({ _id: 'tenant-1', identifier: 'mac-1' } as any);
       vi.mocked(sendWelcomeEmail).mockResolvedValue(true as any);
       vi.mocked(createResidentInTenant).mockResolvedValue({ _id: 'r3', name: 'Bob' } as any);

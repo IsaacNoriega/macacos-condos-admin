@@ -45,7 +45,8 @@
           [value]="selectedFilterTenantId()"
           (change)="onFilterTenantChange($event)"
         >
-          <option value="">Mi Condominio (Default)</option>
+          <option value="">Mi Condominio</option>
+          <option value="all">Todos los condominios</option>
           @for (t of tenants(); track t._id) {
             <option [value]="t._id">{{ t.name }}</option>
           }
@@ -226,10 +227,10 @@
   <!-- Drawer Editor -->
   <mac-drawer
     [open]="editorOpen()"
-    [title]="selectedNoticeId() ? 'Editar aviso' : 'Nuevo aviso'"
+    [title]="selectedNoticeId() ? (isStaff() ? 'Editar aviso' : 'Detalles del aviso') : 'Nuevo aviso'"
     [subtitle]="
       selectedNoticeId()
-        ? 'Actualice el contenido del anuncio'
+        ? (isStaff() ? 'Actualice el contenido del anuncio' : 'Información detallada del comunicado')
         : 'Publique un mensaje para toda la comunidad'
     "
     [width]="500"
@@ -284,12 +285,14 @@
 
     <ng-container footer>
       <button class="mcs-btn" type="button" (click)="closeEditor()">Cancelar</button>
-      <button class="mcs-btn primary" type="button" (click)="saveNotice()" [disabled]="loading()">
-        @if (loading()) {
-          <span class="mcs-btn-spin"></span>
-        }
-        <span>{{ selectedNoticeId() ? 'Guardar cambios' : 'Publicar aviso' }}</span>
-      </button>
+      @if (isStaff()) {
+        <button class="mcs-btn primary" type="button" (click)="saveNotice()" [disabled]="loading()">
+          @if (loading()) {
+            <span class="mcs-btn-spin"></span>
+          }
+          <span>{{ selectedNoticeId() ? 'Guardar cambios' : 'Publicar aviso' }}</span>
+        </button>
+      }
     </ng-container>
   </mac-drawer>
 
